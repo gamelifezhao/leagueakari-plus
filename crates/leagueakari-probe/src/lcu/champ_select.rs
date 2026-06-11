@@ -282,4 +282,58 @@ mod tests {
         assert_eq!(draft.their_team.len(), 1);
         assert_eq!(draft.their_team[0].champion_id, Some(22));
     }
+
+    #[test]
+    fn parses_tencent_style_ban_and_pick_actions() {
+        let session = json!({
+            "localPlayerCellId": 2,
+            "myTeam": [],
+            "theirTeam": [],
+            "actions": [
+                [
+                    { "actorCellId": 0, "championId": 63, "completed": true, "isAllyAction": true, "type": "ban" },
+                    { "actorCellId": 1, "championId": 104, "completed": true, "isAllyAction": true, "type": "ban" },
+                    { "actorCellId": 2, "championId": 121, "completed": true, "isAllyAction": true, "type": "ban" },
+                    { "actorCellId": 3, "championId": 893, "completed": true, "isAllyAction": true, "type": "ban" },
+                    { "actorCellId": 4, "championId": 11, "completed": true, "isAllyAction": true, "type": "ban" },
+                    { "actorCellId": 5, "championId": 157, "completed": true, "isAllyAction": false, "type": "ban" },
+                    { "actorCellId": 6, "championId": 89, "completed": true, "isAllyAction": false, "type": "ban" },
+                    { "actorCellId": 7, "championId": 56, "completed": true, "isAllyAction": false, "type": "ban" },
+                    { "actorCellId": 8, "championId": 800, "completed": true, "isAllyAction": false, "type": "ban" },
+                    { "actorCellId": 9, "championId": 54, "completed": true, "isAllyAction": false, "type": "ban" }
+                ],
+                [
+                    { "actorCellId": 0, "championId": 103, "completed": true, "isAllyAction": true, "type": "pick" },
+                    { "actorCellId": 5, "championId": 22, "completed": true, "isAllyAction": false, "type": "pick" }
+                ]
+            ],
+            "bans": {
+                "myTeamBans": [],
+                "theirTeamBans": []
+            }
+        });
+
+        let draft = parse_draft_state("ChampSelect", &session);
+
+        assert_eq!(draft.local_player_cell_id, Some(2));
+        assert_eq!(draft.bans.len(), 10);
+        assert_eq!(
+            draft
+                .bans
+                .iter()
+                .filter(|ban| ban.team_id == Some(100))
+                .count(),
+            5
+        );
+        assert_eq!(
+            draft
+                .bans
+                .iter()
+                .filter(|ban| ban.team_id == Some(200))
+                .count(),
+            5
+        );
+        assert_eq!(draft.my_team[0].champion_id, Some(103));
+        assert_eq!(draft.their_team[0].champion_id, Some(22));
+    }
 }
