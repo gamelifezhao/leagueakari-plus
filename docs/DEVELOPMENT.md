@@ -51,6 +51,14 @@ C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 ```
 
+默认输出会隐藏账号标识、token 和原始 session，只打印连接状态、当前阶段和标准化 `DraftState`。
+
+如果需要调试原始 LCU JSON，可以显式加 `--raw`：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --raw
+```
+
 如果英雄联盟客户端没有启动，预期输出是：
 
 ```text
@@ -73,6 +81,8 @@ Error: League Client lockfile was not found. Start the League client, then run t
 - `--remoting-auth-token`
 
 探针只会在控制台显示端口和来源路径，不会打印 token。
+
+探针会从最新的少量日志里提取候选端口，并逐个做短超时连接测试。旧端口不可用时会自动跳过，避免在历史日志里长时间等待。
 
 当前已验证的国服路径示例：
 

@@ -5,6 +5,9 @@ use std::{
 
 use thiserror::Error;
 
+const MAX_LOG_FILES: usize = 12;
+const MAX_LOG_CONNECTIONS: usize = 24;
+
 #[derive(Debug, Clone)]
 pub struct LcuConnection {
     pub source: String,
@@ -34,22 +37,24 @@ pub enum LcuConnectionError {
     InvalidPort { path: PathBuf, value: String },
 }
 
-pub fn discover() -> Result<LcuConnection, LcuConnectionError> {
-    if let Some(result) = discover_standard_lockfile() {
-        return result;
-    }
+pub fn discover_all() -> Result<Vec<LcuConnection>, LcuConnectionError> {
+    let mut connections = Vec::new();
 
-    if let Some(result) = discover_from_logs() {
-        return result;
-    }
+    connections.extend(discover_standard_lockfiles()?);
+    connections.extend(discover_from_logs()?);
+    dedupe_connections(&mut connections);
 
-    Err(LcuConnectionError::NotFound)
+    if connections.is_empty() {
+        Err(LcuConnectionError::NotFound)
+    } else {
+        Ok(connections)
+    }
 }
 
-fn discover_standard_lockfile() -> Option<Result<LcuConnection, LcuConnectionError>> {
+fn discover_standard_lockfiles() -> Result<Vec<LcuConnection>, LcuConnectionError> {
     standard_lockfile_paths()
         .into_iter()
-        .find(|path| {
+        .filter(|path| {
             path.is_file()
                 && path
                     .metadata()
@@ -57,6 +62,7 @@ fn discover_standard_lockfile() -> Option<Result<LcuConnection, LcuConnectionErr
                     .unwrap_or(false)
         })
         .map(read_standard_lockfile)
+        .collect()
 }
 
 fn read_standard_lockfile(path: PathBuf) -> Result<LcuConnection, LcuConnectionError> {
@@ -93,43 +99,60 @@ fn parse_standard_lockfile(
     })
 }
 
-fn discover_from_logs() -> Option<Result<LcuConnection, LcuConnectionError>> {
+fn discover_from_logs() -> Result<Vec<LcuConnection>, LcuConnectionError> {
     latest_log_paths()
         .into_iter()
-        .filter_map(|path| match read_log_lossy(&path) {
-            Ok(content) => parse_log_connection(&path, &content).transpose(),
-            Err(error) => Some(Err(error)),
+        .take(MAX_LOG_FILES)
+        .map(|path| {
+            let content = read_log_lossy(&path)?;
+            parse_log_connections(&path, &content)
         })
-        .next()
+        .collect::<Result<Vec<_>, LcuConnectionError>>()
+        .map(|groups| {
+            groups
+                .into_iter()
+                .flatten()
+                .take(MAX_LOG_CONNECTIONS)
+                .collect()
+        })
 }
 
-fn parse_log_connection(
+fn parse_log_connections(
     path: &Path,
     content: &str,
-) -> Result<Option<LcuConnection>, LcuConnectionError> {
-    let port = find_flag_value(content, "--app-port=").map(|value| parse_port(path, value));
-    let token = find_flag_value(content, "--remoting-auth-token=");
+) -> Result<Vec<LcuConnection>, LcuConnectionError> {
+    let ports = find_flag_values(content, "--app-port=");
+    let tokens = find_flag_values(content, "--remoting-auth-token=");
+    let pair_count = ports.len().min(tokens.len());
+    let start = ports.len().saturating_sub(pair_count);
+    let token_start = tokens.len().saturating_sub(pair_count);
+    let mut connections = Vec::new();
 
-    match (port, token) {
-        (Some(port), Some(token)) => Ok(Some(LcuConnection {
+    for (port, token) in ports[start..]
+        .iter()
+        .zip(tokens[token_start..].iter())
+        .rev()
+    {
+        connections.push(LcuConnection {
             source: "LeagueClientUx log arguments".to_string(),
             path: path.to_path_buf(),
             pid: None,
-            port: port?,
-            password: token.to_string(),
+            port: parse_port(path, port)?,
+            password: (*token).to_string(),
             protocol: "https".to_string(),
-        })),
-        _ => Ok(None),
+        });
     }
+
+    Ok(connections)
 }
 
-fn find_flag_value<'a>(content: &'a str, flag: &str) -> Option<&'a str> {
+fn find_flag_values<'a>(content: &'a str, flag: &str) -> Vec<&'a str> {
     content
         .match_indices(flag)
-        .last()
-        .and_then(|(index, _)| content[index + flag.len()..].split_whitespace().next())
+        .filter_map(|(index, _)| content[index + flag.len()..].split_whitespace().next())
         .map(|value| value.trim_matches('"'))
         .filter(|value| !value.is_empty())
+        .collect()
 }
 
 fn standard_lockfile_paths() -> Vec<PathBuf> {
@@ -237,6 +260,19 @@ fn parse_port(path: &Path, value: &str) -> Result<u16, LcuConnectionError> {
         })
 }
 
+fn dedupe_connections(connections: &mut Vec<LcuConnection>) {
+    let mut seen = Vec::new();
+    connections.retain(|connection| {
+        let key = (connection.port, connection.password.clone());
+        if seen.contains(&key) {
+            false
+        } else {
+            seen.push(key);
+            true
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,8 +292,10 @@ mod tests {
     #[test]
     fn parses_log_arguments() {
         let content = r#"Command line arguments: --remoting-auth-token=token-value --app-port=58425 --install-directory=test"#;
-        let connection = parse_log_connection(Path::new("LeagueClientUx.log"), content)
+        let connection = parse_log_connections(Path::new("LeagueClientUx.log"), content)
             .unwrap()
+            .into_iter()
+            .next()
             .unwrap();
 
         assert_eq!(connection.port, 58425);
@@ -268,12 +306,24 @@ mod tests {
     #[test]
     fn uses_last_log_arguments() {
         let content = "--remoting-auth-token=old --app-port=11111\n--remoting-auth-token=new --app-port=22222";
-        let connection = parse_log_connection(Path::new("LeagueClientUx.log"), content)
+        let connection = parse_log_connections(Path::new("LeagueClientUx.log"), content)
             .unwrap()
+            .into_iter()
+            .next()
             .unwrap();
 
         assert_eq!(connection.port, 22222);
         assert_eq!(connection.password, "new");
+    }
+
+    #[test]
+    fn parses_multiple_log_argument_pairs_newest_first() {
+        let content = "--remoting-auth-token=old --app-port=11111\n--remoting-auth-token=new --app-port=22222";
+        let connections = parse_log_connections(Path::new("LeagueClientUx.log"), content).unwrap();
+
+        assert_eq!(connections.len(), 2);
+        assert_eq!(connections[0].port, 22222);
+        assert_eq!(connections[1].port, 11111);
     }
 
     #[test]

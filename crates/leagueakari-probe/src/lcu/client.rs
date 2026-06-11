@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
@@ -31,6 +33,7 @@ impl LcuClient {
     pub fn new(connection: &LcuConnection) -> Result<Self, LcuClientError> {
         let http = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
+            .timeout(Duration::from_millis(1500))
             .build()
             .map_err(LcuClientError::Build)?;
 

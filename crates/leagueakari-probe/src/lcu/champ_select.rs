@@ -5,9 +5,13 @@ use super::models::{DraftBan, DraftPlayer, DraftState};
 pub fn parse_draft_state(gameflow: &str, session: &Value) -> DraftState {
     let local_player_cell_id = session.get("localPlayerCellId").and_then(Value::as_i64);
 
-    let my_team = parse_players(session.get("myTeam"));
-    let their_team = parse_players(session.get("theirTeam"));
-    let bans = parse_bans(session.get("bans"));
+    let mut my_team = parse_players(session.get("myTeam"));
+    let mut their_team = parse_players(session.get("theirTeam"));
+    merge_action_picks(session.get("actions"), &mut my_team, &mut their_team);
+    let mut bans = parse_bans(session.get("bans"));
+    if bans.is_empty() {
+        bans = parse_action_bans(session.get("actions"));
+    }
 
     DraftState {
         connected: true,
@@ -58,6 +62,88 @@ fn parse_bans(value: Option<&Value>) -> Vec<DraftBan> {
     }
 
     bans
+}
+
+fn parse_action_bans(value: Option<&Value>) -> Vec<DraftBan> {
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_array)
+        .flatten()
+        .filter(|action| action.get("type").and_then(Value::as_str) == Some("ban"))
+        .filter(|action| {
+            action
+                .get("completed")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        })
+        .filter_map(|action| {
+            positive_i64(action.get("championId")).map(|champion_id| DraftBan {
+                champion_id,
+                team_id: action
+                    .get("isAllyAction")
+                    .and_then(Value::as_bool)
+                    .map(|is_ally| if is_ally { 100 } else { 200 }),
+            })
+        })
+        .collect()
+}
+
+fn merge_action_picks(
+    value: Option<&Value>,
+    my_team: &mut Vec<DraftPlayer>,
+    their_team: &mut Vec<DraftPlayer>,
+) {
+    let Some(actions) = value.and_then(Value::as_array) else {
+        return;
+    };
+
+    for action in actions
+        .iter()
+        .filter_map(Value::as_array)
+        .flatten()
+        .filter(|action| action.get("type").and_then(Value::as_str) == Some("pick"))
+        .filter(|action| {
+            action
+                .get("completed")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        })
+    {
+        let Some(champion_id) = positive_i64(action.get("championId")) else {
+            continue;
+        };
+        let cell_id = action
+            .get("actorCellId")
+            .and_then(Value::as_i64)
+            .unwrap_or_default();
+        let target = if action
+            .get("isAllyAction")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            &mut *my_team
+        } else {
+            &mut *their_team
+        };
+
+        upsert_action_pick(target, cell_id, champion_id);
+    }
+}
+
+fn upsert_action_pick(team: &mut Vec<DraftPlayer>, cell_id: i64, champion_id: i64) {
+    if let Some(player) = team.iter_mut().find(|player| player.cell_id == cell_id) {
+        player.champion_id = Some(champion_id);
+        return;
+    }
+
+    team.push(DraftPlayer {
+        cell_id,
+        champion_id: Some(champion_id),
+        assigned_position: None,
+        summoner_id: None,
+    });
 }
 
 fn parse_ban_ids(values: &[Value], team_id: Option<i64>) -> impl Iterator<Item = DraftBan> + '_ {
@@ -122,5 +208,78 @@ mod tests {
             Some("bottom")
         );
         assert_eq!(draft.bans.len(), 2);
+    }
+
+    #[test]
+    fn parses_bans_from_actions_when_bans_field_is_empty() {
+        let session = json!({
+            "actions": [
+                [
+                    {
+                        "championId": 63,
+                        "completed": true,
+                        "isAllyAction": true,
+                        "type": "ban"
+                    },
+                    {
+                        "championId": 157,
+                        "completed": true,
+                        "isAllyAction": false,
+                        "type": "ban"
+                    },
+                    {
+                        "championId": 103,
+                        "completed": true,
+                        "isAllyAction": true,
+                        "type": "pick"
+                    }
+                ]
+            ],
+            "bans": {
+                "myTeamBans": [],
+                "theirTeamBans": []
+            }
+        });
+
+        let draft = parse_draft_state("ChampSelect", &session);
+
+        assert_eq!(draft.bans.len(), 2);
+        assert_eq!(draft.bans[0].champion_id, 63);
+        assert_eq!(draft.bans[0].team_id, Some(100));
+        assert_eq!(draft.bans[1].champion_id, 157);
+        assert_eq!(draft.bans[1].team_id, Some(200));
+    }
+
+    #[test]
+    fn merges_public_picks_from_actions() {
+        let session = json!({
+            "myTeam": [],
+            "theirTeam": [],
+            "actions": [
+                [
+                    {
+                        "actorCellId": 1,
+                        "championId": 103,
+                        "completed": true,
+                        "isAllyAction": true,
+                        "type": "pick"
+                    },
+                    {
+                        "actorCellId": 6,
+                        "championId": 22,
+                        "completed": true,
+                        "isAllyAction": false,
+                        "type": "pick"
+                    }
+                ]
+            ]
+        });
+
+        let draft = parse_draft_state("ChampSelect", &session);
+
+        assert_eq!(draft.my_team.len(), 1);
+        assert_eq!(draft.my_team[0].champion_id, Some(103));
+        assert_eq!(draft.their_team.len(), 1);
+        assert_eq!(draft.their_team[0].champion_id, Some(22));
     }
 }

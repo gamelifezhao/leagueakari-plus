@@ -11,5 +11,6 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    lcu::run_probe().await
+    let raw = std::env::args().any(|arg| arg == "--raw");
+    lcu::run_probe(raw).await
 }
