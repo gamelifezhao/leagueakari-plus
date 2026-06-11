@@ -57,6 +57,8 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 探针也会输出一个本地规则模型的 `composition analysis`。当前规则库只覆盖少量样例英雄，用来验证分析管线，不能当成正式胜率预测。
 
+样例英雄标签位于 `crates/leagueakari-probe/data/champion-tags.sample.json`，后续会扩展成完整英雄标签库。
+
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
 
 ```powershell

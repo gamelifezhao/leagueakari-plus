@@ -1,0 +1,39 @@
+[
+  {
+    "champion_id": 22,
+    "physical_damage": 85,
+    "crowd_control": 55,
+    "scaling": 65
+  },
+  {
+    "champion_id": 103,
+    "engage": 45,
+    "magic_damage": 80,
+    "crowd_control": 45,
+    "scaling": 60
+  },
+  {
+    "champion_id": 54,
+    "engage": 70,
+    "frontline": 85,
+    "magic_damage": 55,
+    "crowd_control": 75,
+    "scaling": 70
+  },
+  {
+    "champion_id": 89,
+    "engage": 85,
+    "frontline": 75,
+    "magic_damage": 30,
+    "physical_damage": 25,
+    "crowd_control": 90,
+    "scaling": 45
+  },
+  {
+    "champion_id": 104,
+    "engage": 35,
+    "physical_damage": 80,
+    "crowd_control": 35,
+    "scaling": 55
+  }
+]

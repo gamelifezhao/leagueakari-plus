@@ -31,13 +31,22 @@ pub struct CompositionDimensions {
     pub scaling: u8,
 }
 
-#[derive(Debug, Clone, Default)]
+const SAMPLE_TAGS_JSON: &str = include_str!("../../data/champion-tags.sample.json");
+
+#[derive(Debug, Clone, Default, Deserialize)]
 struct ChampionTags {
+    champion_id: i64,
+    #[serde(default)]
     engage: u8,
+    #[serde(default)]
     frontline: u8,
+    #[serde(default)]
     magic_damage: u8,
+    #[serde(default)]
     physical_damage: u8,
+    #[serde(default)]
     crowd_control: u8,
+    #[serde(default)]
     scaling: u8,
 }
 
@@ -150,59 +159,11 @@ fn suggestions_for(dimensions: &CompositionDimensions) -> Vec<String> {
 }
 
 fn sample_tags() -> HashMap<i64, ChampionTags> {
-    HashMap::from([
-        (
-            22,
-            ChampionTags {
-                physical_damage: 85,
-                crowd_control: 55,
-                scaling: 65,
-                ..ChampionTags::default()
-            },
-        ),
-        (
-            103,
-            ChampionTags {
-                engage: 45,
-                magic_damage: 80,
-                crowd_control: 45,
-                scaling: 60,
-                ..ChampionTags::default()
-            },
-        ),
-        (
-            54,
-            ChampionTags {
-                engage: 70,
-                frontline: 85,
-                magic_damage: 55,
-                crowd_control: 75,
-                scaling: 70,
-                ..ChampionTags::default()
-            },
-        ),
-        (
-            89,
-            ChampionTags {
-                engage: 85,
-                frontline: 75,
-                magic_damage: 30,
-                physical_damage: 25,
-                crowd_control: 90,
-                scaling: 45,
-            },
-        ),
-        (
-            104,
-            ChampionTags {
-                engage: 35,
-                physical_damage: 80,
-                crowd_control: 35,
-                scaling: 55,
-                ..ChampionTags::default()
-            },
-        ),
-    ])
+    serde_json::from_str::<Vec<ChampionTags>>(SAMPLE_TAGS_JSON)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|tags| (tags.champion_id, tags))
+        .collect()
 }
 
 #[cfg(test)]
@@ -216,6 +177,14 @@ mod tests {
 
         assert_eq!(analysis.confidence, AnalysisConfidence::Low);
         assert!(!analysis.suggestions.is_empty());
+    }
+
+    #[test]
+    fn loads_sample_tags_from_json() {
+        let tags = sample_tags();
+
+        assert!(tags.contains_key(&103));
+        assert!(tags.contains_key(&22));
     }
 
     #[test]
