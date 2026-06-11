@@ -55,6 +55,8 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 进入选人阶段后，探针会从 LCU 本地 game-data 读取英雄摘要数据，把公开 pick 和 ban 的 `championId` 尽量转换成英雄名称。
 
+探针也会输出一个本地规则模型的 `composition analysis`。当前规则库只覆盖少量样例英雄，用来验证分析管线，不能当成正式胜率预测。
+
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
 
 ```powershell

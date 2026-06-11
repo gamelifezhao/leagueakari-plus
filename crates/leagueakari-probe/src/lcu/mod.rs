@@ -1,3 +1,4 @@
+mod analysis;
 mod auth;
 mod champ_select;
 mod champions;
@@ -35,6 +36,8 @@ pub async fn run_probe(raw: bool) -> Result<()> {
         let draft_state =
             champ_select::parse_draft_state(gameflow_phase.as_str().unwrap_or("Unknown"), &session);
         print_draft_summary(&draft_state, &champion_catalog);
+        let analysis = analysis::analyze_draft(&draft_state);
+        print_json("composition analysis", &serde_json::to_value(analysis)?)?;
         print_json(
             "normalized draft state",
             &serde_json::to_value(draft_state)?,
