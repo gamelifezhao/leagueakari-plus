@@ -78,4 +78,5 @@ Rust 负责 LCU 客户端连接、实时事件监听、阵容分析和本地数�
 - [Rust / Tauri 技术规划](docs/RUST_TAURI_PLAN.md)
 - [路线图](docs/ROADMAP.md)
 - [开发说明](docs/DEVELOPMENT.md)
+- [当前状态](docs/STATUS.md)
 - [法律与安全边界](docs/LEGAL_AND_SAFETY.md)
