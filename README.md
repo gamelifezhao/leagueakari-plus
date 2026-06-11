@@ -1,64 +1,80 @@
 # LeagueAkari Plus
 
-LeagueAkari Plus is a second-development project based on the LeagueAkari idea: a League of Legends companion that helps players understand how to win a match, without building features that affect game balance.
+LeagueAkari Plus 是一个基于 LeagueAkari 思路进行二开的英雄联盟客户端助手项目。
 
-> Not to help you cheat, but to help you understand how this game can be won.
+项目目标不是影响游戏平衡，而是帮助玩家在选人、复盘和准备阶段更清楚地理解这一局应该怎么赢。
 
-## Product Direction
+> 不是帮你作弊，而是帮你理解这一局应该怎么赢。
 
-The first version focuses on a clean and safe MVP:
+## 产品方向
 
-- League client connection status
-- Current summoner profile
-- Recent match history
-- Champion select detection
-- Rune recommendation with explicit confirmation before applying
-- Team composition analysis with win-rate range
-- Composition weakness hints, such as missing AP damage, frontline, engage, control, or scaling
-- CN/Global client compatibility improvements
+第一版先做一个干净、安全、能跑通核心流程的 MVP：
 
-## Core Feature: Composition Analysis
+- 英雄联盟客户端连接状态
+- 当前召唤师资料展示
+- 最近战绩展示
+- 选人阶段检测
+- 符文推荐，并且必须由用户确认后才应用
+- 双方阵容分析，展示胜率区间而不是假装精确
+- 阵容短板提示，例如缺 AP、缺前排、缺开团、缺控制、后期不足
+- 国服和国际服客户端兼容验证
 
-LeagueAkari Plus should explain a draft in practical language:
+## 核心功能：阵容分析
 
-- Estimated win-rate range, not fake precision
-- Confidence level
-- Strengths and weaknesses for both teams
-- Damage mix, engage, peel, frontline, crowd control, scaling, and tempo
-- Suggestions during champion select, based on the player's own champion pool
+LeagueAkari Plus 的阵容分析要用玩家能理解的语言解释选人局面：
 
-Example output:
+- 预估胜率区间，而不是精确到小数点的假数字
+- 可信度等级
+- 双方阵容优势和风险
+- 伤害结构、开团、保护、前排、控制、后期能力、节奏能力
+- 基于玩家个人英雄池的选人建议
+
+示例输出：
 
 ```text
-Estimated win rate: 54% - 58%
-Confidence: Medium
+预估胜率：54% - 58%
+可信度：中
 
-Key reasons:
-- Our team has stronger engage and better dragon-fight setup.
-- Enemy team scales better after three items.
-- Our AP damage is slightly low.
-- Bot lane may face early pressure.
+关键原因：
+- 我方开团能力更强，小龙团站位更主动。
+- 敌方三件套后成长性更高。
+- 我方 AP 伤害略低。
+- 下路前期可能承压。
 ```
 
-## Safety Boundary
+## 技术路线
 
-This project should not include:
+第一版建议使用：
 
-- In-game automation
-- Memory reading or memory patching
-- Anti-cheat bypass
-- Auto dodge/auto play scripts
-- Real-time gameplay manipulation
+```text
+Tauri + Rust + React + TypeScript
+```
 
-The goal is client-side analysis, organization, and decision support.
+Rust 负责 LCU 客户端连接、实时事件监听、阵容分析和本地数据缓存。前端负责 UI、图表、交互和用户确认流程。
 
-## Status
+正式做完整 UI 之前，先做一个 `leagueakari-probe` 命令行探针，验证能否稳定读取当前召唤师、游戏阶段和选人 session。
 
-This repository is currently in the product planning and project bootstrap stage.
+## 安全边界
 
-See:
+这个项目不做：
 
-- [MVP scope](docs/MVP.md)
-- [Composition analysis design](docs/COMPOSITION_ANALYSIS.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Legal and safety notes](docs/LEGAL_AND_SAFETY.md)
+- 游戏内自动操作
+- 内存读取或内存修改
+- 反作弊绕过
+- 自动秒退、自动操作脚本
+- 实时对局操控
+- 获取客户端不可见的信息
+
+项目只做客户端侧分析、整理、解释和决策辅助。
+
+## 当前状态
+
+当前仓库处于产品规划和项目启动阶段。
+
+文档入口：
+
+- [MVP 范围](docs/MVP.md)
+- [阵容分析设计](docs/COMPOSITION_ANALYSIS.md)
+- [Rust / Tauri 技术规划](docs/RUST_TAURI_PLAN.md)
+- [路线图](docs/ROADMAP.md)
+- [法律与安全边界](docs/LEGAL_AND_SAFETY.md)
