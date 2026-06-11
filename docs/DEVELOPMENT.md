@@ -1,0 +1,70 @@
+# 开发说明
+
+## 当前阶段
+
+当前实现的是 M0：`leagueakari-probe`。
+
+它是一个 Rust 命令行探针，用来验证 League Client / LCU 本地接口能否稳定读取：
+
+- 客户端 `lockfile`
+- 当前召唤师资料
+- 当前游戏阶段
+- 选人阶段 session
+- 标准化后的 `DraftState`
+
+这个阶段只读取客户端公开给本地应用的数据，不做游戏内自动操作，不读取内存，不绕过反作弊。
+
+## 环境
+
+本机已安装：
+
+- Rust stable MSVC toolchain
+- Visual Studio 2022 Build Tools C++ 组件
+- `rustfmt`
+
+仓库内 `.cargo/config.toml` 配置了 Cargo 镜像源，用于改善依赖下载速度。
+
+## 常用命令
+
+格式检查：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe fmt --all --check
+```
+
+单元测试：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-probe
+```
+
+编译检查：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
+```
+
+运行探针：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
+```
+
+如果英雄联盟客户端没有启动，预期输出是：
+
+```text
+Error: League Client lockfile was not found. Start the League client, then run the probe again.
+```
+
+如果客户端已启动，探针会读取 `lockfile`，隐藏 token/password，并请求：
+
+- `/lol-summoner/v1/current-summoner`
+- `/lol-gameflow/v1/gameflow-phase`
+- `/lol-champ-select/v1/session`，仅在 `ChampSelect` 阶段读取
+
+## 下一步
+
+1. 启动英雄联盟客户端后运行 `leagueakari-probe`。
+2. 确认能读到当前召唤师和 gameflow。
+3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
+4. 增加 WebSocket 订阅，实时监听选人变化。
