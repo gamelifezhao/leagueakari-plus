@@ -2,7 +2,7 @@ use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
-use super::{auth, lockfile::Lockfile};
+use super::{auth, connection::LcuConnection};
 
 #[derive(Debug, Clone)]
 pub struct LcuClient {
@@ -28,15 +28,15 @@ pub enum LcuClientError {
 }
 
 impl LcuClient {
-    pub fn new(lockfile: &Lockfile) -> Result<Self, LcuClientError> {
+    pub fn new(connection: &LcuConnection) -> Result<Self, LcuClientError> {
         let http = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
             .build()
             .map_err(LcuClientError::Build)?;
 
         Ok(Self {
-            base_url: format!("{}://127.0.0.1:{}", lockfile.protocol, lockfile.port),
-            auth_header: auth::basic_auth_header(&lockfile.password),
+            base_url: format!("{}://127.0.0.1:{}", connection.protocol, connection.port),
+            auth_header: auth::basic_auth_header(&connection.password),
             http,
         })
     }

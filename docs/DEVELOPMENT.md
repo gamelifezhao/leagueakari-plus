@@ -7,6 +7,7 @@
 它是一个 Rust 命令行探针，用来验证 League Client / LCU 本地接口能否稳定读取：
 
 - 客户端 `lockfile`
+- 国服 / WeGame 的 `LeagueClientUx*.log` 启动参数
 - 当前召唤师资料
 - 当前游戏阶段
 - 选人阶段 session
@@ -61,6 +62,23 @@ Error: League Client lockfile was not found. Start the League client, then run t
 - `/lol-summoner/v1/current-summoner`
 - `/lol-gameflow/v1/gameflow-phase`
 - `/lol-champ-select/v1/session`，仅在 `ChampSelect` 阶段读取
+
+## 国服 / WeGame 兼容
+
+国服客户端可能出现传统 `LeagueClient:pid:port:password:protocol` 格式的 `lockfile` 为空文件。
+
+这种情况下，探针会继续从最新的 `LeagueClientUx*.log` 里读取：
+
+- `--app-port`
+- `--remoting-auth-token`
+
+探针只会在控制台显示端口和来源路径，不会打印 token。
+
+当前已验证的国服路径示例：
+
+```text
+F:\WeGameApps\英雄联盟\LeagueClient
+```
 
 ## 下一步
 

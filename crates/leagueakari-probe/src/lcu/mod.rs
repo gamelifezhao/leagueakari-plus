@@ -1,23 +1,26 @@
 mod auth;
 mod champ_select;
 mod client;
-mod lockfile;
+mod connection;
 mod models;
 
 use anyhow::Result;
 use serde_json::Value;
 
 pub async fn run_probe() -> Result<()> {
-    let lockfile = lockfile::discover()?;
+    let connection = connection::discover()?;
 
-    println!("LCU lockfile found:");
-    println!("  path: {}", lockfile.path.display());
-    println!("  pid: {}", lockfile.pid);
-    println!("  port: {}", lockfile.port);
-    println!("  protocol: {}", lockfile.protocol);
-    println!("  password: <hidden>");
+    println!("LCU connection found:");
+    println!("  source: {}", connection.source);
+    println!("  path: {}", connection.path.display());
+    if let Some(pid) = connection.pid {
+        println!("  pid: {pid}");
+    }
+    println!("  port: {}", connection.port);
+    println!("  protocol: {}", connection.protocol);
+    println!("  password/token: <hidden>");
 
-    let client = client::LcuClient::new(&lockfile)?;
+    let client = client::LcuClient::new(&connection)?;
 
     let summoner: Value = client.get_json("/lol-summoner/v1/current-summoner").await?;
     print_json("current summoner", &summoner)?;
