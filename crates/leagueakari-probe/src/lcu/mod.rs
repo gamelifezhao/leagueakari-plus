@@ -1,5 +1,6 @@
 mod auth;
 mod champ_select;
+mod champions;
 mod client;
 mod connection;
 mod models;
@@ -17,6 +18,7 @@ pub async fn run_probe(raw: bool) -> Result<()> {
 
     let gameflow_phase: Value = client.get_json("/lol-gameflow/v1/gameflow-phase").await?;
     print_json("gameflow phase", &gameflow_phase)?;
+    let champion_catalog = load_champion_catalog(&client).await;
 
     if let Some(gameflow) = gameflow_phase.as_str() {
         let empty_draft = models::DraftState::empty(gameflow.to_string());
@@ -32,6 +34,7 @@ pub async fn run_probe(raw: bool) -> Result<()> {
 
         let draft_state =
             champ_select::parse_draft_state(gameflow_phase.as_str().unwrap_or("Unknown"), &session);
+        print_draft_summary(&draft_state, &champion_catalog);
         print_json(
             "normalized draft state",
             &serde_json::to_value(draft_state)?,
@@ -43,6 +46,19 @@ pub async fn run_probe(raw: bool) -> Result<()> {
     println!("probe finished");
 
     Ok(())
+}
+
+async fn load_champion_catalog(client: &client::LcuClient) -> champions::ChampionCatalog {
+    match client
+        .get_json::<Value>("/lol-game-data/assets/v1/champion-summary.json")
+        .await
+    {
+        Ok(value) => champions::ChampionCatalog::from_lcu_summary(&value),
+        Err(error) => {
+            tracing::debug!("failed to load champion summary: {error}");
+            champions::ChampionCatalog::default()
+        }
+    }
 }
 
 async fn connect_to_lcu() -> Result<(connection::LcuConnection, client::LcuClient, Value)> {
@@ -131,6 +147,65 @@ fn print_champ_select_summary(session: &Value) {
     println!("  my_team_count: {my_team_count}");
     println!("  their_team_count: {their_team_count}");
     println!("  action_count: {action_count}");
+}
+
+fn print_draft_summary(
+    draft_state: &models::DraftState,
+    champion_catalog: &champions::ChampionCatalog,
+) {
+    println!();
+    println!("draft summary:");
+    println!(
+        "  my picks: {}",
+        format_players(&draft_state.my_team, champion_catalog)
+    );
+    println!(
+        "  their picks: {}",
+        format_players(&draft_state.their_team, champion_catalog)
+    );
+    println!(
+        "  my bans: {}",
+        format_bans(&draft_state.bans, Some(100), champion_catalog)
+    );
+    println!(
+        "  their bans: {}",
+        format_bans(&draft_state.bans, Some(200), champion_catalog)
+    );
+}
+
+fn format_players(
+    players: &[models::DraftPlayer],
+    champion_catalog: &champions::ChampionCatalog,
+) -> String {
+    let labels = players
+        .iter()
+        .filter_map(|player| player.champion_id)
+        .map(|champion_id| champion_catalog.label(champion_id))
+        .collect::<Vec<_>>();
+
+    format_list(labels)
+}
+
+fn format_bans(
+    bans: &[models::DraftBan],
+    team_id: Option<i64>,
+    champion_catalog: &champions::ChampionCatalog,
+) -> String {
+    let labels = bans
+        .iter()
+        .filter(|ban| ban.team_id == team_id)
+        .map(|ban| champion_catalog.label(ban.champion_id))
+        .collect::<Vec<_>>();
+
+    format_list(labels)
+}
+
+fn format_list(labels: Vec<String>) -> String {
+    if labels.is_empty() {
+        "none".to_string()
+    } else {
+        labels.join(", ")
+    }
 }
 
 fn print_json(label: &str, value: &Value) -> Result<()> {

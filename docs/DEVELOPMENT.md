@@ -53,6 +53,8 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 默认输出会隐藏账号标识、token 和原始 session，只打印连接状态、当前阶段和标准化 `DraftState`。
 
+进入选人阶段后，探针会从 LCU 本地 game-data 读取英雄摘要数据，把公开 pick 和 ban 的 `championId` 尽量转换成英雄名称。
+
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
 
 ```powershell
