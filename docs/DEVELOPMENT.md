@@ -62,6 +62,18 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 英雄机制标签位于 `crates/leagueakari-probe/data/champion-tags.v1.json`。OP.GG 公开页面统计快照位于 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`，只用于版本环境解释，不直接承诺胜负。
 
+更新英雄标签或 OP.GG 快照后，可以先运行本地数据自检，不需要启动英雄联盟客户端：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
+```
+
+如果需要给工具消费，也可以输出 JSON：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data --json
+```
+
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
 
 ```powershell

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +45,18 @@ pub struct ChampionStatSummary {
     pub pick_rate: f32,
     pub ban_rate: f32,
     pub rank: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataValidationReport {
+    pub tag_count: usize,
+    pub opgg_entry_count: usize,
+    pub matched_opgg_entries: usize,
+    pub unmatched_opgg_entries: Vec<String>,
+    pub duplicate_tag_ids: Vec<i64>,
+    pub duplicate_tag_keys: Vec<String>,
+    pub invalid_stat_entries: Vec<String>,
+    pub warnings: Vec<String>,
 }
 
 const TAGS_JSON: &str = include_str!("../../data/champion-tags.v1.json");
@@ -143,6 +155,66 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
         enemy_threats,
         win_conditions,
         suggestions,
+    }
+}
+
+pub fn validate_data() -> DataValidationReport {
+    let tags = champion_tags_vec();
+    let snapshot = opgg_snapshot();
+    let tag_keys = tags
+        .iter()
+        .map(|tag| tag.champion_key.as_str())
+        .collect::<HashSet<_>>();
+    let duplicate_tag_ids = duplicates(tags.iter().map(|tag| tag.champion_id));
+    let duplicate_tag_keys = duplicates(tags.iter().map(|tag| tag.champion_key.clone()));
+    let unmatched_opgg_entries = snapshot
+        .entries
+        .iter()
+        .filter(|entry| !tag_keys.contains(entry.champion_key.as_str()))
+        .map(|entry| format!("{}:{}", entry.champion_key, entry.role))
+        .collect::<Vec<_>>();
+    let invalid_stat_entries = snapshot
+        .entries
+        .iter()
+        .filter_map(|entry| invalid_stat_entry(entry))
+        .collect::<Vec<_>>();
+    let matched_opgg_entries = snapshot.entries.len() - unmatched_opgg_entries.len();
+    let mut warnings = Vec::new();
+
+    if !unmatched_opgg_entries.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG entries do not have local champion tags.",
+            unmatched_opgg_entries.len()
+        ));
+    }
+    if !duplicate_tag_ids.is_empty() {
+        warnings.push(format!(
+            "{} duplicated champion ids in local tags.",
+            duplicate_tag_ids.len()
+        ));
+    }
+    if !duplicate_tag_keys.is_empty() {
+        warnings.push(format!(
+            "{} duplicated champion keys in local tags.",
+            duplicate_tag_keys.len()
+        ));
+    }
+    if !invalid_stat_entries.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG entries have invalid rates or ranks.",
+            invalid_stat_entries.len()
+        ));
+    }
+
+    DataValidationReport {
+        tag_count: tags.len(),
+        opgg_entry_count: snapshot.entries.len(),
+        matched_opgg_entries,
+        unmatched_opgg_entries,
+        duplicate_tag_ids,
+        duplicate_tag_keys,
+        invalid_stat_entries,
+        warnings,
     }
 }
 
@@ -473,11 +545,14 @@ fn has_archetype(tags: &[&ChampionTags], archetype: &str) -> bool {
 }
 
 fn champion_tags() -> HashMap<i64, ChampionTags> {
-    serde_json::from_str::<Vec<ChampionTags>>(TAGS_JSON)
-        .unwrap_or_default()
+    champion_tags_vec()
         .into_iter()
         .map(|tags| (tags.champion_id, tags))
         .collect()
+}
+
+fn champion_tags_vec() -> Vec<ChampionTags> {
+    serde_json::from_str::<Vec<ChampionTags>>(TAGS_JSON).unwrap_or_default()
 }
 
 fn opgg_stats() -> HashMap<String, OpggChampionStat> {
@@ -514,6 +589,44 @@ fn opgg_roles_for(role: &str) -> &'static [&'static str] {
     }
 }
 
+fn invalid_stat_entry(entry: &OpggChampionStat) -> Option<String> {
+    let rates_are_valid = (0.0..=100.0).contains(&entry.win_rate)
+        && (0.0..=100.0).contains(&entry.pick_rate)
+        && (0.0..=100.0).contains(&entry.ban_rate);
+
+    if entry.rank == 0 || !rates_are_valid {
+        Some(format!(
+            "{}:{} rank={} win={} pick={} ban={}",
+            entry.champion_key,
+            entry.role,
+            entry.rank,
+            entry.win_rate,
+            entry.pick_rate,
+            entry.ban_rate
+        ))
+    } else {
+        None
+    }
+}
+
+fn duplicates<T>(values: impl Iterator<Item = T>) -> Vec<T>
+where
+    T: Clone + Eq + std::hash::Hash + Ord,
+{
+    let mut seen = HashSet::new();
+    let mut duplicated = HashSet::new();
+
+    for value in values {
+        if !seen.insert(value.clone()) {
+            duplicated.insert(value);
+        }
+    }
+
+    let mut duplicated = duplicated.into_iter().collect::<Vec<_>>();
+    duplicated.sort();
+    duplicated
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -544,6 +657,17 @@ mod tests {
         assert!(stats.contains_key("ahri:mid"));
         assert!(stats.contains_key("ashe:adc"));
         assert!(stats.contains_key("nautilus:support"));
+    }
+
+    #[test]
+    fn validates_local_data_files() {
+        let report = validate_data();
+
+        assert!(report.tag_count >= 40);
+        assert!(report.opgg_entry_count >= 40);
+        assert!(report.matched_opgg_entries >= 40);
+        assert!(report.duplicate_tag_ids.is_empty());
+        assert!(report.invalid_stat_entries.is_empty());
     }
 
     #[test]

@@ -14,7 +14,7 @@
 - 能解析双方公开 pick 和 ban。
 - 能从 LCU 本地 game-data 读取英雄摘要，将 `championId` 转为英雄名称。
 - 新增本地规则模型骨架，输出基础 `composition analysis`。
-- 样例英雄标签已拆到 `crates/leagueakari-probe/data/champion-tags.sample.json`。
+- 英雄机制标签已升级到 `crates/leagueakari-probe/data/champion-tags.v1.json`。
 - 项目级 Cargo 配置已切到 `rsproxy` 镜像源，改善国内依赖下载速度。
 - 新增 `--watch` 实时监听模式，通过 LCU 本地 WebSocket 订阅 gameflow 和选人阶段变化。
 - 新增敌我阵容对比分析字段，开始输出敌方威胁和本局取胜思路。
@@ -27,6 +27,7 @@
 - 新增 `champion-tags.v1.json` 英雄机制标签库，覆盖真实 BP 样例和一批 OP.GG 当前榜单英雄。
 - 新增 OP.GG 公开页面统计快照缓存，并把胜率、选率、禁率作为阵容解释的辅助信息。
 - 新增 `tools/opgg-exporter`，用于从已打开的 OP.GG 公开页面导出本地统计快照。
+- 新增 `leagueakari-probe --validate-data`，可在不启动英雄联盟客户端的情况下检查英雄标签和 OP.GG 快照。
 
 ## 安全边界
 
@@ -50,9 +51,10 @@ C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe build -p leagueakari-app
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
 ```
 
-当前单元测试数量：`leagueakari-probe` 20 个，`leagueakari-app` 3 个。
+当前单元测试数量：`leagueakari-probe` 21 个，`leagueakari-app` 3 个。
 
 ## 需要回来后确认
 

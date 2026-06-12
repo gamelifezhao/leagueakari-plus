@@ -16,9 +16,14 @@ pub struct ProbeOptions {
     pub raw: bool,
     pub watch: bool,
     pub json: bool,
+    pub validate_data: bool,
 }
 
 pub async fn run_probe(options: ProbeOptions) -> Result<()> {
+    if options.validate_data {
+        return run_data_validation(options.json);
+    }
+
     let LcuProbeConnection {
         connection,
         client,
@@ -112,6 +117,38 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
         output::print_event("probe_status", &output::status_message("finished", ""))?;
     } else {
         println!("probe finished");
+    }
+
+    Ok(())
+}
+
+fn run_data_validation(json: bool) -> Result<()> {
+    let report = analysis::validate_data();
+
+    if json {
+        output::print_event("data_validation", &report)?;
+    } else {
+        println!("data validation:");
+        println!("  champion tags: {}", report.tag_count);
+        println!("  OP.GG entries: {}", report.opgg_entry_count);
+        println!("  matched OP.GG entries: {}", report.matched_opgg_entries);
+        println!(
+            "  unmatched OP.GG entries: {}",
+            format_list(report.unmatched_opgg_entries)
+        );
+        println!(
+            "  duplicate tag ids: {}",
+            format_list(report.duplicate_tag_ids)
+        );
+        println!(
+            "  duplicate tag keys: {}",
+            format_list(report.duplicate_tag_keys)
+        );
+        println!(
+            "  invalid OP.GG entries: {}",
+            format_list(report.invalid_stat_entries)
+        );
+        println!("  warnings: {}", format_list(report.warnings));
     }
 
     Ok(())
@@ -313,11 +350,18 @@ fn format_bans(
     format_list(labels)
 }
 
-fn format_list(labels: Vec<String>) -> String {
-    if labels.is_empty() {
+fn format_list<T>(items: Vec<T>) -> String
+where
+    T: ToString,
+{
+    if items.is_empty() {
         "none".to_string()
     } else {
-        labels.join(", ")
+        items
+            .into_iter()
+            .map(|item| item.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 }
 

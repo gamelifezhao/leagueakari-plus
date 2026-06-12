@@ -35,6 +35,7 @@ Content-Length: 0
 2. 使用 `tools/opgg-exporter/extract-opgg-champion-stats.js` 从已打开页面导出 JSON，或人工整理成 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`。
 3. Rust 分析模块从本地 JSON 缓存读取。
 4. 缓存过期时手动或半自动刷新。
+5. 更新缓存后运行 `leagueakari-probe --validate-data` 检查字段和标签匹配。
 
 ## 数据分层
 
