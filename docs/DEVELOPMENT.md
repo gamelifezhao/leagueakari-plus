@@ -73,6 +73,8 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --watch
 
 `--watch` 只订阅 LCU 本地 WebSocket 事件，不会写入客户端配置。
 
+如果 LCU 短时间内没有返回当前召唤师资料，探针会继续使用已经可达的 gameflow 和 WebSocket 数据，不会因为召唤师摘要超时而退出。
+
 如果英雄联盟客户端没有启动，预期输出是：
 
 ```text

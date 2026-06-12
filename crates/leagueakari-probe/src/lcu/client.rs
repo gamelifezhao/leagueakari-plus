@@ -33,7 +33,8 @@ impl LcuClient {
     pub fn new(connection: &LcuConnection) -> Result<Self, LcuClientError> {
         let http = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
-            .timeout(Duration::from_millis(1500))
+            .connect_timeout(Duration::from_millis(800))
+            .timeout(Duration::from_millis(5000))
             .build()
             .map_err(LcuClientError::Build)?;
 

@@ -7,7 +7,7 @@ mod connection;
 mod models;
 mod websocket;
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -17,14 +17,23 @@ pub struct ProbeOptions {
 }
 
 pub async fn run_probe(options: ProbeOptions) -> Result<()> {
-    let (connection, client, summoner) = connect_to_lcu().await?;
+    let LcuProbeConnection {
+        connection,
+        client,
+        summoner,
+        gameflow_phase,
+    } = connect_to_lcu().await?;
+
     print_connection_summary(&connection);
-    print_summoner_summary(&summoner);
-    if options.raw {
-        print_json("current summoner", &summoner)?;
+    if let Some(summoner) = &summoner {
+        print_summoner_summary(summoner);
+        if options.raw {
+            print_json("current summoner", summoner)?;
+        }
+    } else {
+        print_summoner_unavailable();
     }
 
-    let gameflow_phase: Value = client.get_json("/lol-gameflow/v1/gameflow-phase").await?;
     print_json("gameflow phase", &gameflow_phase)?;
     let champion_catalog = load_champion_catalog(&client).await;
 
@@ -75,17 +84,47 @@ async fn load_champion_catalog(client: &client::LcuClient) -> champions::Champio
     }
 }
 
-async fn connect_to_lcu() -> Result<(connection::LcuConnection, client::LcuClient, Value)> {
+struct LcuProbeConnection {
+    connection: connection::LcuConnection,
+    client: client::LcuClient,
+    summoner: Option<Value>,
+    gameflow_phase: Value,
+}
+
+async fn connect_to_lcu() -> Result<LcuProbeConnection> {
     let connections = connection::discover_all()?;
-    let mut last_error = None;
+    let mut failures = Vec::new();
 
     for connection in connections {
         let client = client::LcuClient::new(&connection)?;
         match client
-            .get_json::<Value>("/lol-summoner/v1/current-summoner")
+            .get_json::<Value>("/lol-gameflow/v1/gameflow-phase")
             .await
         {
-            Ok(summoner) => return Ok((connection, client, summoner)),
+            Ok(gameflow_phase) => {
+                let summoner = match client
+                    .get_json::<Value>("/lol-summoner/v1/current-summoner")
+                    .await
+                {
+                    Ok(value) => Some(value),
+                    Err(error) => {
+                        tracing::debug!(
+                            "LCU current summoner request skipped: source={}, port={}, error={}",
+                            connection.source,
+                            connection.port,
+                            error
+                        );
+                        None
+                    }
+                };
+
+                return Ok(LcuProbeConnection {
+                    connection,
+                    client,
+                    summoner,
+                    gameflow_phase,
+                });
+            }
             Err(error) => {
                 tracing::debug!(
                     "LCU candidate failed: source={}, port={}, error={}",
@@ -93,14 +132,21 @@ async fn connect_to_lcu() -> Result<(connection::LcuConnection, client::LcuClien
                     connection.port,
                     error
                 );
-                last_error = Some(error);
+                failures.push(format!(
+                    "{} port {}: {}",
+                    connection.source, connection.port, error
+                ));
             }
         }
     }
 
-    match last_error {
-        Some(error) => Err(error.into()),
-        None => Err(connection::LcuConnectionError::NotFound.into()),
+    if failures.is_empty() {
+        Err(connection::LcuConnectionError::NotFound.into())
+    } else {
+        bail!(
+            "all LCU connection candidates failed:\n  {}",
+            failures.join("\n  ")
+        );
     }
 }
 
@@ -128,6 +174,13 @@ fn print_summoner_summary(summoner: &Value) {
         display_value(summoner.get("summonerLevel"))
     );
     println!("  account fields: hidden");
+}
+
+fn print_summoner_unavailable() {
+    println!();
+    println!("current summoner summary: unavailable");
+    println!("  account fields: hidden");
+    println!("  note: continuing because gameflow is reachable");
 }
 
 fn print_champ_select_summary(session: &Value) {
