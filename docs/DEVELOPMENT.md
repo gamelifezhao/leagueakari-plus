@@ -56,11 +56,11 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 进入选人阶段后，探针会从 LCU 本地 game-data 读取英雄摘要数据，把公开 pick 和 ban 的 `championId` 尽量转换成英雄名称。
 
-探针也会输出一个本地规则模型的 `composition analysis`。当前规则库只覆盖少量样例英雄，用来验证分析管线，不能当成正式胜率预测。
+探针也会输出一个本地规则模型的 `composition analysis`。当前规则库已经开始扩展为 v1 英雄机制标签，但仍然不能当成正式胜率预测。
 
 当前 `composition analysis` 会同时输出我方维度、敌方维度、敌方威胁和本局取胜思路。它的目标不是告诉你“必胜/必输”，而是把这一局的主要风险、强点和打法重点说清楚。
 
-样例英雄标签位于 `crates/leagueakari-probe/data/champion-tags.sample.json`，后续会扩展成完整英雄标签库。
+英雄机制标签位于 `crates/leagueakari-probe/data/champion-tags.v1.json`。OP.GG 公开页面统计快照位于 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`，只用于版本环境解释，不直接承诺胜负。
 
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
 

@@ -24,6 +24,8 @@
 - 新增 Tauri 到 probe 的 JSON 事件桥接：前端准备好后启动只读 probe，并接收实时 LCU 事件。
 - 桌面壳支持 `LEAGUEAKARI_PROBE_PATH` 覆盖 probe 路径，并会在 probe 异常退出时把最后一条错误显示到 UI。
 - 已确认 `leagueakari-app` 开发构建可生成 `target\debug\leagueakari-app.exe`。
+- 新增 `champion-tags.v1.json` 英雄机制标签库，覆盖真实 BP 样例和一批 OP.GG 当前榜单英雄。
+- 新增 OP.GG 公开页面统计快照缓存，并把胜率、选率、禁率作为阵容解释的辅助信息。
 
 ## 安全边界
 
@@ -49,7 +51,7 @@ C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe build -p leagueakari-app
 ```
 
-当前单元测试数量：`leagueakari-probe` 19 个，`leagueakari-app` 3 个。
+当前单元测试数量：`leagueakari-probe` 20 个，`leagueakari-app` 3 个。
 
 ## 需要回来后确认
 

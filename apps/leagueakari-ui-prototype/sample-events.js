@@ -70,6 +70,18 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
           crowd_control: 100,
           scaling: 100
         },
+        data_notes: [
+          "OP.GG 快照：16.12 / global / emerald_plus / ranked_solo_duo，样本量 3256825。",
+          "本局匹配到 6 个英雄的 OP.GG 角色统计；统计只辅助解释，不直接承诺胜负。"
+        ],
+        champion_stats: [
+          { champion_id: 22, champion_key: "ashe", role: "adc", win_rate: 50.39, pick_rate: 11.71, ban_rate: 9.82, rank: 20 },
+          { champion_id: 104, champion_key: "graves", role: "jungle", win_rate: 49.51, pick_rate: 12.14, ban_rate: 15.35, rank: 26 },
+          { champion_id: 89, champion_key: "leona", role: "support", win_rate: 52.42, pick_rate: 7.92, ban_rate: 7.3, rank: 4 },
+          { champion_id: 111, champion_key: "nautilus", role: "support", win_rate: 50.04, pick_rate: 10.98, ban_rate: 14.94, rank: 23 },
+          { champion_id: 54, champion_key: "malphite", role: "top", win_rate: 51.3, pick_rate: 7.02, ban_rate: 18.79, rank: 14 },
+          { champion_id: 56, champion_key: "nocturne", role: "jungle", win_rate: 50.3, pick_rate: 6.87, ban_rate: 15.88, rank: 21 }
+        ],
         strengths: [
           "我方具备较好的主动开团能力。",
           "我方前排厚度较好，团战容错更高。",

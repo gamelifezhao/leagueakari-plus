@@ -1,0 +1,542 @@
+[
+  {
+    "champion_id": 6,
+    "champion_key": "urgot",
+    "roles": ["top"],
+    "archetypes": ["juggernaut", "front_to_back"],
+    "frontline": 65,
+    "physical_damage": 75,
+    "crowd_control": 45,
+    "scaling": 60
+  },
+  {
+    "champion_id": 8,
+    "champion_key": "vladimir",
+    "roles": ["middle", "top"],
+    "archetypes": ["scaling", "teamfight"],
+    "magic_damage": 85,
+    "scaling": 85,
+    "frontline": 30
+  },
+  {
+    "champion_id": 10,
+    "champion_key": "kayle",
+    "roles": ["top"],
+    "archetypes": ["scaling", "carry"],
+    "magic_damage": 55,
+    "physical_damage": 55,
+    "scaling": 95
+  },
+  {
+    "champion_id": 19,
+    "champion_key": "warwick",
+    "roles": ["jungle", "top"],
+    "archetypes": ["duelist", "pick"],
+    "engage": 55,
+    "frontline": 55,
+    "physical_damage": 65,
+    "crowd_control": 45,
+    "scaling": 45
+  },
+  {
+    "champion_id": 22,
+    "champion_key": "ashe",
+    "roles": ["bottom", "utility"],
+    "archetypes": ["marksman", "utility", "pick"],
+    "engage": 45,
+    "physical_damage": 85,
+    "crowd_control": 65,
+    "scaling": 65
+  },
+  {
+    "champion_id": 23,
+    "champion_key": "tryndamere",
+    "roles": ["top"],
+    "archetypes": ["split_push", "duelist"],
+    "physical_damage": 85,
+    "scaling": 65
+  },
+  {
+    "champion_id": 27,
+    "champion_key": "singed",
+    "roles": ["top"],
+    "archetypes": ["disruption", "frontline"],
+    "engage": 45,
+    "frontline": 70,
+    "magic_damage": 55,
+    "crowd_control": 45,
+    "scaling": 55
+  },
+  {
+    "champion_id": 28,
+    "champion_key": "evelynn",
+    "roles": ["jungle"],
+    "archetypes": ["assassin", "pick"],
+    "engage": 45,
+    "magic_damage": 85,
+    "scaling": 60
+  },
+  {
+    "champion_id": 33,
+    "champion_key": "rammus",
+    "roles": ["jungle"],
+    "archetypes": ["tank", "engage", "anti_ad"],
+    "engage": 75,
+    "frontline": 90,
+    "magic_damage": 35,
+    "crowd_control": 75,
+    "scaling": 60
+  },
+  {
+    "champion_id": 45,
+    "champion_key": "veigar",
+    "roles": ["middle"],
+    "archetypes": ["control_mage", "scaling"],
+    "magic_damage": 90,
+    "crowd_control": 55,
+    "scaling": 90
+  },
+  {
+    "champion_id": 51,
+    "champion_key": "caitlyn",
+    "roles": ["bottom"],
+    "archetypes": ["marksman", "lane_pressure", "siege"],
+    "physical_damage": 90,
+    "crowd_control": 25,
+    "scaling": 65
+  },
+  {
+    "champion_id": 54,
+    "champion_key": "malphite",
+    "roles": ["top"],
+    "archetypes": ["tank", "engage", "anti_ad"],
+    "engage": 80,
+    "frontline": 90,
+    "magic_damage": 55,
+    "crowd_control": 80,
+    "scaling": 70
+  },
+  {
+    "champion_id": 55,
+    "champion_key": "katarina",
+    "roles": ["middle"],
+    "archetypes": ["assassin", "reset"],
+    "engage": 35,
+    "magic_damage": 80,
+    "physical_damage": 25,
+    "scaling": 65
+  },
+  {
+    "champion_id": 56,
+    "champion_key": "nocturne",
+    "roles": ["jungle"],
+    "archetypes": ["dive", "pick"],
+    "engage": 85,
+    "frontline": 35,
+    "physical_damage": 80,
+    "crowd_control": 55,
+    "scaling": 55
+  },
+  {
+    "champion_id": 59,
+    "champion_key": "jarvaniv",
+    "roles": ["jungle"],
+    "archetypes": ["engage", "bruiser"],
+    "engage": 80,
+    "frontline": 65,
+    "physical_damage": 60,
+    "crowd_control": 65,
+    "scaling": 50
+  },
+  {
+    "champion_id": 62,
+    "champion_key": "monkeyking",
+    "roles": ["jungle", "top"],
+    "archetypes": ["engage", "bruiser"],
+    "engage": 75,
+    "frontline": 55,
+    "physical_damage": 75,
+    "crowd_control": 65,
+    "scaling": 60
+  },
+  {
+    "champion_id": 63,
+    "champion_key": "brand",
+    "roles": ["utility", "middle", "bottom"],
+    "archetypes": ["aoe", "burn", "teamfight"],
+    "magic_damage": 90,
+    "crowd_control": 45,
+    "scaling": 65
+  },
+  {
+    "champion_id": 64,
+    "champion_key": "leesin",
+    "roles": ["jungle"],
+    "archetypes": ["early_tempo", "pick"],
+    "engage": 65,
+    "physical_damage": 70,
+    "crowd_control": 50,
+    "scaling": 35
+  },
+  {
+    "champion_id": 69,
+    "champion_key": "cassiopeia",
+    "roles": ["middle", "top"],
+    "archetypes": ["battle_mage", "scaling"],
+    "magic_damage": 95,
+    "crowd_control": 45,
+    "scaling": 85
+  },
+  {
+    "champion_id": 72,
+    "champion_key": "skarner",
+    "roles": ["jungle"],
+    "archetypes": ["tank", "pick"],
+    "engage": 70,
+    "frontline": 80,
+    "physical_damage": 45,
+    "crowd_control": 80,
+    "scaling": 55
+  },
+  {
+    "champion_id": 75,
+    "champion_key": "nasus",
+    "roles": ["top"],
+    "archetypes": ["scaling", "split_push"],
+    "frontline": 65,
+    "physical_damage": 75,
+    "scaling": 90
+  },
+  {
+    "champion_id": 76,
+    "champion_key": "nidalee",
+    "roles": ["jungle"],
+    "archetypes": ["poke", "early_tempo"],
+    "magic_damage": 80,
+    "physical_damage": 20,
+    "scaling": 45
+  },
+  {
+    "champion_id": 77,
+    "champion_key": "udyr",
+    "roles": ["jungle"],
+    "archetypes": ["bruiser", "frontline"],
+    "engage": 45,
+    "frontline": 70,
+    "physical_damage": 65,
+    "magic_damage": 35,
+    "crowd_control": 35,
+    "scaling": 55
+  },
+  {
+    "champion_id": 79,
+    "champion_key": "gragas",
+    "roles": ["jungle", "top", "middle"],
+    "archetypes": ["disengage", "engage", "burst"],
+    "engage": 70,
+    "frontline": 60,
+    "magic_damage": 70,
+    "crowd_control": 70,
+    "scaling": 55
+  },
+  {
+    "champion_id": 86,
+    "champion_key": "garen",
+    "roles": ["top"],
+    "archetypes": ["juggernaut", "frontline"],
+    "engage": 45,
+    "frontline": 75,
+    "physical_damage": 75,
+    "crowd_control": 35,
+    "scaling": 55
+  },
+  {
+    "champion_id": 89,
+    "champion_key": "leona",
+    "roles": ["utility"],
+    "archetypes": ["tank", "engage", "lockdown"],
+    "engage": 90,
+    "frontline": 80,
+    "magic_damage": 30,
+    "physical_damage": 20,
+    "crowd_control": 95,
+    "scaling": 50
+  },
+  {
+    "champion_id": 90,
+    "champion_key": "malzahar",
+    "roles": ["middle"],
+    "archetypes": ["control_mage", "pick"],
+    "magic_damage": 85,
+    "crowd_control": 75,
+    "scaling": 80
+  },
+  {
+    "champion_id": 98,
+    "champion_key": "shen",
+    "roles": ["top"],
+    "archetypes": ["tank", "peel", "global"],
+    "engage": 50,
+    "frontline": 80,
+    "physical_damage": 40,
+    "crowd_control": 65,
+    "scaling": 60
+  },
+  {
+    "champion_id": 102,
+    "champion_key": "shyvana",
+    "roles": ["jungle"],
+    "archetypes": ["bruiser", "scaling"],
+    "frontline": 55,
+    "magic_damage": 65,
+    "physical_damage": 55,
+    "scaling": 75
+  },
+  {
+    "champion_id": 103,
+    "champion_key": "ahri",
+    "roles": ["middle"],
+    "archetypes": ["pick", "mage_assassin"],
+    "engage": 50,
+    "magic_damage": 80,
+    "crowd_control": 50,
+    "scaling": 60
+  },
+  {
+    "champion_id": 104,
+    "champion_key": "graves",
+    "roles": ["jungle"],
+    "archetypes": ["marksman", "tempo"],
+    "engage": 35,
+    "frontline": 35,
+    "physical_damage": 85,
+    "crowd_control": 35,
+    "scaling": 60
+  },
+  {
+    "champion_id": 105,
+    "champion_key": "fizz",
+    "roles": ["middle"],
+    "archetypes": ["assassin", "pick"],
+    "engage": 45,
+    "magic_damage": 85,
+    "scaling": 60
+  },
+  {
+    "champion_id": 111,
+    "champion_key": "nautilus",
+    "roles": ["utility"],
+    "archetypes": ["tank", "engage", "lockdown"],
+    "engage": 90,
+    "frontline": 85,
+    "magic_damage": 25,
+    "crowd_control": 95,
+    "scaling": 50
+  },
+  {
+    "champion_id": 115,
+    "champion_key": "ziggs",
+    "roles": ["bottom", "middle"],
+    "archetypes": ["poke", "siege", "wave_clear"],
+    "magic_damage": 90,
+    "crowd_control": 35,
+    "scaling": 75
+  },
+  {
+    "champion_id": 117,
+    "champion_key": "lulu",
+    "roles": ["utility"],
+    "archetypes": ["enchanter", "peel"],
+    "magic_damage": 30,
+    "crowd_control": 70,
+    "scaling": 80
+  },
+  {
+    "champion_id": 122,
+    "champion_key": "darius",
+    "roles": ["top"],
+    "archetypes": ["juggernaut", "reset"],
+    "frontline": 70,
+    "physical_damage": 85,
+    "crowd_control": 35,
+    "scaling": 60
+  },
+  {
+    "champion_id": 134,
+    "champion_key": "syndra",
+    "roles": ["middle"],
+    "archetypes": ["burst_mage", "pick"],
+    "magic_damage": 90,
+    "crowd_control": 55,
+    "scaling": 75
+  },
+  {
+    "champion_id": 147,
+    "champion_key": "seraphine",
+    "roles": ["utility", "bottom"],
+    "archetypes": ["enchanter", "aoe", "teamfight"],
+    "magic_damage": 60,
+    "crowd_control": 75,
+    "scaling": 85
+  },
+  {
+    "champion_id": 200,
+    "champion_key": "belveth",
+    "roles": ["jungle"],
+    "archetypes": ["skirmisher", "scaling"],
+    "engage": 45,
+    "physical_damage": 85,
+    "scaling": 80
+  },
+  {
+    "champion_id": 201,
+    "champion_key": "braum",
+    "roles": ["utility"],
+    "archetypes": ["warden", "peel", "frontline"],
+    "frontline": 85,
+    "physical_damage": 25,
+    "crowd_control": 80,
+    "scaling": 60
+  },
+  {
+    "champion_id": 222,
+    "champion_key": "jinx",
+    "roles": ["bottom"],
+    "archetypes": ["marksman", "scaling", "reset"],
+    "physical_damage": 90,
+    "scaling": 85
+  },
+  {
+    "champion_id": 235,
+    "champion_key": "senna",
+    "roles": ["bottom", "utility"],
+    "archetypes": ["marksman", "enchanter", "scaling"],
+    "physical_damage": 75,
+    "crowd_control": 45,
+    "scaling": 85
+  },
+  {
+    "champion_id": 266,
+    "champion_key": "aatrox",
+    "roles": ["top"],
+    "archetypes": ["bruiser", "frontline"],
+    "engage": 50,
+    "frontline": 70,
+    "physical_damage": 85,
+    "crowd_control": 35,
+    "scaling": 60
+  },
+  {
+    "champion_id": 412,
+    "champion_key": "thresh",
+    "roles": ["utility"],
+    "archetypes": ["pick", "peel"],
+    "engage": 70,
+    "frontline": 45,
+    "physical_damage": 25,
+    "crowd_control": 85,
+    "scaling": 60
+  },
+  {
+    "champion_id": 420,
+    "champion_key": "illaoi",
+    "roles": ["top"],
+    "archetypes": ["juggernaut", "side_lane"],
+    "frontline": 75,
+    "physical_damage": 85,
+    "scaling": 65
+  },
+  {
+    "champion_id": 421,
+    "champion_key": "reksai",
+    "roles": ["jungle"],
+    "archetypes": ["early_tempo", "pick"],
+    "engage": 70,
+    "frontline": 45,
+    "physical_damage": 80,
+    "crowd_control": 50,
+    "scaling": 45
+  },
+  {
+    "champion_id": 427,
+    "champion_key": "ivern",
+    "roles": ["jungle"],
+    "archetypes": ["enchanter", "utility"],
+    "magic_damage": 35,
+    "crowd_control": 55,
+    "scaling": 70
+  },
+  {
+    "champion_id": 497,
+    "champion_key": "rakan",
+    "roles": ["utility"],
+    "archetypes": ["engage", "peel"],
+    "engage": 85,
+    "frontline": 45,
+    "magic_damage": 25,
+    "crowd_control": 80,
+    "scaling": 65
+  },
+  {
+    "champion_id": 516,
+    "champion_key": "ornn",
+    "roles": ["top"],
+    "archetypes": ["tank", "engage", "scaling"],
+    "engage": 75,
+    "frontline": 90,
+    "magic_damage": 45,
+    "crowd_control": 85,
+    "scaling": 85
+  },
+  {
+    "champion_id": 517,
+    "champion_key": "sylas",
+    "roles": ["middle", "jungle"],
+    "archetypes": ["skirmisher", "ap_bruiser"],
+    "engage": 55,
+    "frontline": 45,
+    "magic_damage": 80,
+    "crowd_control": 45,
+    "scaling": 70
+  },
+  {
+    "champion_id": 526,
+    "champion_key": "rell",
+    "roles": ["utility"],
+    "archetypes": ["tank", "engage", "lockdown"],
+    "engage": 90,
+    "frontline": 80,
+    "magic_damage": 25,
+    "crowd_control": 95,
+    "scaling": 55
+  },
+  {
+    "champion_id": 901,
+    "champion_key": "smolder",
+    "roles": ["bottom"],
+    "archetypes": ["marksman", "scaling"],
+    "frontline": 35,
+    "magic_damage": 40,
+    "physical_damage": 70,
+    "crowd_control": 30,
+    "scaling": 90
+  },
+  {
+    "champion_id": 910,
+    "champion_key": "hwei",
+    "roles": ["middle", "bottom"],
+    "archetypes": ["artillery_mage", "control_mage"],
+    "magic_damage": 90,
+    "crowd_control": 60,
+    "scaling": 80
+  },
+  {
+    "champion_id": 950,
+    "champion_key": "naafiri",
+    "roles": ["middle", "jungle"],
+    "archetypes": ["assassin", "pick"],
+    "engage": 55,
+    "physical_damage": 85,
+    "scaling": 60
+  }
+]

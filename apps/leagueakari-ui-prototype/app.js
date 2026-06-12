@@ -209,10 +209,12 @@ function renderAdvice(analysis) {
 }
 
 function renderReasons(analysis) {
+  const dataNotes = (analysis?.data_notes ?? []).slice(0, 1);
   const strengths = (analysis?.strengths ?? []).slice(0, 2);
   const risks = (analysis?.risks ?? []).slice(0, 2);
   const suggestions = (analysis?.suggestions ?? []).slice(0, 1);
   const reasons = [
+    ...dataNotes.map((text) => ({ text: `数据：${text}`, type: "suggestion" })),
     ...strengths.map((text) => ({ text: `+ ${text}`, type: "positive" })),
     ...risks.map((text) => ({ text: `- ${text}`, type: "negative" })),
     ...suggestions.map((text) => ({ text: `建议：${text}`, type: "suggestion" }))
@@ -347,6 +349,18 @@ function adviceTagsFor(analysis) {
 }
 
 function recommendHeroes(analysis) {
+  const statRecommendations = (analysis?.champion_stats ?? [])
+    .filter((stat) => stat.win_rate >= 51 || stat.pick_rate >= 10 || stat.ban_rate >= 15)
+    .slice(0, 3)
+    .map((stat) => ({
+      name: championNames[stat.champion_id] ?? stat.champion_key,
+      score: `OP.GG ${stat.role} ${stat.win_rate.toFixed(1)}%`
+    }));
+
+  if (statRecommendations.length > 0) {
+    return statRecommendations;
+  }
+
   const magic = analysis?.dimensions?.magic_damage ?? 0;
   if (magic <= 40) {
     return [

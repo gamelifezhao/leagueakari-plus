@@ -2,13 +2,15 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::models::DraftState;
+use super::models::{DraftPlayer, DraftState};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompositionAnalysis {
     pub confidence: AnalysisConfidence,
     pub dimensions: CompositionDimensions,
     pub enemy_dimensions: CompositionDimensions,
+    pub data_notes: Vec<String>,
+    pub champion_stats: Vec<ChampionStatSummary>,
     pub strengths: Vec<String>,
     pub risks: Vec<String>,
     pub enemy_threats: Vec<String>,
@@ -34,11 +36,28 @@ pub struct CompositionDimensions {
     pub scaling: u8,
 }
 
-const SAMPLE_TAGS_JSON: &str = include_str!("../../data/champion-tags.sample.json");
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ChampionStatSummary {
+    pub champion_id: i64,
+    pub champion_key: String,
+    pub role: String,
+    pub win_rate: f32,
+    pub pick_rate: f32,
+    pub ban_rate: f32,
+    pub rank: u16,
+}
+
+const TAGS_JSON: &str = include_str!("../../data/champion-tags.v1.json");
+const OPGG_STATS_JSON: &str = include_str!("../../data/opgg-champion-stats.sample.json");
 
 #[derive(Debug, Clone, Default, Deserialize)]
 struct ChampionTags {
     champion_id: i64,
+    champion_key: String,
+    #[serde(default)]
+    roles: Vec<String>,
+    #[serde(default)]
+    archetypes: Vec<String>,
     #[serde(default)]
     engage: u8,
     #[serde(default)]
@@ -53,8 +72,29 @@ struct ChampionTags {
     scaling: u8,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+struct OpggStatsSnapshot {
+    patch: String,
+    tier: String,
+    region: String,
+    queue: String,
+    sample_count: Option<u64>,
+    entries: Vec<OpggChampionStat>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggChampionStat {
+    rank: u16,
+    champion_key: String,
+    role: String,
+    win_rate: f32,
+    pick_rate: f32,
+    ban_rate: f32,
+}
+
 pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
-    let tag_db = sample_tags();
+    let tag_db = champion_tags();
+    let stat_db = opgg_stats();
     let picked_champions = draft
         .my_team
         .iter()
@@ -75,6 +115,8 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
         .collect::<Vec<_>>();
     let dimensions = aggregate_dimensions(&known_tags);
     let enemy_dimensions = aggregate_dimensions(&enemy_known_tags);
+    let champion_stats = champion_stats_for(&draft.my_team, &draft.their_team, &tag_db, &stat_db);
+    let data_notes = data_notes_for(&stat_db, champion_stats.len());
     let confidence = confidence_for(
         picked_champions.len() + enemy_champions.len(),
         known_tags.len() + enemy_known_tags.len(),
@@ -82,15 +124,20 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
     let strengths = strengths_for(&dimensions);
     let mut risks = risks_for(&dimensions);
     risks.extend(matchup_risks_for(&dimensions, &enemy_dimensions));
+    risks.extend(meta_risks_for(&champion_stats));
     let enemy_threats = enemy_threats_for(&dimensions, &enemy_dimensions);
     let win_conditions = win_conditions_for(&dimensions, &enemy_dimensions);
     let mut suggestions = suggestions_for(&dimensions, picked_champions.len() >= 5);
     suggestions.extend(counterplay_suggestions_for(&dimensions, &enemy_dimensions));
+    suggestions.extend(archetype_suggestions_for(&known_tags, &enemy_known_tags));
+    suggestions.extend(meta_suggestions_for(&champion_stats));
 
     CompositionAnalysis {
         confidence,
         dimensions,
         enemy_dimensions,
+        data_notes,
+        champion_stats,
         strengths,
         risks,
         enemy_threats,
@@ -282,12 +329,189 @@ fn counterplay_suggestions_for(
     suggestions
 }
 
-fn sample_tags() -> HashMap<i64, ChampionTags> {
-    serde_json::from_str::<Vec<ChampionTags>>(SAMPLE_TAGS_JSON)
+fn champion_stats_for(
+    my_players: &[DraftPlayer],
+    enemy_players: &[DraftPlayer],
+    tag_db: &HashMap<i64, ChampionTags>,
+    stat_db: &HashMap<String, OpggChampionStat>,
+) -> Vec<ChampionStatSummary> {
+    my_players
+        .iter()
+        .chain(enemy_players.iter())
+        .filter_map(|player| {
+            let champion_id = player.champion_id?;
+            let tags = tag_db.get(&champion_id)?;
+            let stat = best_stat_for(tags, player.assigned_position.as_deref(), stat_db)?;
+            Some(ChampionStatSummary {
+                champion_id,
+                champion_key: tags.champion_key.clone(),
+                role: stat.role.clone(),
+                win_rate: stat.win_rate,
+                pick_rate: stat.pick_rate,
+                ban_rate: stat.ban_rate,
+                rank: stat.rank,
+            })
+        })
+        .collect()
+}
+
+fn best_stat_for<'a>(
+    tags: &ChampionTags,
+    assigned_position: Option<&str>,
+    stat_db: &'a HashMap<String, OpggChampionStat>,
+) -> Option<&'a OpggChampionStat> {
+    if let Some(stat) = assigned_position
+        .into_iter()
+        .flat_map(opgg_roles_for)
+        .find_map(|role| stat_db.get(&stat_key(&tags.champion_key, role)))
+    {
+        return Some(stat);
+    }
+
+    tags.roles
+        .iter()
+        .flat_map(|role| opgg_roles_for(role))
+        .find_map(|role| stat_db.get(&stat_key(&tags.champion_key, role)))
+        .or_else(|| stat_db.get(&stat_key(&tags.champion_key, "overall")))
+}
+
+fn data_notes_for(
+    stat_db: &HashMap<String, OpggChampionStat>,
+    matched_champion_stats: usize,
+) -> Vec<String> {
+    let snapshot = opgg_snapshot();
+    let mut notes = vec![format!(
+        "OP.GG 快照：{} / {} / {} / {}，样本量 {}。",
+        snapshot.patch,
+        snapshot.region,
+        snapshot.tier,
+        snapshot.queue,
+        snapshot
+            .sample_count
+            .map(|count| count.to_string())
+            .unwrap_or_else(|| "未知".to_string())
+    )];
+
+    if stat_db.is_empty() {
+        notes.push("当前没有可用 OP.GG 统计缓存，分析仅使用本地英雄机制标签。".to_string());
+    } else {
+        notes.push(format!(
+            "本局匹配到 {matched_champion_stats} 个英雄的 OP.GG 角色统计；统计只辅助解释，不直接承诺胜负。"
+        ));
+    }
+
+    notes
+}
+
+fn meta_risks_for(champion_stats: &[ChampionStatSummary]) -> Vec<String> {
+    let mut risks = Vec::new();
+
+    let high_ban = champion_stats
+        .iter()
+        .filter(|stat| stat.ban_rate >= 15.0)
+        .collect::<Vec<_>>();
+    if !high_ban.is_empty() {
+        let names = high_ban
+            .iter()
+            .map(|stat| stat.champion_key.as_str())
+            .collect::<Vec<_>>()
+            .join("、");
+        risks.push(format!(
+            "OP.GG 当前版本里 {names} 禁用率较高，对局里通常代表处理成本或心理压力更高。"
+        ));
+    }
+
+    risks
+}
+
+fn meta_suggestions_for(champion_stats: &[ChampionStatSummary]) -> Vec<String> {
+    let mut suggestions = Vec::new();
+
+    let low_win_high_pick = champion_stats
+        .iter()
+        .filter(|stat| stat.win_rate < 49.5 && stat.pick_rate >= 10.0)
+        .collect::<Vec<_>>();
+    if !low_win_high_pick.is_empty() {
+        let names = low_win_high_pick
+            .iter()
+            .map(|stat| stat.champion_key.as_str())
+            .collect::<Vec<_>>()
+            .join("、");
+        suggestions.push(format!(
+            "OP.GG 快照里 {names} 属于高登场但胜率偏低，实战更要关注熟练度和阵容配合。"
+        ));
+    }
+
+    suggestions
+}
+
+fn archetype_suggestions_for(
+    my_tags: &[&ChampionTags],
+    enemy_tags: &[&ChampionTags],
+) -> Vec<String> {
+    let mut suggestions = Vec::new();
+
+    if has_archetype(enemy_tags, "pick") && !has_archetype(my_tags, "peel") {
+        suggestions
+            .push("敌方抓单能力较强，我方保护标签不足，边线和野区入口要避免单人脸探。".to_string());
+    }
+    if has_archetype(my_tags, "scaling") && has_archetype(enemy_tags, "early_tempo") {
+        suggestions
+            .push("我方有成长点但敌方前期节奏更强，前两条小龙不必硬换全队节奏。".to_string());
+    }
+    if has_archetype(my_tags, "poke") && has_archetype(enemy_tags, "engage") {
+        suggestions
+            .push("我方有消耗能力时，团前先拉开距离压血线，不要让敌方直接强开满血团。".to_string());
+    }
+
+    suggestions
+}
+
+fn has_archetype(tags: &[&ChampionTags], archetype: &str) -> bool {
+    tags.iter()
+        .any(|tags| tags.archetypes.iter().any(|value| value == archetype))
+}
+
+fn champion_tags() -> HashMap<i64, ChampionTags> {
+    serde_json::from_str::<Vec<ChampionTags>>(TAGS_JSON)
         .unwrap_or_default()
         .into_iter()
         .map(|tags| (tags.champion_id, tags))
         .collect()
+}
+
+fn opgg_stats() -> HashMap<String, OpggChampionStat> {
+    opgg_snapshot()
+        .entries
+        .into_iter()
+        .map(|entry| (stat_key(&entry.champion_key, &entry.role), entry))
+        .collect()
+}
+
+fn opgg_snapshot() -> OpggStatsSnapshot {
+    serde_json::from_str::<OpggStatsSnapshot>(OPGG_STATS_JSON).unwrap_or(OpggStatsSnapshot {
+        patch: "unknown".to_string(),
+        tier: "unknown".to_string(),
+        region: "unknown".to_string(),
+        queue: "unknown".to_string(),
+        sample_count: None,
+        entries: Vec::new(),
+    })
+}
+
+fn stat_key(champion_key: &str, role: &str) -> String {
+    format!("{champion_key}:{role}")
+}
+
+fn opgg_roles_for(role: &str) -> &'static [&'static str] {
+    match role {
+        "bottom" => &["adc"],
+        "utility" => &["support"],
+        "middle" => &["mid"],
+        "top" => &["top"],
+        "jungle" => &["jungle"],
+        _ => &[],
+    }
 }
 
 #[cfg(test)]
@@ -305,12 +529,21 @@ mod tests {
 
     #[test]
     fn loads_sample_tags_from_json() {
-        let tags = sample_tags();
+        let tags = champion_tags();
 
         assert!(tags.contains_key(&103));
         assert!(tags.contains_key(&22));
         assert!(tags.contains_key(&111));
         assert!(tags.contains_key(&901));
+    }
+
+    #[test]
+    fn loads_opgg_stats_snapshot() {
+        let stats = opgg_stats();
+
+        assert!(stats.contains_key("ahri:mid"));
+        assert!(stats.contains_key("ashe:adc"));
+        assert!(stats.contains_key("nautilus:support"));
     }
 
     #[test]
@@ -335,6 +568,18 @@ mod tests {
 
         assert_eq!(analysis.confidence, AnalysisConfidence::High);
         assert!(analysis.enemy_dimensions.engage >= 75);
+        assert!(
+            analysis
+                .champion_stats
+                .iter()
+                .any(|stat| stat.champion_key == "ashe" && stat.role == "adc")
+        );
+        assert!(
+            analysis
+                .data_notes
+                .iter()
+                .any(|note| note.contains("OP.GG 快照"))
+        );
         assert!(
             analysis
                 .enemy_threats
