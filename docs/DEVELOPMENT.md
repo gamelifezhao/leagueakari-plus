@@ -57,6 +57,8 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 探针也会输出一个本地规则模型的 `composition analysis`。当前规则库只覆盖少量样例英雄，用来验证分析管线，不能当成正式胜率预测。
 
+当前 `composition analysis` 会同时输出我方维度、敌方维度、敌方威胁和本局取胜思路。它的目标不是告诉你“必胜/必输”，而是把这一局的主要风险、强点和打法重点说清楚。
+
 样例英雄标签位于 `crates/leagueakari-probe/data/champion-tags.sample.json`，后续会扩展成完整英雄标签库。
 
 如果需要调试原始 LCU JSON，可以显式加 `--raw`：
@@ -112,4 +114,4 @@ F:\WeGameApps\英雄联盟\LeagueClient
 2. 确认能读到当前召唤师和 gameflow。
 3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
 4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
-5. 搭建 Tauri UI 骨架，把 `DraftState` 和 `composition analysis` 显示到桌面客户端里。
+5. 搭建 Tauri UI 骨架，把 `DraftState`、敌我阵容对比和 `composition analysis` 显示到桌面客户端里。

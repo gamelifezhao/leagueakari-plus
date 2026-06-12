@@ -17,6 +17,7 @@
 - 样例英雄标签已拆到 `crates/leagueakari-probe/data/champion-tags.sample.json`。
 - 项目级 Cargo 配置已切到 `rsproxy` 镜像源，改善国内依赖下载速度。
 - 新增 `--watch` 实时监听模式，通过 LCU 本地 WebSocket 订阅 gameflow 和选人阶段变化。
+- 新增敌我阵容对比分析字段，开始输出敌方威胁和本局取胜思路。
 
 ## 安全边界
 
@@ -39,16 +40,15 @@ C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
 ```
 
-当前单元测试数量：16。
+当前单元测试数量：17。
 
 ## 需要回来后确认
 
-- 再进入一次自定义选人阶段，运行 `leagueakari-probe -- --watch`，确认选人和 ban/pick 变化能实时刷新。
-- 确认 `composition analysis` 的解释口吻是否符合“帮你理解这一局应该怎么赢”。
+- 用更多真实对局验证 `enemy_threats` 和 `win_conditions` 的解释是否符合“帮你理解这一局应该怎么赢”。
 - 决定下一步先扩展完整英雄标签库，还是先搭 Tauri UI。
 
 ## 推荐下一步
 
-优先做一次实机 `--watch` 验证，然后搭 Tauri UI 骨架。
+优先搭 Tauri UI 骨架，同时继续扩展完整英雄标签库。
 
-原因：实时数据流已经接上，下一步需要把它变成你能看的客户端界面，同时继续补足阵容分析需要的英雄标签数据。
+原因：实时数据流和第一版敌我分析已经接上，下一步需要把它变成你能看的客户端界面，同时继续补足阵容分析需要的英雄标签数据。

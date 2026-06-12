@@ -35,5 +35,49 @@
     "physical_damage": 80,
     "crowd_control": 35,
     "scaling": 55
+  },
+  {
+    "champion_id": 86,
+    "engage": 45,
+    "frontline": 70,
+    "physical_damage": 70,
+    "crowd_control": 35,
+    "scaling": 50
+  },
+  {
+    "champion_id": 117,
+    "magic_damage": 35,
+    "crowd_control": 70,
+    "scaling": 75
+  },
+  {
+    "champion_id": 111,
+    "engage": 90,
+    "frontline": 85,
+    "magic_damage": 25,
+    "crowd_control": 95,
+    "scaling": 50
+  },
+  {
+    "champion_id": 56,
+    "engage": 80,
+    "frontline": 35,
+    "physical_damage": 75,
+    "crowd_control": 55,
+    "scaling": 55
+  },
+  {
+    "champion_id": 90,
+    "magic_damage": 85,
+    "crowd_control": 70,
+    "scaling": 80
+  },
+  {
+    "champion_id": 901,
+    "frontline": 45,
+    "magic_damage": 75,
+    "physical_damage": 45,
+    "crowd_control": 45,
+    "scaling": 80
   }
 ]
