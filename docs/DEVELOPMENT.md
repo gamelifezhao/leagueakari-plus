@@ -75,6 +75,16 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --watch
 
 `--watch` 只订阅 LCU 本地 WebSocket 事件，不会写入客户端配置。
 
+如果需要给未来 Tauri UI 或其他前端进程消费，可以加 `--json`，输出会变成一行一个 JSON 事件：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --watch --json
+```
+
+结构化事件会隐藏 token/password、puuid、summonerId 等账号字段，只暴露连接状态、gameflow、标准化 `DraftState` 和阵容分析结果。
+
+后续 UI 进程建议直接启动 `target\debug\leagueakari-probe.exe --watch --json`，这样 stdout 会是纯 JSON 行；如果用 `cargo run`，请加 `--quiet`，避免 Cargo 编译日志混入输出。
+
 如果 LCU 短时间内没有返回当前召唤师资料，探针会继续使用已经可达的 gameflow 和 WebSocket 数据，不会因为召唤师摘要超时而退出。
 
 如果英雄联盟客户端没有启动，预期输出是：
@@ -114,4 +124,4 @@ F:\WeGameApps\英雄联盟\LeagueClient
 2. 确认能读到当前召唤师和 gameflow。
 3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
 4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
-5. 搭建 Tauri UI 骨架，把 `DraftState`、敌我阵容对比和 `composition analysis` 显示到桌面客户端里。
+5. 搭建 Tauri UI 骨架，通过 `--watch --json` 消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。

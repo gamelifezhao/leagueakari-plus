@@ -10,7 +10,7 @@ use tokio_tungstenite::{
 };
 
 use super::{
-    analysis, auth, champ_select, champions::ChampionCatalog, connection::LcuConnection,
+    analysis, auth, champ_select, champions::ChampionCatalog, connection::LcuConnection, output,
     print_champ_select_summary, print_draft_summary, print_json,
 };
 
@@ -73,6 +73,7 @@ pub async fn watch(
     connection: &LcuConnection,
     champion_catalog: &ChampionCatalog,
     raw: bool,
+    json: bool,
 ) -> Result<()> {
     let url = format!("wss://127.0.0.1:{}/", connection.port);
     let mut request = url.into_client_request()?;
@@ -96,24 +97,45 @@ pub async fn watch(
         .send(Message::Text(r#"[5,"OnJsonApiEvent"]"#.into()))
         .await?;
 
-    println!();
-    println!("watch mode: listening for LCU gameflow and champ-select events");
-    println!("press Ctrl+C to stop");
+    if json {
+        output::print_event(
+            "watch_status",
+            &output::status_message("listening", "LCU websocket connected"),
+        )?;
+    } else {
+        println!();
+        println!("watch mode: listening for LCU gameflow and champ-select events");
+        println!("press Ctrl+C to stop");
+    }
 
     loop {
         tokio::select! {
             _ = tokio::signal::ctrl_c() => {
-                println!("watch mode stopped");
+                if json {
+                    output::print_event(
+                        "watch_status",
+                        &output::status_message("stopped", "Ctrl+C received"),
+                    )?;
+                } else {
+                    println!("watch mode stopped");
+                }
                 break;
             }
             message = socket.next() => {
                 let Some(message) = message else {
-                    println!("watch mode ended: websocket closed");
+                    if json {
+                        output::print_event(
+                            "watch_status",
+                            &output::status_message("closed", "websocket closed"),
+                        )?;
+                    } else {
+                        println!("watch mode ended: websocket closed");
+                    }
                     break;
                 };
                 let message = message?;
                 if let Message::Text(text) = message {
-                    handle_text_message(&text, champion_catalog, raw)?;
+                    handle_text_message(&text, champion_catalog, raw, json)?;
                 }
             }
         }
@@ -122,34 +144,64 @@ pub async fn watch(
     Ok(())
 }
 
-fn handle_text_message(text: &str, champion_catalog: &ChampionCatalog, raw: bool) -> Result<()> {
+fn handle_text_message(
+    text: &str,
+    champion_catalog: &ChampionCatalog,
+    raw: bool,
+    json: bool,
+) -> Result<()> {
     let Some(event) = parse_lcu_event(text) else {
         return Ok(());
     };
 
     match event.uri.as_str() {
         "/lol-gameflow/v1/gameflow-phase" => {
-            println!();
-            println!(
-                "watch event: gameflow {} -> {}",
-                event.event_type, event.data
-            );
+            if json {
+                output::print_event(
+                    "watch_gameflow",
+                    &serde_json::json!({
+                        "lcu_event_type": event.event_type,
+                        "phase": event.data
+                    }),
+                )?;
+            } else {
+                println!();
+                println!(
+                    "watch event: gameflow {} -> {}",
+                    event.event_type, event.data
+                );
+            }
         }
         "/lol-champ-select/v1/session" => {
-            println!();
-            println!("watch event: champ select {}", event.event_type);
-            print_champ_select_summary(&event.data);
-            if raw {
-                print_json("watch champ select session", &event.data)?;
-            }
-
             let draft_state = champ_select::parse_draft_state("ChampSelect", &event.data);
-            print_draft_summary(&draft_state, champion_catalog);
             let analysis = analysis::analyze_draft(&draft_state);
-            print_json(
-                "watch composition analysis",
-                &serde_json::to_value(analysis)?,
-            )?;
+            if json {
+                if raw {
+                    output::print_event("raw_champ_select_session", &event.data)?;
+                }
+                output::print_event(
+                    "draft_snapshot",
+                    &output::draft_snapshot(
+                        "watch",
+                        Some(event.event_type.as_str()),
+                        &draft_state,
+                        &analysis,
+                    ),
+                )?;
+            } else {
+                println!();
+                println!("watch event: champ select {}", event.event_type);
+                print_champ_select_summary(&event.data);
+                if raw {
+                    print_json("watch champ select session", &event.data)?;
+                }
+
+                print_draft_summary(&draft_state, champion_catalog);
+                print_json(
+                    "watch composition analysis",
+                    &serde_json::to_value(analysis)?,
+                )?;
+            }
         }
         _ => {}
     }

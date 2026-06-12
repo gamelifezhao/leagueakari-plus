@@ -5,6 +5,7 @@ mod champions;
 mod client;
 mod connection;
 mod models;
+mod output;
 mod websocket;
 
 use anyhow::{Result, bail};
@@ -14,6 +15,7 @@ use serde_json::Value;
 pub struct ProbeOptions {
     pub raw: bool,
     pub watch: bool,
+    pub json: bool,
 }
 
 pub async fn run_probe(options: ProbeOptions) -> Result<()> {
@@ -24,49 +26,93 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
         gameflow_phase,
     } = connect_to_lcu().await?;
 
-    print_connection_summary(&connection);
-    if let Some(summoner) = &summoner {
-        print_summoner_summary(summoner);
+    if options.json {
+        output::print_event("lcu_connection", &output::connection_summary(&connection))?;
+        output::print_event(
+            "summoner_summary",
+            &output::summoner_summary(summoner.as_ref()),
+        )?;
         if options.raw {
-            print_json("current summoner", summoner)?;
+            if let Some(summoner) = &summoner {
+                output::print_event("raw_current_summoner", summoner)?;
+            }
         }
     } else {
-        print_summoner_unavailable();
+        print_connection_summary(&connection);
+        if let Some(summoner) = &summoner {
+            print_summoner_summary(summoner);
+            if options.raw {
+                print_json("current summoner", summoner)?;
+            }
+        } else {
+            print_summoner_unavailable();
+        }
     }
 
-    print_json("gameflow phase", &gameflow_phase)?;
+    if options.json {
+        output::print_event("gameflow_phase", &output::gameflow_phase(&gameflow_phase))?;
+    } else {
+        print_json("gameflow phase", &gameflow_phase)?;
+    }
     let champion_catalog = load_champion_catalog(&client).await;
 
     if let Some(gameflow) = gameflow_phase.as_str() {
         let empty_draft = models::DraftState::empty(gameflow.to_string());
-        print_json("draft state", &serde_json::to_value(empty_draft)?)?;
+        if options.json {
+            let analysis = analysis::analyze_draft(&empty_draft);
+            output::print_event(
+                "draft_snapshot",
+                &output::draft_snapshot("initial", None, &empty_draft, &analysis),
+            )?;
+        } else {
+            print_json("draft state", &serde_json::to_value(empty_draft)?)?;
+        }
     }
 
     if gameflow_phase.as_str() == Some("ChampSelect") {
         let session: Value = client.get_json("/lol-champ-select/v1/session").await?;
-        print_champ_select_summary(&session);
-        if options.raw {
-            print_json("champ select session", &session)?;
-        }
-
         let draft_state =
             champ_select::parse_draft_state(gameflow_phase.as_str().unwrap_or("Unknown"), &session);
-        print_draft_summary(&draft_state, &champion_catalog);
         let analysis = analysis::analyze_draft(&draft_state);
-        print_json("composition analysis", &serde_json::to_value(analysis)?)?;
-        print_json(
-            "normalized draft state",
-            &serde_json::to_value(draft_state)?,
+        if options.json {
+            if options.raw {
+                output::print_event("raw_champ_select_session", &session)?;
+            }
+            output::print_event(
+                "draft_snapshot",
+                &output::draft_snapshot("initial", None, &draft_state, &analysis),
+            )?;
+        } else {
+            print_champ_select_summary(&session);
+            if options.raw {
+                print_json("champ select session", &session)?;
+            }
+
+            print_draft_summary(&draft_state, &champion_catalog);
+            print_json("composition analysis", &serde_json::to_value(analysis)?)?;
+            print_json(
+                "normalized draft state",
+                &serde_json::to_value(draft_state)?,
+            )?;
+        }
+    } else if options.json {
+        output::print_event(
+            "champ_select_status",
+            &output::status_message("skipped", "gameflow is not ChampSelect"),
         )?;
     } else {
         println!("champ select session: skipped because gameflow is not ChampSelect");
     }
 
     if options.watch {
-        websocket::watch(&connection, &champion_catalog, options.raw).await?;
+        websocket::watch(&connection, &champion_catalog, options.raw, options.json).await?;
     }
 
-    println!("probe finished");
+    if options.json {
+        output::print_event("probe_status", &output::status_message("finished", ""))?;
+    } else {
+        println!("probe finished");
+    }
 
     Ok(())
 }

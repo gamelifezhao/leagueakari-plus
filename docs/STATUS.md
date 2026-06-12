@@ -18,6 +18,7 @@
 - 项目级 Cargo 配置已切到 `rsproxy` 镜像源，改善国内依赖下载速度。
 - 新增 `--watch` 实时监听模式，通过 LCU 本地 WebSocket 订阅 gameflow 和选人阶段变化。
 - 新增敌我阵容对比分析字段，开始输出敌方威胁和本局取胜思路。
+- 新增 `--json` 结构化事件输出，作为后续 Tauri UI 的数据通道。
 
 ## 安全边界
 
@@ -40,7 +41,7 @@ C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
 ```
 
-当前单元测试数量：17。
+当前单元测试数量：19。
 
 ## 需要回来后确认
 

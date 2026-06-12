@@ -15,6 +15,7 @@ async fn main() -> Result<()> {
     let options = lcu::ProbeOptions {
         raw: args.iter().any(|arg| arg == "--raw"),
         watch: args.iter().any(|arg| arg == "--watch"),
+        json: args.iter().any(|arg| arg == "--json"),
     };
 
     lcu::run_probe(options).await
