@@ -65,6 +65,14 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --raw
 ```
 
+如果需要实时监听选人变化，可以显式加 `--watch`：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --watch
+```
+
+`--watch` 只订阅 LCU 本地 WebSocket 事件，不会写入客户端配置。
+
 如果英雄联盟客户端没有启动，预期输出是：
 
 ```text
@@ -101,4 +109,5 @@ F:\WeGameApps\英雄联盟\LeagueClient
 1. 启动英雄联盟客户端后运行 `leagueakari-probe`。
 2. 确认能读到当前召唤师和 gameflow。
 3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
-4. 增加 WebSocket 订阅，实时监听选人变化。
+4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
+5. 搭建 Tauri UI 骨架，把 `DraftState` 和 `composition analysis` 显示到桌面客户端里。

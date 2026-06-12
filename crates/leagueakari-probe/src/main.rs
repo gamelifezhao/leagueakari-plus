@@ -11,6 +11,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let raw = std::env::args().any(|arg| arg == "--raw");
-    lcu::run_probe(raw).await
+    let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let options = lcu::ProbeOptions {
+        raw: args.iter().any(|arg| arg == "--raw"),
+        watch: args.iter().any(|arg| arg == "--watch"),
+    };
+
+    lcu::run_probe(options).await
 }

@@ -5,15 +5,22 @@ mod champions;
 mod client;
 mod connection;
 mod models;
+mod websocket;
 
 use anyhow::Result;
 use serde_json::Value;
 
-pub async fn run_probe(raw: bool) -> Result<()> {
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ProbeOptions {
+    pub raw: bool,
+    pub watch: bool,
+}
+
+pub async fn run_probe(options: ProbeOptions) -> Result<()> {
     let (connection, client, summoner) = connect_to_lcu().await?;
     print_connection_summary(&connection);
     print_summoner_summary(&summoner);
-    if raw {
+    if options.raw {
         print_json("current summoner", &summoner)?;
     }
 
@@ -29,7 +36,7 @@ pub async fn run_probe(raw: bool) -> Result<()> {
     if gameflow_phase.as_str() == Some("ChampSelect") {
         let session: Value = client.get_json("/lol-champ-select/v1/session").await?;
         print_champ_select_summary(&session);
-        if raw {
+        if options.raw {
             print_json("champ select session", &session)?;
         }
 
@@ -44,6 +51,10 @@ pub async fn run_probe(raw: bool) -> Result<()> {
         )?;
     } else {
         println!("champ select session: skipped because gameflow is not ChampSelect");
+    }
+
+    if options.watch {
+        websocket::watch(&connection, &champion_catalog, options.raw).await?;
     }
 
     println!("probe finished");

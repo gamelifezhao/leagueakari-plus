@@ -12,10 +12,13 @@ repository = "https://github.com/gamelifezhao/leagueakari-plus"
 [workspace.dependencies]
 anyhow = "1"
 base64 = "0.22"
+futures-util = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
+tokio-tungstenite = { version = "0.28", features = ["rustls-tls-native-roots"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
