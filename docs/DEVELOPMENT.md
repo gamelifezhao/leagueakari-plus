@@ -43,6 +43,7 @@ C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-probe
 
 ```powershell
 C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
+C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-app
 ```
 
 运行探针：
@@ -125,4 +126,5 @@ F:\WeGameApps\英雄联盟\LeagueClient
 3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
 4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
 5. 打开 `apps/leagueakari-ui-prototype/index.html` 查看零依赖 UI 原型。
-6. 搭建 Tauri UI 骨架，通过 `--watch --json` 消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。
+6. 运行 `leagueakari-app` 桌面壳，确认静态 UI 能在 Tauri WebView 中打开。
+7. 让 Tauri 壳启动 `leagueakari-probe --watch --json`，消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。

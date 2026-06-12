@@ -21,12 +21,12 @@ const championNames = {
 };
 
 const metricLabels = {
-  engage: "开团",
-  frontline: "前排",
-  magic_damage: "AP",
-  physical_damage: "AD",
-  crowd_control: "控制",
-  scaling: "后期"
+  engage: "开团能力",
+  magic_damage: "AP 伤害",
+  scaling: "后期成长",
+  crowd_control: "控制链",
+  frontline: "容错率",
+  physical_damage: "AD 输出"
 };
 
 const state = {
@@ -37,20 +37,26 @@ const state = {
 
 const elements = {
   connectionStatus: document.querySelector("#connectionStatus"),
+  serverStatus: document.querySelector("#serverStatus"),
+  connectionDetail: document.querySelector("#connectionDetail"),
   gameflowPhase: document.querySelector("#gameflowPhase"),
   confidence: document.querySelector("#confidence"),
-  myMetrics: document.querySelector("#myMetrics"),
-  enemyMetrics: document.querySelector("#enemyMetrics"),
   snapshotSource: document.querySelector("#snapshotSource"),
+  winRange: document.querySelector("#winRange"),
+  winRangeNote: document.querySelector("#winRangeNote"),
+  engageDelta: document.querySelector("#engageDelta"),
+  damageDelta: document.querySelector("#damageDelta"),
+  currentAdvice: document.querySelector("#currentAdvice"),
+  adviceTags: document.querySelector("#adviceTags"),
   myPicks: document.querySelector("#myPicks"),
   enemyPicks: document.querySelector("#enemyPicks"),
   myBans: document.querySelector("#myBans"),
   enemyBans: document.querySelector("#enemyBans"),
   myPickCount: document.querySelector("#myPickCount"),
   enemyPickCount: document.querySelector("#enemyPickCount"),
-  enemyThreats: document.querySelector("#enemyThreats"),
-  winConditions: document.querySelector("#winConditions"),
-  risksAndSuggestions: document.querySelector("#risksAndSuggestions"),
+  dimensionCompare: document.querySelector("#dimensionCompare"),
+  keyReasons: document.querySelector("#keyReasons"),
+  heroRecommendations: document.querySelector("#heroRecommendations"),
   loadSampleButton: document.querySelector("#loadSampleButton")
 };
 
@@ -75,62 +81,55 @@ function render() {
   const snapshot = state.snapshot;
   const draft = snapshot?.draft_state;
   const analysis = snapshot?.analysis;
+  const myDimensions = analysis?.dimensions ?? {};
+  const enemyDimensions = analysis?.enemy_dimensions ?? {};
+  const winScore = estimateWinScore(myDimensions, enemyDimensions, analysis?.confidence);
 
-  elements.connectionStatus.textContent = state.connection ? "已连接" : "等待数据";
-  elements.gameflowPhase.textContent = state.phase;
-  elements.confidence.textContent = analysis?.confidence ?? "low";
+  elements.connectionStatus.textContent = state.connection ? "LCU 已连接" : "等待 LCU";
+  elements.serverStatus.textContent = state.connection ? "国服 · 召唤师峡谷" : "等待客户端启动";
+  elements.connectionDetail.textContent = state.connection
+    ? `端口 ${state.connection.port} · token 已隐藏`
+    : "不会写入客户端配置";
+  elements.gameflowPhase.textContent = phaseLabel(state.phase);
+  elements.confidence.textContent = confidenceLabel(analysis?.confidence);
   elements.snapshotSource.textContent = snapshot
     ? `${snapshot.source} ${snapshot.lcu_event_type ?? ""}`.trim()
     : "等待 LCU 实时事件";
 
-  renderMetrics(elements.myMetrics, analysis?.dimensions);
-  renderMetrics(elements.enemyMetrics, analysis?.enemy_dimensions);
-  renderPicks(elements.myPicks, draft?.my_team ?? []);
-  renderPicks(elements.enemyPicks, draft?.their_team ?? []);
+  elements.winRange.textContent = winScore.range;
+  elements.winRangeNote.textContent = winScore.note;
+  elements.engageDelta.textContent = formatDelta("开团", myDimensions.engage, enemyDimensions.engage);
+  elements.damageDelta.textContent = formatDelta(
+    "伤害",
+    Math.max(myDimensions.magic_damage ?? 0, myDimensions.physical_damage ?? 0),
+    Math.max(enemyDimensions.magic_damage ?? 0, enemyDimensions.physical_damage ?? 0)
+  );
+
+  renderPicks(elements.myPicks, draft?.my_team ?? [], "ally");
+  renderPicks(elements.enemyPicks, draft?.their_team ?? [], "enemy");
   renderBans(elements.myBans, draft?.bans ?? [], 100);
   renderBans(elements.enemyBans, draft?.bans ?? [], 200);
+  renderDimensions(myDimensions, enemyDimensions);
+  renderAdvice(analysis);
+  renderReasons(analysis);
+  renderRecommendations(analysis);
 
   elements.myPickCount.textContent = `${countPicked(draft?.my_team)} / 5`;
   elements.enemyPickCount.textContent = `${countPicked(draft?.their_team)} / 5`;
-
-  renderList(elements.enemyThreats, analysis?.enemy_threats ?? []);
-  renderList(elements.winConditions, analysis?.win_conditions ?? []);
-  renderList(elements.risksAndSuggestions, [
-    ...(analysis?.risks ?? []),
-    ...(analysis?.suggestions ?? [])
-  ]);
 }
 
-function renderMetrics(container, dimensions = {}) {
-  container.replaceChildren(
-    ...Object.entries(metricLabels).map(([key, label]) => {
-      const value = dimensions[key] ?? 0;
-      const item = document.createElement("div");
-      item.className = "metric";
-      item.innerHTML = `
-        <span>${label}</span>
-        <div class="bar"><div class="fill" style="width: ${value}%"></div></div>
-        <strong>${value}</strong>
-      `;
-      return item;
-    })
-  );
-}
-
-function renderPicks(container, players) {
+function renderPicks(container, players, side) {
   const slots = Array.from({ length: 5 }, (_, index) => players[index] ?? null);
   container.replaceChildren(
-    ...slots.map((player, index) => {
+    ...slots.map((player) => {
       const championId = player?.champion_id;
       const item = document.createElement("article");
-      item.className = "pick-slot";
+      item.className = `hero-card ${championId ? "picked" : "empty"}`;
       item.innerHTML = `
-        <div class="pick-icon">${index + 1}</div>
-        <div>
-          <div class="pick-name">${championName(championId)}</div>
-          <div class="pick-meta">${positionLabel(player?.assigned_position)}</div>
-        </div>
+        <div class="hero-name">${championName(championId, false)}</div>
+        <div class="hero-position">${positionLabel(player?.assigned_position)}</div>
       `;
+      item.dataset.side = side;
       return item;
     })
   );
@@ -147,32 +146,95 @@ function renderBans(container, bans, teamId) {
     ...teamBans.map((ban) => {
       const chip = document.createElement("span");
       chip.className = "ban-chip";
-      chip.textContent = championName(ban.champion_id);
+      chip.textContent = championName(ban.champion_id, false);
       return chip;
     })
   );
 }
 
-function renderList(container, items) {
-  if (items.length === 0) {
-    container.innerHTML = '<li class="empty">等待更多选人信息</li>';
-    return;
-  }
+function renderDimensions(myDimensions, enemyDimensions) {
+  elements.dimensionCompare.replaceChildren(
+    ...Object.entries(metricLabels).map(([key, label]) => {
+      const myValue = myDimensions[key] ?? 0;
+      const enemyValue = enemyDimensions[key] ?? 0;
+      const verdict = dimensionVerdict(myValue, enemyValue);
+      const row = document.createElement("div");
+      row.className = "dimension-row";
+      row.innerHTML = `
+        <span>${label}</span>
+        <div class="bar" aria-label="${label}">
+          <div class="bar-fill" style="width: ${myValue}%"></div>
+          <div class="bar-fill enemy" style="width: ${enemyValue}%"></div>
+        </div>
+        <strong class="${verdict.className}">${verdict.text}</strong>
+      `;
+      return row;
+    })
+  );
+}
 
-  container.replaceChildren(
-    ...items.map((text) => {
-      const item = document.createElement("li");
-      item.textContent = text;
+function renderAdvice(analysis) {
+  const suggestions = analysis?.suggestions ?? [];
+  const winConditions = analysis?.win_conditions ?? [];
+  elements.currentAdvice.textContent =
+    suggestions[0] ?? winConditions[0] ?? "等待更多选人信息。";
+
+  const tags = adviceTagsFor(analysis);
+  elements.adviceTags.replaceChildren(
+    ...tags.map((tag) => {
+      const item = document.createElement("span");
+      item.className = tag.type;
+      item.textContent = tag.text;
       return item;
     })
   );
 }
 
-function championName(championId) {
-  if (!championId) {
-    return "未选择";
+function renderReasons(analysis) {
+  const strengths = (analysis?.strengths ?? []).slice(0, 2);
+  const risks = (analysis?.risks ?? []).slice(0, 2);
+  const suggestions = (analysis?.suggestions ?? []).slice(0, 1);
+  const reasons = [
+    ...strengths.map((text) => ({ text: `+ ${text}`, type: "positive" })),
+    ...risks.map((text) => ({ text: `- ${text}`, type: "negative" })),
+    ...suggestions.map((text) => ({ text: `建议：${text}`, type: "suggestion" }))
+  ];
+
+  if (reasons.length === 0) {
+    reasons.push({ text: "等待双方阵容成型后生成关键原因。", type: "suggestion" });
   }
-  return `${championNames[championId] ?? "未知英雄"} (${championId})`;
+
+  elements.keyReasons.replaceChildren(
+    ...reasons.map((reason) => {
+      const item = document.createElement("li");
+      item.className = reason.type;
+      item.textContent = reason.text;
+      return item;
+    })
+  );
+}
+
+function renderRecommendations(analysis) {
+  const recommendations = recommendHeroes(analysis);
+  elements.heroRecommendations.replaceChildren(
+    ...recommendations.map((recommendation) => {
+      const item = document.createElement("div");
+      item.className = "recommend-card";
+      item.innerHTML = `
+        <strong>${recommendation.name}</strong>
+        <span>${recommendation.score}</span>
+      `;
+      return item;
+    })
+  );
+}
+
+function championName(championId, includeId = true) {
+  if (!championId) {
+    return "待选";
+  }
+  const name = championNames[championId] ?? "未知英雄";
+  return includeId ? `${name} (${championId})` : name;
 }
 
 function positionLabel(position) {
@@ -186,8 +248,101 @@ function positionLabel(position) {
   return labels[position] ?? "位置待定";
 }
 
+function phaseLabel(phase) {
+  if (phase === "ChampSelect") {
+    return "BP 阶段检测中";
+  }
+  if (phase === "InProgress") {
+    return "游戏进行中";
+  }
+  if (phase === "None") {
+    return "等待对局";
+  }
+  return phase;
+}
+
+function confidenceLabel(confidence) {
+  const labels = {
+    low: "低",
+    medium: "中",
+    high: "高"
+  };
+  return labels[confidence] ?? "低";
+}
+
 function countPicked(players = []) {
   return players.filter((player) => player?.champion_id).length;
+}
+
+function formatDelta(label, mine = 0, enemy = 0) {
+  const delta = mine - enemy;
+  if (Math.abs(delta) <= 8) {
+    return `${label} 持平`;
+  }
+  const prefix = delta > 0 ? "+" : "";
+  return `${label} ${prefix}${delta}`;
+}
+
+function dimensionVerdict(mine = 0, enemy = 0) {
+  if (mine - enemy >= 15) {
+    return { text: "强", className: "good" };
+  }
+  if (enemy - mine >= 20) {
+    return { text: "风险", className: "risk" };
+  }
+  return { text: "均衡", className: "warn" };
+}
+
+function estimateWinScore(myDimensions = {}, enemyDimensions = {}, confidence = "low") {
+  const myTotal = Object.values(myDimensions).reduce((sum, value) => sum + value, 0);
+  const enemyTotal = Object.values(enemyDimensions).reduce((sum, value) => sum + value, 0);
+  const delta = Math.max(-8, Math.min(8, Math.round((myTotal - enemyTotal) / 18)));
+  const center = 50 + delta;
+  const spread = confidence === "high" ? 2 : confidence === "medium" ? 3 : 5;
+  return {
+    range: `${center - spread}% - ${center + spread}%`,
+    note: `可信度：${confidenceLabel(confidence)} · 只用于阵容解释`
+  };
+}
+
+function adviceTagsFor(analysis) {
+  if (!analysis) {
+    return [{ text: "等待阵容", type: "gold-tag" }];
+  }
+
+  const tags = [];
+  const magic = analysis.dimensions?.magic_damage ?? 0;
+  const engage = analysis.dimensions?.engage ?? 0;
+  const enemyEngage = analysis.enemy_dimensions?.engage ?? 0;
+
+  if (magic <= 40) {
+    tags.push({ text: "优先补 AP", type: "gold-tag" });
+  }
+  if (engage >= 65) {
+    tags.push({ text: "可以主动开团", type: "teal-tag" });
+  }
+  if (enemyEngage >= 75) {
+    tags.push({ text: "注意反开站位", type: "gold-tag" });
+  }
+
+  return tags.length > 0 ? tags : [{ text: "稳住资源节奏", type: "teal-tag" }];
+}
+
+function recommendHeroes(analysis) {
+  const magic = analysis?.dimensions?.magic_damage ?? 0;
+  if (magic <= 40) {
+    return [
+      { name: "发条魔灵", score: "适配 92" },
+      { name: "岩雀", score: "适配 86" },
+      { name: "辛德拉", score: "熟练度中" }
+    ];
+  }
+
+  return [
+    { name: "加里奥", score: "反开 88" },
+    { name: "阿狸", score: "节奏 84" },
+    { name: "维克托", score: "后期 82" }
+  ];
 }
 
 elements.loadSampleButton.addEventListener("click", () => {

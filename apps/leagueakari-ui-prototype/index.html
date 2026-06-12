@@ -7,103 +7,158 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <aside class="side-panel">
-        <div class="brand-block">
-          <div class="brand-mark">LA+</div>
+    <main class="app-frame">
+      <aside class="sidebar" aria-label="主导航">
+        <div class="brand">
+          <div class="brand-icon">A</div>
           <div>
-            <h1>LeagueAkari Plus</h1>
-            <p>理解这一局应该怎么赢</p>
+            <h1>LeagueAkari</h1>
+            <span>Plus</span>
           </div>
         </div>
 
-        <section class="status-panel" aria-label="连接状态">
-          <div class="status-row">
-            <span>连接</span>
-            <strong id="connectionStatus">等待数据</strong>
-          </div>
-          <div class="status-row">
-            <span>阶段</span>
-            <strong id="gameflowPhase">Unknown</strong>
-          </div>
-          <div class="status-row">
-            <span>置信度</span>
-            <strong id="confidence">low</strong>
-          </div>
-        </section>
+        <nav class="nav-list">
+          <a class="nav-item active" href="#">
+            <span>◇</span>
+            选人分析
+          </a>
+          <a class="nav-item" href="#">
+            <span>◎</span>
+            账号概览
+          </a>
+          <a class="nav-item" href="#">
+            <span>▣</span>
+            近期战绩
+          </a>
+          <a class="nav-item" href="#">
+            <span>✦</span>
+            英雄池
+          </a>
+          <a class="nav-item" href="#">
+            <span>⚙</span>
+            设置
+          </a>
+        </nav>
 
-        <section class="metric-panel" aria-label="阵容维度">
-          <h2>我方维度</h2>
-          <div id="myMetrics" class="metrics-grid"></div>
-        </section>
-
-        <section class="metric-panel" aria-label="敌方维度">
-          <h2>敌方维度</h2>
-          <div id="enemyMetrics" class="metrics-grid"></div>
+        <section class="lcu-card" aria-label="LCU 连接状态">
+          <strong id="connectionStatus">等待数据</strong>
+          <span id="serverStatus">国服 · 召唤师峡谷</span>
+          <small id="connectionDetail">等待 LCU 事件</small>
         </section>
       </aside>
 
-      <section class="draft-board" aria-label="双方阵容">
-        <header class="board-header">
+      <section class="content">
+        <header class="page-header">
           <div>
-            <h2>Ban / Pick</h2>
-            <p id="snapshotSource">等待 LCU 实时事件</p>
+            <h2>选人阶段 · 阵容胜率分析</h2>
+            <p>不是帮你作弊，而是帮你理解这一局应该怎么赢。</p>
           </div>
-          <button id="loadSampleButton" type="button">载入样例</button>
+          <div class="header-pills">
+            <span id="gameflowPhase" class="pill teal">Unknown</span>
+            <span class="pill gold">本地规则模型</span>
+            <button id="loadSampleButton" type="button">载入样例</button>
+          </div>
         </header>
 
-        <div class="teams-grid">
-          <section class="team-column ally" aria-label="我方阵容">
-            <div class="team-heading">
-              <h3>我方</h3>
-              <span id="myPickCount">0 / 5</span>
+        <section class="summary-grid" aria-label="对局摘要">
+          <article class="summary-card summoner-card">
+            <div class="avatar-ring">LA</div>
+            <div>
+              <h3>当前对局</h3>
+              <p id="snapshotSource">等待 LCU 实时事件</p>
+              <strong id="confidence">low</strong>
+              <span>分析置信度</span>
             </div>
-            <div id="myPicks" class="pick-list"></div>
-            <div class="ban-strip">
-              <span>Ban</span>
-              <div id="myBans" class="ban-list"></div>
-            </div>
-          </section>
+          </article>
 
-          <section class="team-column enemy" aria-label="敌方阵容">
-            <div class="team-heading">
-              <h3>敌方</h3>
-              <span id="enemyPickCount">0 / 5</span>
+          <article class="summary-card win-card">
+            <h3>预计胜率区间</h3>
+            <strong id="winRange">--</strong>
+            <div class="delta-row">
+              <span id="engageDelta">开团 --</span>
+              <span id="damageDelta">伤害 --</span>
             </div>
-            <div id="enemyPicks" class="pick-list"></div>
-            <div class="ban-strip">
-              <span>Ban</span>
-              <div id="enemyBans" class="ban-list"></div>
+            <p id="winRangeNote">等待双方阵容成型</p>
+          </article>
+
+          <article class="summary-card advice-card">
+            <h3>当前建议</h3>
+            <p id="currentAdvice">等待更多选人信息。</p>
+            <div id="adviceTags" class="tag-row"></div>
+          </article>
+        </section>
+
+        <section class="middle-grid">
+          <article class="draft-section">
+            <div class="section-title">
+              <div>
+                <h3>双方阵容</h3>
+                <p>自动识别位置，必要时允许手动修正</p>
+              </div>
+              <div class="pick-counts">
+                <span id="myPickCount">0 / 5</span>
+                <span id="enemyPickCount">0 / 5</span>
+              </div>
             </div>
-          </section>
-        </div>
+
+            <div class="team-row ally">
+              <div class="team-label">我方</div>
+              <div id="myPicks" class="hero-row"></div>
+            </div>
+            <div class="team-row enemy">
+              <div class="team-label">敌方</div>
+              <div id="enemyPicks" class="hero-row"></div>
+            </div>
+
+            <div class="ban-grid">
+              <div>
+                <span>我方 Ban</span>
+                <div id="myBans" class="ban-list"></div>
+              </div>
+              <div>
+                <span>敌方 Ban</span>
+                <div id="enemyBans" class="ban-list"></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dimension-section">
+            <div class="section-title">
+              <div>
+                <h3>阵容维度评分</h3>
+                <p>数值只用于解释，不做绝对胜负承诺</p>
+              </div>
+            </div>
+            <div id="dimensionCompare" class="dimension-list"></div>
+          </article>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="reason-section">
+            <h3>关键原因</h3>
+            <ul id="keyReasons" class="reason-list"></ul>
+          </article>
+
+          <article class="recommend-section">
+            <h3>基于英雄池推荐</h3>
+            <div id="heroRecommendations" class="recommend-list"></div>
+            <p>推荐优先看“你会玩且适合这一局”。</p>
+          </article>
+
+          <article class="rune-section">
+            <h3>符文页确认</h3>
+            <p>选择英雄后展示将要写入客户端的内容。</p>
+            <div class="rune-preview">
+              <strong>主系：等待选择</strong>
+              <span>副系：等待选择</span>
+            </div>
+            <div class="rune-actions">
+              <button type="button">预览</button>
+              <button type="button" class="primary" disabled>确认应用</button>
+            </div>
+          </article>
+        </section>
       </section>
-
-      <aside class="analysis-panel">
-        <section class="insight-section">
-          <div class="section-heading">
-            <span class="section-dot threat"></span>
-            <h2>敌方威胁</h2>
-          </div>
-          <ul id="enemyThreats" class="insight-list"></ul>
-        </section>
-
-        <section class="insight-section">
-          <div class="section-heading">
-            <span class="section-dot win"></span>
-            <h2>取胜思路</h2>
-          </div>
-          <ul id="winConditions" class="insight-list"></ul>
-        </section>
-
-        <section class="insight-section">
-          <div class="section-heading">
-            <span class="section-dot risk"></span>
-            <h2>风险与建议</h2>
-          </div>
-          <ul id="risksAndSuggestions" class="insight-list"></ul>
-        </section>
-      </aside>
     </main>
 
     <script src="./sample-events.js"></script>

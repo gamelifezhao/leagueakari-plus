@@ -10,6 +10,7 @@ target/
 dist/
 build/
 coverage/
+crates/leagueakari-app/gen/
 
 *.log
 *.tmp
