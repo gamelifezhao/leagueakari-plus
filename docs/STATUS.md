@@ -26,6 +26,7 @@
 - 已确认 `leagueakari-app` 开发构建可生成 `target\debug\leagueakari-app.exe`。
 - 新增 `champion-tags.v1.json` 英雄机制标签库，覆盖真实 BP 样例和一批 OP.GG 当前榜单英雄。
 - 新增 OP.GG 公开页面统计快照缓存，并把胜率、选率、禁率作为阵容解释的辅助信息。
+- 新增 `tools/opgg-exporter`，用于从已打开的 OP.GG 公开页面导出本地统计快照。
 
 ## 安全边界
 

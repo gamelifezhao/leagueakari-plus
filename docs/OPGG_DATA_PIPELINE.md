@@ -32,7 +32,7 @@ Content-Length: 0
 因此当前不在 app 运行时直接爬 OP.GG，也不绕过 WAF challenge。推荐方式是：
 
 1. 用浏览器或人工流程查看公开页面。
-2. 导出/整理成 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`。
+2. 使用 `tools/opgg-exporter/extract-opgg-champion-stats.js` 从已打开页面导出 JSON，或人工整理成 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`。
 3. Rust 分析模块从本地 JSON 缓存读取。
 4. 缓存过期时手动或半自动刷新。
 
