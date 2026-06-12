@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LeagueAkari Plus</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="side-panel">
+        <div class="brand-block">
+          <div class="brand-mark">LA+</div>
+          <div>
+            <h1>LeagueAkari Plus</h1>
+            <p>理解这一局应该怎么赢</p>
+          </div>
+        </div>
+
+        <section class="status-panel" aria-label="连接状态">
+          <div class="status-row">
+            <span>连接</span>
+            <strong id="connectionStatus">等待数据</strong>
+          </div>
+          <div class="status-row">
+            <span>阶段</span>
+            <strong id="gameflowPhase">Unknown</strong>
+          </div>
+          <div class="status-row">
+            <span>置信度</span>
+            <strong id="confidence">low</strong>
+          </div>
+        </section>
+
+        <section class="metric-panel" aria-label="阵容维度">
+          <h2>我方维度</h2>
+          <div id="myMetrics" class="metrics-grid"></div>
+        </section>
+
+        <section class="metric-panel" aria-label="敌方维度">
+          <h2>敌方维度</h2>
+          <div id="enemyMetrics" class="metrics-grid"></div>
+        </section>
+      </aside>
+
+      <section class="draft-board" aria-label="双方阵容">
+        <header class="board-header">
+          <div>
+            <h2>Ban / Pick</h2>
+            <p id="snapshotSource">等待 LCU 实时事件</p>
+          </div>
+          <button id="loadSampleButton" type="button">载入样例</button>
+        </header>
+
+        <div class="teams-grid">
+          <section class="team-column ally" aria-label="我方阵容">
+            <div class="team-heading">
+              <h3>我方</h3>
+              <span id="myPickCount">0 / 5</span>
+            </div>
+            <div id="myPicks" class="pick-list"></div>
+            <div class="ban-strip">
+              <span>Ban</span>
+              <div id="myBans" class="ban-list"></div>
+            </div>
+          </section>
+
+          <section class="team-column enemy" aria-label="敌方阵容">
+            <div class="team-heading">
+              <h3>敌方</h3>
+              <span id="enemyPickCount">0 / 5</span>
+            </div>
+            <div id="enemyPicks" class="pick-list"></div>
+            <div class="ban-strip">
+              <span>Ban</span>
+              <div id="enemyBans" class="ban-list"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="analysis-panel">
+        <section class="insight-section">
+          <div class="section-heading">
+            <span class="section-dot threat"></span>
+            <h2>敌方威胁</h2>
+          </div>
+          <ul id="enemyThreats" class="insight-list"></ul>
+        </section>
+
+        <section class="insight-section">
+          <div class="section-heading">
+            <span class="section-dot win"></span>
+            <h2>取胜思路</h2>
+          </div>
+          <ul id="winConditions" class="insight-list"></ul>
+        </section>
+
+        <section class="insight-section">
+          <div class="section-heading">
+            <span class="section-dot risk"></span>
+            <h2>风险与建议</h2>
+          </div>
+          <ul id="risksAndSuggestions" class="insight-list"></ul>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./sample-events.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

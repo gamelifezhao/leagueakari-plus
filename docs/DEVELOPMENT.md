@@ -124,4 +124,5 @@ F:\WeGameApps\英雄联盟\LeagueClient
 2. 确认能读到当前召唤师和 gameflow。
 3. 进入自定义房间或正常选人阶段，确认能读到 champ select session。
 4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
-5. 搭建 Tauri UI 骨架，通过 `--watch --json` 消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。
+5. 打开 `apps/leagueakari-ui-prototype/index.html` 查看零依赖 UI 原型。
+6. 搭建 Tauri UI 骨架，通过 `--watch --json` 消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。
