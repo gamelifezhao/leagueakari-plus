@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{
+    ffi::OsString,
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{Child, Command, Stdio},
@@ -22,6 +23,7 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 const PROBE_EVENT: &str = "leagueakari-probe-event";
 const FRONTEND_READY_EVENT: &str = "leagueakari-frontend-ready";
+const PROBE_PATH_ENV: &str = "LEAGUEAKARI_PROBE_PATH";
 
 #[derive(Clone, Default)]
 struct ProbeProcess {
@@ -61,6 +63,7 @@ fn start_probe_bridge(app: AppHandle, probe_process: ProbeProcess) {
 
     thread::spawn(move || {
         let probe_path = resolve_probe_path();
+        let last_stderr = Arc::new(Mutex::new(None::<String>));
         emit_bridge_status(
             &app,
             "starting",
@@ -102,16 +105,24 @@ fn start_probe_bridge(app: AppHandle, probe_process: ProbeProcess) {
 
         emit_bridge_status(&app, "running", &format!("probe process started: {pid}"));
 
-        if let Some(stderr) = stderr {
+        let stderr_reader = if let Some(stderr) = stderr {
             let stderr_app = app.clone();
-            thread::spawn(move || {
+            let stderr_state = last_stderr.clone();
+            Some(thread::spawn(move || {
                 for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-                    if !line.trim().is_empty() {
-                        emit_bridge_status(&stderr_app, "stderr", &line);
+                    let line = line.trim();
+                    if !line.is_empty() {
+                        let mut last_stderr = stderr_state
+                            .lock()
+                            .expect("probe stderr status lock poisoned");
+                        *last_stderr = Some(line.to_string());
+                        emit_bridge_status(&stderr_app, "stderr", line);
                     }
                 }
-            });
-        }
+            }))
+        } else {
+            None
+        };
 
         if let Some(stdout) = stdout {
             for line in BufReader::new(stdout).lines().map_while(Result::ok) {
@@ -133,20 +144,27 @@ fn start_probe_bridge(app: AppHandle, probe_process: ProbeProcess) {
             }
         }
 
-        let exit_message = {
+        let exit_status = {
             let mut child_slot = probe_process
                 .child
                 .lock()
                 .expect("probe child process lock poisoned");
-            child_slot
-                .take()
-                .and_then(|mut child| child.wait().ok())
-                .map(|status| format!("probe process exited: {status}"))
-                .unwrap_or_else(|| "probe process stopped".to_string())
+            child_slot.take().and_then(|mut child| child.wait().ok())
         };
 
+        if let Some(stderr_reader) = stderr_reader {
+            let _ = stderr_reader.join();
+        }
+
+        let last_stderr = last_stderr
+            .lock()
+            .expect("probe stderr status lock poisoned")
+            .clone();
+        let (final_status, exit_message) =
+            format_probe_exit_status(exit_status, last_stderr.as_deref());
+
         probe_process.started.store(false, Ordering::SeqCst);
-        emit_bridge_status(&app, "stopped", &exit_message);
+        emit_bridge_status(&app, final_status, &exit_message);
     });
 }
 
@@ -164,13 +182,33 @@ fn stop_probe_bridge(probe_process: &ProbeProcess) {
 }
 
 fn resolve_probe_path() -> PathBuf {
-    let executable_name = if cfg!(windows) {
+    resolve_probe_path_from(
+        std::env::var_os(PROBE_PATH_ENV),
+        std::env::current_exe().ok(),
+        probe_executable_name(),
+    )
+}
+
+fn probe_executable_name() -> &'static str {
+    if cfg!(windows) {
         "leagueakari-probe.exe"
     } else {
         "leagueakari-probe"
-    };
+    }
+}
 
-    if let Ok(current_exe) = std::env::current_exe() {
+fn resolve_probe_path_from(
+    env_override: Option<OsString>,
+    current_exe: Option<PathBuf>,
+    executable_name: &str,
+) -> PathBuf {
+    if let Some(env_override) = env_override {
+        if !env_override.as_os_str().is_empty() {
+            return PathBuf::from(env_override);
+        }
+    }
+
+    if let Some(current_exe) = current_exe {
         if let Some(directory) = current_exe.parent() {
             let sibling = directory.join(executable_name);
             if sibling.is_file() {
@@ -180,6 +218,23 @@ fn resolve_probe_path() -> PathBuf {
     }
 
     PathBuf::from(executable_name)
+}
+
+fn format_probe_exit_status(
+    exit_status: Option<std::process::ExitStatus>,
+    last_stderr: Option<&str>,
+) -> (&'static str, String) {
+    match (exit_status, last_stderr) {
+        (Some(status), Some(stderr)) if !status.success() => {
+            ("error", format!("{stderr} ({status})"))
+        }
+        (Some(status), _) if status.success() => {
+            ("stopped", format!("probe process exited: {status}"))
+        }
+        (Some(status), _) => ("error", format!("probe process exited: {status}")),
+        (None, Some(stderr)) => ("error", stderr.to_string()),
+        (None, None) => ("stopped", "probe process stopped".to_string()),
+    }
 }
 
 fn emit_bridge_status(app: &AppHandle, status: &str, message: &str) {
@@ -193,4 +248,62 @@ fn emit_bridge_status(app: &AppHandle, status: &str, message: &str) {
             }
         }),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{fs, time::SystemTime};
+
+    #[test]
+    fn env_override_wins_over_other_probe_paths() {
+        let override_path = PathBuf::from(r"C:\LeagueAkari\custom-probe.exe");
+
+        let resolved = resolve_probe_path_from(
+            Some(override_path.clone().into_os_string()),
+            None,
+            "leagueakari-probe.exe",
+        );
+
+        assert_eq!(resolved, override_path);
+    }
+
+    #[test]
+    fn uses_probe_next_to_current_executable_when_present() {
+        let directory = unique_temp_dir();
+        fs::create_dir_all(&directory).expect("create temp test directory");
+        let app_path = directory.join("leagueakari-app.exe");
+        let probe_path = directory.join("leagueakari-probe.exe");
+        fs::write(&app_path, b"app").expect("write app test file");
+        fs::write(&probe_path, b"probe").expect("write probe test file");
+
+        let resolved = resolve_probe_path_from(None, Some(app_path), "leagueakari-probe.exe");
+
+        assert_eq!(resolved, probe_path);
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn falls_back_to_executable_name_when_no_sibling_exists() {
+        let directory = unique_temp_dir();
+        fs::create_dir_all(&directory).expect("create temp test directory");
+        let app_path = directory.join("leagueakari-app.exe");
+        fs::write(&app_path, b"app").expect("write app test file");
+
+        let resolved = resolve_probe_path_from(None, Some(app_path), "leagueakari-probe.exe");
+
+        assert_eq!(resolved, PathBuf::from("leagueakari-probe.exe"));
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    fn unique_temp_dir() -> PathBuf {
+        let suffix = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("system clock before unix epoch")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "leagueakari-app-test-{}-{suffix}",
+            std::process::id()
+        ))
+    }
 }

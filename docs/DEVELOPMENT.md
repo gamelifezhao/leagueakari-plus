@@ -93,6 +93,21 @@ C:\Users\admin\.cargo\bin\cargo.exe build -p leagueakari-probe
 C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-app
 ```
 
+开发构建生成的桌面程序位于：
+
+```text
+target\debug\leagueakari-app.exe
+```
+
+默认情况下，桌面壳会优先查找同目录下的 `leagueakari-probe.exe`。如果需要临时指定另一个探针路径，可以使用环境变量：
+
+```powershell
+$env:LEAGUEAKARI_PROBE_PATH="C:\Users\admin\Documents\Codex\2026-06-11\leagueakari\target\debug\leagueakari-probe.exe"
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-app
+```
+
+如果 probe 因为客户端未启动、LCU 超时或其他原因退出，桌面 UI 会显示最后一条 probe 错误，方便判断是客户端状态问题还是桥接启动问题。
+
 如果 LCU 短时间内没有返回当前召唤师资料，探针会继续使用已经可达的 gameflow 和 WebSocket 数据，不会因为召唤师摘要超时而退出。
 
 如果英雄联盟客户端没有启动，预期输出是：
