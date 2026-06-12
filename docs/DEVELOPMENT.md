@@ -62,6 +62,13 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe
 
 英雄机制标签位于 `crates/leagueakari-probe/data/champion-tags.v1.json`。OP.GG 公开页面统计快照位于 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`，只用于版本环境解释，不直接承诺胜负。
 
+如果要刷新 OP.GG 快照，先用浏览器里的 `tools/opgg-exporter/extract-opgg-champion-stats.js` 导出临时 JSON，再用导入工具检查并写入缓存：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js work/opgg-snapshot.json --dry-run
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js work/opgg-snapshot.json
+```
+
 更新英雄标签或 OP.GG 快照后，可以先运行本地数据自检，不需要启动英雄联盟客户端：
 
 ```powershell

@@ -145,6 +145,10 @@ fn run_data_validation(json: bool) -> Result<()> {
             format_list(report.duplicate_tag_keys)
         );
         println!(
+            "  duplicate OP.GG stat keys: {}",
+            format_list(report.duplicate_stat_keys)
+        );
+        println!(
             "  invalid OP.GG entries: {}",
             format_list(report.invalid_stat_entries)
         );

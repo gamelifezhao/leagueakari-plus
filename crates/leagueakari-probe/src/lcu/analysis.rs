@@ -55,6 +55,7 @@ pub struct DataValidationReport {
     pub unmatched_opgg_entries: Vec<String>,
     pub duplicate_tag_ids: Vec<i64>,
     pub duplicate_tag_keys: Vec<String>,
+    pub duplicate_stat_keys: Vec<String>,
     pub invalid_stat_entries: Vec<String>,
     pub warnings: Vec<String>,
 }
@@ -167,6 +168,12 @@ pub fn validate_data() -> DataValidationReport {
         .collect::<HashSet<_>>();
     let duplicate_tag_ids = duplicates(tags.iter().map(|tag| tag.champion_id));
     let duplicate_tag_keys = duplicates(tags.iter().map(|tag| tag.champion_key.clone()));
+    let duplicate_stat_keys = duplicates(
+        snapshot
+            .entries
+            .iter()
+            .map(|entry| stat_key(&entry.champion_key, &entry.role)),
+    );
     let unmatched_opgg_entries = snapshot
         .entries
         .iter()
@@ -199,6 +206,12 @@ pub fn validate_data() -> DataValidationReport {
             duplicate_tag_keys.len()
         ));
     }
+    if !duplicate_stat_keys.is_empty() {
+        warnings.push(format!(
+            "{} duplicated OP.GG champion-role stat keys.",
+            duplicate_stat_keys.len()
+        ));
+    }
     if !invalid_stat_entries.is_empty() {
         warnings.push(format!(
             "{} OP.GG entries have invalid rates or ranks.",
@@ -213,6 +226,7 @@ pub fn validate_data() -> DataValidationReport {
         unmatched_opgg_entries,
         duplicate_tag_ids,
         duplicate_tag_keys,
+        duplicate_stat_keys,
         invalid_stat_entries,
         warnings,
     }
@@ -667,6 +681,7 @@ mod tests {
         assert!(report.opgg_entry_count >= 40);
         assert!(report.matched_opgg_entries >= 40);
         assert!(report.duplicate_tag_ids.is_empty());
+        assert!(report.duplicate_stat_keys.is_empty());
         assert!(report.invalid_stat_entries.is_empty());
     }
 

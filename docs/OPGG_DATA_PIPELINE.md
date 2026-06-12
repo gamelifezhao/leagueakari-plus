@@ -32,10 +32,11 @@ Content-Length: 0
 因此当前不在 app 运行时直接爬 OP.GG，也不绕过 WAF challenge。推荐方式是：
 
 1. 用浏览器或人工流程查看公开页面。
-2. 使用 `tools/opgg-exporter/extract-opgg-champion-stats.js` 从已打开页面导出 JSON，或人工整理成 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`。
-3. Rust 分析模块从本地 JSON 缓存读取。
-4. 缓存过期时手动或半自动刷新。
-5. 更新缓存后运行 `leagueakari-probe --validate-data` 检查字段和标签匹配。
+2. 使用 `tools/opgg-exporter/extract-opgg-champion-stats.js` 从已打开页面导出 JSON。
+3. 使用 `tools/opgg-exporter/import-opgg-snapshot.js` 检查并导入到 `crates/leagueakari-probe/data/opgg-champion-stats.sample.json`。
+4. Rust 分析模块从本地 JSON 缓存读取。
+5. 缓存过期时手动或半自动刷新。
+6. 更新缓存后运行 `leagueakari-probe --validate-data` 检查字段、重复项和标签匹配。
 
 ## 数据分层
 
@@ -67,6 +68,26 @@ OP.GG 公开页面快照，维护版本统计属性：
 - `pick_rate`
 - `ban_rate`
 - `rank`
+
+## 刷新命令
+
+导入前先 dry-run：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js work/opgg-snapshot.json --dry-run
+```
+
+确认报告无错误后写入缓存：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js work/opgg-snapshot.json
+```
+
+最后运行 Rust 侧数据自检：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
+```
 
 ## 使用边界
 

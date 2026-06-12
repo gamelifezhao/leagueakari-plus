@@ -28,6 +28,7 @@
 - 新增 OP.GG 公开页面统计快照缓存，并把胜率、选率、禁率作为阵容解释的辅助信息。
 - 新增 `tools/opgg-exporter`，用于从已打开的 OP.GG 公开页面导出本地统计快照。
 - 新增 `leagueakari-probe --validate-data`，可在不启动英雄联盟客户端的情况下检查英雄标签和 OP.GG 快照。
+- 新增 `tools/opgg-exporter/import-opgg-snapshot.js`，刷新 OP.GG 快照前可先做字段、重复项和标签覆盖检查。
 
 ## 安全边界
 
@@ -52,6 +53,8 @@ C:\Users\admin\.cargo\bin\cargo.exe test -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe build -p leagueakari-app
 C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe --check tools/opgg-exporter/import-opgg-snapshot.js
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js crates/leagueakari-probe/data/opgg-champion-stats.sample.json --dry-run
 ```
 
 当前单元测试数量：`leagueakari-probe` 21 个，`leagueakari-app` 3 个。
