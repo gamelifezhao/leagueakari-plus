@@ -21,6 +21,7 @@
 - 新增 `--json` 结构化事件输出，作为后续 Tauri UI 的数据通道。
 - 新增零依赖 UI 原型，用样例 JSON 事件展示连接状态、双方阵容和阵容分析。
 - 新增最小 Tauri 桌面壳，直接嵌入当前静态 UI 原型。
+- 新增 Tauri 到 probe 的 JSON 事件桥接：前端准备好后启动只读 probe，并接收实时 LCU 事件。
 
 ## 安全边界
 
@@ -52,6 +53,6 @@ C:\Users\admin\.cargo\bin\cargo.exe check -p leagueakari-probe
 
 ## 推荐下一步
 
-优先让 Tauri 壳启动 `leagueakari-probe --watch --json` 并把实时事件推给前端，同时继续扩展完整英雄标签库。
+优先在真实选人阶段验证 `leagueakari-app` 的实时 UI，同时继续扩展完整英雄标签库。
 
-原因：静态 UI 和桌面壳已经有了，下一步要把它从样例数据切到真实 LCU 实时数据，同时继续补足阵容分析需要的英雄标签数据。
+原因：Tauri 壳已经能启动 probe 并转发事件，下一步要在真实 BP 流程里验证 UI 刷新体验，同时继续补足阵容分析需要的英雄标签数据。

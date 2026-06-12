@@ -8,7 +8,7 @@
     "frontendDist": "../../apps/leagueakari-ui-prototype"
   },
   "app": {
-    "withGlobalTauri": false,
+    "withGlobalTauri": true,
     "windows": [
       {
         "label": "main",

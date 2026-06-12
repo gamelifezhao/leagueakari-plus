@@ -86,6 +86,13 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --watch --json
 
 后续 UI 进程建议直接启动 `target\debug\leagueakari-probe.exe --watch --json`，这样 stdout 会是纯 JSON 行；如果用 `cargo run`，请加 `--quiet`，避免 Cargo 编译日志混入输出。
 
+Tauri 桌面壳会在前端准备好后启动同目录下的 `leagueakari-probe --watch --json`，并把每一行 JSON 事件转发给前端。开发时请先确保 probe 已经编译过：
+
+```powershell
+C:\Users\admin\.cargo\bin\cargo.exe build -p leagueakari-probe
+C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-app
+```
+
 如果 LCU 短时间内没有返回当前召唤师资料，探针会继续使用已经可达的 gameflow 和 WebSocket 数据，不会因为召唤师摘要超时而退出。
 
 如果英雄联盟客户端没有启动，预期输出是：
@@ -127,4 +134,4 @@ F:\WeGameApps\英雄联盟\LeagueClient
 4. 使用 `--watch` 做一次实机验证，确认选人变化能稳定推送。
 5. 打开 `apps/leagueakari-ui-prototype/index.html` 查看零依赖 UI 原型。
 6. 运行 `leagueakari-app` 桌面壳，确认静态 UI 能在 Tauri WebView 中打开。
-7. 让 Tauri 壳启动 `leagueakari-probe --watch --json`，消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。
+7. 在真实选人阶段运行 `leagueakari-app`，确认前端能消费实时 `DraftState`、敌我阵容对比和 `composition analysis`。

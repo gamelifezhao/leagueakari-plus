@@ -32,7 +32,9 @@ const metricLabels = {
 const state = {
   connection: null,
   phase: "Unknown",
-  snapshot: null
+  snapshot: null,
+  bridgeStatus: null,
+  usingLiveData: false
 };
 
 const elements = {
@@ -61,6 +63,10 @@ const elements = {
 };
 
 function applyEvent(message) {
+  if (message.event === "probe_bridge_status") {
+    state.bridgeStatus = message.payload;
+  }
+
   if (message.event === "lcu_connection") {
     state.connection = message.payload;
   }
@@ -84,12 +90,24 @@ function render() {
   const myDimensions = analysis?.dimensions ?? {};
   const enemyDimensions = analysis?.enemy_dimensions ?? {};
   const winScore = estimateWinScore(myDimensions, enemyDimensions, analysis?.confidence);
+  const hasLiveConnection = state.usingLiveData && state.connection;
+  const hasSampleConnection = !state.usingLiveData && state.connection;
 
-  elements.connectionStatus.textContent = state.connection ? "LCU 已连接" : "等待 LCU";
-  elements.serverStatus.textContent = state.connection ? "国服 · 召唤师峡谷" : "等待客户端启动";
+  elements.connectionStatus.textContent = hasLiveConnection
+    ? "LCU 已连接"
+    : hasSampleConnection
+      ? "样例数据"
+      : "等待 LCU";
+  elements.serverStatus.textContent = state.connection
+    ? hasLiveConnection
+      ? "国服 · 召唤师峡谷"
+      : bridgeLabel(state.bridgeStatus)
+    : bridgeLabel(state.bridgeStatus);
   elements.connectionDetail.textContent = state.connection
-    ? `端口 ${state.connection.port} · token 已隐藏`
-    : "不会写入客户端配置";
+    ? hasLiveConnection
+      ? `端口 ${state.connection.port} · token 已隐藏`
+      : "样例事件已载入"
+    : bridgeMessage(state.bridgeStatus);
   elements.gameflowPhase.textContent = phaseLabel(state.phase);
   elements.confidence.textContent = confidenceLabel(analysis?.confidence);
   elements.snapshotSource.textContent = snapshot
@@ -345,8 +363,63 @@ function recommendHeroes(analysis) {
   ];
 }
 
+function bridgeLabel(status) {
+  if (!status) {
+    return state.usingLiveData ? "等待 probe 桥接" : "浏览器样例模式";
+  }
+  const labels = {
+    starting: "正在启动 probe",
+    running: "probe 已运行",
+    stderr: "probe 日志",
+    error: "probe 启动失败",
+    stopped: "probe 已停止",
+    parse_error: "事件解析失败",
+    already_running: "probe 已运行"
+  };
+  return labels[status.status] ?? "等待客户端启动";
+}
+
+function bridgeMessage(status) {
+  if (!status) {
+    return state.usingLiveData ? "等待实时 LCU 事件" : "使用样例 JSON 事件";
+  }
+  return status.message || "不会写入客户端配置";
+}
+
+async function startTauriEventBridge() {
+  const tauriEvent = window.__TAURI__?.event;
+  if (!tauriEvent?.listen || !tauriEvent?.emit) {
+    return false;
+  }
+
+  state.usingLiveData = true;
+  state.bridgeStatus = {
+    status: "starting",
+    message: "waiting for frontend event bridge"
+  };
+  render();
+
+  await tauriEvent.listen("leagueakari-probe-event", (event) => {
+    applyEvent(event.payload);
+  });
+  await tauriEvent.emit("leagueakari-frontend-ready");
+  return true;
+}
+
 elements.loadSampleButton.addEventListener("click", () => {
   window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
 });
 
-window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
+startTauriEventBridge()
+  .then((connected) => {
+    if (!connected) {
+      window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
+    }
+  })
+  .catch((error) => {
+    state.bridgeStatus = {
+      status: "error",
+      message: `Tauri event bridge failed: ${error}`
+    };
+    render();
+  });
