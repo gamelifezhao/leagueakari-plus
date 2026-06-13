@@ -186,6 +186,7 @@ fn handle_text_message(
                         Some(event.event_type.as_str()),
                         &draft_state,
                         &analysis,
+                        champion_catalog,
                     ),
                 )?;
             } else {

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
@@ -8,7 +9,7 @@ pub struct ChampionCatalog {
     champions: HashMap<i64, ChampionInfo>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ChampionInfo {
     pub id: i64,
     pub alias: String,
@@ -56,6 +57,10 @@ impl ChampionCatalog {
                 }
             })
             .unwrap_or_else(|| format!("Unknown champion ({champion_id})"))
+    }
+
+    pub fn get(&self, champion_id: i64) -> Option<&ChampionInfo> {
+        self.champions.get(&champion_id)
     }
 }
 

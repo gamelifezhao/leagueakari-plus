@@ -67,7 +67,13 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
             let analysis = analysis::analyze_draft(&empty_draft);
             output::print_event(
                 "draft_snapshot",
-                &output::draft_snapshot("initial", None, &empty_draft, &analysis),
+                &output::draft_snapshot(
+                    "initial",
+                    None,
+                    &empty_draft,
+                    &analysis,
+                    &champion_catalog,
+                ),
             )?;
         } else {
             print_json("draft state", &serde_json::to_value(empty_draft)?)?;
@@ -85,7 +91,13 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
             }
             output::print_event(
                 "draft_snapshot",
-                &output::draft_snapshot("initial", None, &draft_state, &analysis),
+                &output::draft_snapshot(
+                    "initial",
+                    None,
+                    &draft_state,
+                    &analysis,
+                    &champion_catalog,
+                ),
             )?;
         } else {
             print_champ_select_summary(&session);

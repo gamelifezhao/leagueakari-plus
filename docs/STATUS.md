@@ -70,6 +70,11 @@ C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
 - 用更多真实对局验证 `enemy_threats` 和 `win_conditions` 的解释是否符合“帮你理解这一局应该怎么赢”。
 - 决定下一步先扩展完整英雄标签库，还是先搭 Tauri UI。
 
+## 实机观察问题
+
+- 真实选人阶段里，部分 pick / ban 在桌面 UI 显示为“未知英雄”。初步判断：LCU 已经返回了 `championId`，但前端目前只维护了少量 `championId -> 中文名` 映射，没有复用 probe 从 LCU game-data 读取到的完整英雄目录。后续修复方向：让 JSON 事件携带英雄名称，或让前端加载完整英雄目录；找不到名称时至少显示 `英雄 ID`，避免完全不可读。
+- 进入游戏后，双方阵容 / ban 区域会被清空，显示回 `0 / 5` 和待选状态。初步判断：gameflow 从 `ChampSelect` 切到 `GameStart` / `InProgress` 后，前端把新的非选人阶段空快照覆盖了最后一次 BP 快照。后续修复方向：把“当前阶段”与“最后一次有效 BP 快照”分开保存，游戏开始后继续展示本局 BP 结果，并标注“游戏进行中 / BP 已结束”。
+
 ## 推荐下一步
 
 优先在真实选人阶段验证 `leagueakari-app` 的实时 UI，同时继续扩展完整英雄标签库。

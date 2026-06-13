@@ -34,6 +34,7 @@ const state = {
   summoner: null,
   phase: "Unknown",
   snapshot: null,
+  lastDraftSnapshot: null,
   bridgeStatus: null,
   watchStatus: null,
   champSelectStatus: null,
@@ -115,8 +116,14 @@ function applyEvent(message) {
   }
 
   if (message.event === "draft_snapshot") {
-    state.snapshot = message.payload;
+    cacheChampionNames(message.payload?.champion_names);
     state.phase = message.payload.draft_state?.gameflow ?? state.phase;
+    if (isUsableDraftSnapshot(message.payload)) {
+      state.lastDraftSnapshot = message.payload;
+      state.snapshot = message.payload;
+    } else if (!state.lastDraftSnapshot) {
+      state.snapshot = message.payload;
+    }
     state.champSelectStatus = null;
   }
 
@@ -124,7 +131,7 @@ function applyEvent(message) {
 }
 
 function render() {
-  const snapshot = state.snapshot;
+  const snapshot = displaySnapshot();
   const draft = snapshot?.draft_state;
   const analysis = snapshot?.analysis;
   const myDimensions = analysis?.dimensions ?? {};
@@ -379,8 +386,39 @@ function championName(championId, includeId = true) {
   if (!championId) {
     return "待选";
   }
-  const name = championNames[championId] ?? "未知英雄";
+  const name = championNames[championId] ?? `英雄 ${championId}`;
   return includeId ? `${name} (${championId})` : name;
+}
+
+function cacheChampionNames(names = {}) {
+  Object.entries(names || {}).forEach(([id, info]) => {
+    const championId = Number(id);
+    const name = info?.name || info?.alias;
+    if (Number.isFinite(championId) && name) {
+      championNames[championId] = name;
+    }
+  });
+}
+
+function displaySnapshot() {
+  return state.snapshot ?? state.lastDraftSnapshot;
+}
+
+function isUsableDraftSnapshot(snapshot) {
+  const draft = snapshot?.draft_state;
+  if (!draft) {
+    return false;
+  }
+
+  return (
+    hasPickedChampion(draft.my_team) ||
+    hasPickedChampion(draft.their_team) ||
+    (draft.bans?.length ?? 0) > 0
+  );
+}
+
+function hasPickedChampion(players = []) {
+  return players.some((player) => player?.champion_id);
 }
 
 function positionLabel(position) {
@@ -573,6 +611,7 @@ function clearLiveConnection() {
   state.summoner = null;
   state.phase = "Unknown";
   state.snapshot = null;
+  state.lastDraftSnapshot = null;
   state.watchStatus = null;
   state.champSelectStatus = null;
 }
@@ -696,6 +735,7 @@ function resetLiveState() {
   state.summoner = null;
   state.phase = "Unknown";
   state.snapshot = null;
+  state.lastDraftSnapshot = null;
   state.bridgeStatus = null;
   state.watchStatus = null;
   state.champSelectStatus = null;
@@ -723,6 +763,7 @@ function loadSampleEvents() {
   state.summoner = null;
   state.phase = "Unknown";
   state.snapshot = null;
+  state.lastDraftSnapshot = null;
   state.bridgeStatus = null;
   state.watchStatus = null;
   state.champSelectStatus = null;
