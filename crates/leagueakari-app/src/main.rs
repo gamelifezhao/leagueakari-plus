@@ -10,6 +10,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
     },
     thread,
+    time::Duration,
 };
 
 #[cfg(windows)]
@@ -24,6 +25,7 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 const PROBE_EVENT: &str = "leagueakari-probe-event";
 const FRONTEND_READY_EVENT: &str = "leagueakari-frontend-ready";
 const PROBE_PATH_ENV: &str = "LEAGUEAKARI_PROBE_PATH";
+const PROBE_RETRY_DELAY: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Default)]
 struct ProbeProcess {
@@ -63,109 +65,151 @@ fn start_probe_bridge(app: AppHandle, probe_process: ProbeProcess) {
 
     thread::spawn(move || {
         let probe_path = resolve_probe_path();
-        let last_stderr = Arc::new(Mutex::new(None::<String>));
-        emit_bridge_status(
-            &app,
-            "starting",
-            &format!("starting {}", probe_path.display()),
-        );
+        let mut attempt = 1_u64;
 
-        let mut command = Command::new(&probe_path);
-        command
-            .args(["--watch", "--json"])
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        while probe_process.started.load(Ordering::SeqCst) {
+            let outcome = run_probe_once(&app, &probe_process, &probe_path, attempt);
 
-        #[cfg(windows)]
-        command.creation_flags(CREATE_NO_WINDOW);
-
-        let child_result = command.spawn();
-
-        let mut child = match child_result {
-            Ok(child) => child,
-            Err(error) => {
-                probe_process.started.store(false, Ordering::SeqCst);
-                emit_bridge_status(&app, "error", &format!("failed to start probe: {error}"));
-                return;
+            if !probe_process.started.load(Ordering::SeqCst) {
+                break;
             }
-        };
 
-        let stdout = child.stdout.take();
-        let stderr = child.stderr.take();
-        let pid = child.id();
-
-        {
-            let mut child_slot = probe_process
-                .child
-                .lock()
-                .expect("probe child process lock poisoned");
-            *child_slot = Some(child);
-        }
-
-        emit_bridge_status(&app, "running", &format!("probe process started: {pid}"));
-
-        let stderr_reader = if let Some(stderr) = stderr {
-            let stderr_app = app.clone();
-            let stderr_state = last_stderr.clone();
-            Some(thread::spawn(move || {
-                for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-                    let line = line.trim();
-                    if !line.is_empty() {
-                        let mut last_stderr = stderr_state
-                            .lock()
-                            .expect("probe stderr status lock poisoned");
-                        *last_stderr = Some(line.to_string());
-                        emit_bridge_status(&stderr_app, "stderr", line);
-                    }
+            match outcome {
+                ProbeRunOutcome::ListeningEnded => {
+                    probe_process.started.store(false, Ordering::SeqCst);
+                    break;
                 }
-            }))
-        } else {
-            None
-        };
-
-        if let Some(stdout) = stdout {
-            for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-                let line = line.trim();
-                if line.is_empty() {
-                    continue;
-                }
-
-                match serde_json::from_str::<Value>(line) {
-                    Ok(event) => {
-                        let _ = app.emit(PROBE_EVENT, event);
-                    }
-                    Err(error) => emit_bridge_status(
+                ProbeRunOutcome::Failed(message) => {
+                    attempt += 1;
+                    emit_bridge_status(
                         &app,
-                        "parse_error",
-                        &format!("failed to parse probe JSON event: {error}"),
-                    ),
+                        "retrying",
+                        &format!(
+                            "{message}; retrying in {} seconds",
+                            PROBE_RETRY_DELAY.as_secs()
+                        ),
+                    );
+                    thread::sleep(PROBE_RETRY_DELAY);
                 }
             }
         }
-
-        let exit_status = {
-            let mut child_slot = probe_process
-                .child
-                .lock()
-                .expect("probe child process lock poisoned");
-            child_slot.take().and_then(|mut child| child.wait().ok())
-        };
-
-        if let Some(stderr_reader) = stderr_reader {
-            let _ = stderr_reader.join();
-        }
-
-        let last_stderr = last_stderr
-            .lock()
-            .expect("probe stderr status lock poisoned")
-            .clone();
-        let (final_status, exit_message) =
-            format_probe_exit_status(exit_status, last_stderr.as_deref());
-
-        probe_process.started.store(false, Ordering::SeqCst);
-        emit_bridge_status(&app, final_status, &exit_message);
     });
+}
+
+enum ProbeRunOutcome {
+    ListeningEnded,
+    Failed(String),
+}
+
+fn run_probe_once(
+    app: &AppHandle,
+    probe_process: &ProbeProcess,
+    probe_path: &PathBuf,
+    attempt: u64,
+) -> ProbeRunOutcome {
+    let last_stderr = Arc::new(Mutex::new(None::<String>));
+    emit_bridge_status(
+        app,
+        "starting",
+        &format!("starting {} (attempt {attempt})", probe_path.display()),
+    );
+
+    let mut command = Command::new(probe_path);
+    command
+        .args(["--watch", "--json"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(error) => {
+            return ProbeRunOutcome::Failed(format!("failed to start probe: {error}"));
+        }
+    };
+
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let pid = child.id();
+
+    {
+        let mut child_slot = probe_process
+            .child
+            .lock()
+            .expect("probe child process lock poisoned");
+        *child_slot = Some(child);
+    }
+
+    emit_bridge_status(app, "running", &format!("probe process started: {pid}"));
+
+    let stderr_reader = if let Some(stderr) = stderr {
+        let stderr_app = app.clone();
+        let stderr_state = last_stderr.clone();
+        Some(thread::spawn(move || {
+            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+                let line = line.trim();
+                if !line.is_empty() {
+                    let mut last_stderr = stderr_state
+                        .lock()
+                        .expect("probe stderr status lock poisoned");
+                    *last_stderr = Some(line.to_string());
+                    emit_bridge_status(&stderr_app, "stderr", line);
+                }
+            }
+        }))
+    } else {
+        None
+    };
+
+    if let Some(stdout) = stdout {
+        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+
+            match serde_json::from_str::<Value>(line) {
+                Ok(event) => {
+                    let _ = app.emit(PROBE_EVENT, event);
+                }
+                Err(error) => emit_bridge_status(
+                    app,
+                    "parse_error",
+                    &format!("failed to parse probe JSON event: {error}"),
+                ),
+            }
+        }
+    }
+
+    let exit_status = {
+        let mut child_slot = probe_process
+            .child
+            .lock()
+            .expect("probe child process lock poisoned");
+        child_slot.take().and_then(|mut child| child.wait().ok())
+    };
+
+    if let Some(stderr_reader) = stderr_reader {
+        let _ = stderr_reader.join();
+    }
+
+    let last_stderr = last_stderr
+        .lock()
+        .expect("probe stderr status lock poisoned")
+        .clone();
+    let (final_status, exit_message) =
+        format_probe_exit_status(exit_status, last_stderr.as_deref());
+
+    emit_bridge_status(app, final_status, &exit_message);
+
+    if should_retry_probe(final_status) {
+        ProbeRunOutcome::Failed(exit_message)
+    } else {
+        ProbeRunOutcome::ListeningEnded
+    }
 }
 
 fn stop_probe_bridge(probe_process: &ProbeProcess) {
@@ -237,6 +281,10 @@ fn format_probe_exit_status(
     }
 }
 
+fn should_retry_probe(final_status: &str) -> bool {
+    final_status != "stopped"
+}
+
 fn emit_bridge_status(app: &AppHandle, status: &str, message: &str) {
     let _ = app.emit(
         PROBE_EVENT,
@@ -294,6 +342,13 @@ mod tests {
 
         assert_eq!(resolved, PathBuf::from("leagueakari-probe.exe"));
         let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn retries_probe_errors_but_not_clean_stops() {
+        assert!(should_retry_probe("error"));
+        assert!(should_retry_probe("parse_error"));
+        assert!(!should_retry_probe("stopped"));
     }
 
     fn unique_temp_dir() -> PathBuf {

@@ -541,7 +541,8 @@ function bridgeLabel(status) {
     listening: "监听选人事件",
     closed: "监听已断开",
     skipped: "等待进入 BP",
-    finished: "probe 已结束"
+    finished: "probe 已结束",
+    retrying: "等待自动重试"
   };
   return labels[status.status] ?? "等待客户端启动";
 }
@@ -613,10 +614,16 @@ function friendlyBridgeMessage(message) {
     return "没有找到英雄联盟客户端，请先打开并登录客户端。";
   }
   if (text.includes("operation timed out") || text.includes("timed out")) {
-    return "LCU 请求超时，可能是客户端刚启动或 WeGame 正在切换进程，稍后点重新连接。";
+    return "LCU 请求超时，可能是客户端刚启动或 WeGame 正在切换进程，LeagueAkari Plus 会自动重试。";
+  }
+  if (text.includes("error sending request for url")) {
+    return "找到了旧的 LCU 端口，但当前不可用。请确认英雄联盟客户端正在运行，LeagueAkari Plus 会自动重试。";
   }
   if (text.includes("all LCU connection candidates failed")) {
-    return "找到了客户端线索，但本地 LCU 接口暂时连不上，稍后点重新连接。";
+    return "找到了客户端线索，但本地 LCU 接口暂时连不上。请确认英雄联盟客户端正在运行，LeagueAkari Plus 会自动重试。";
+  }
+  if (text.includes("retrying in")) {
+    return "暂时没有连上 LCU，正在后台自动重试。";
   }
   if (text.includes("gameflow is not ChampSelect")) {
     return "当前还不在 BP 阶段，进入选人后会自动刷新。";
