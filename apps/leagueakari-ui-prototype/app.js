@@ -179,17 +179,14 @@ function renderPicks(container, players, side) {
 }
 
 function renderBans(container, bans, teamId) {
-  const teamBans = bans.filter((ban) => ban.team_id === teamId);
-  if (teamBans.length === 0) {
-    container.innerHTML = '<span class="empty">暂无</span>';
-    return;
-  }
+  const teamBans = bans.filter((ban) => ban.team_id === teamId).slice(0, 5);
+  const slots = Array.from({ length: 5 }, (_, index) => teamBans[index] ?? null);
 
   container.replaceChildren(
-    ...teamBans.map((ban) => {
+    ...slots.map((ban) => {
       const chip = document.createElement("span");
-      chip.className = "ban-chip";
-      chip.textContent = championName(ban.champion_id, false);
+      chip.className = `ban-chip ${ban ? "" : "empty"}`.trim();
+      chip.textContent = ban ? championName(ban.champion_id, false) : "-";
       return chip;
     })
   );
