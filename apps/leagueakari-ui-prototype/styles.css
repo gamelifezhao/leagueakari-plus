@@ -24,9 +24,15 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at 12% 12%, rgba(49, 216, 195, 0.08), transparent 28%),
     linear-gradient(135deg, #101318 0%, #15181e 56%, #11161a 100%);
@@ -45,13 +51,13 @@ a {
 }
 
 button {
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid #3a4451;
   border-radius: 8px;
   background: #242b35;
   color: var(--text);
   cursor: pointer;
-  padding: 0 14px;
+  padding: 0 13px;
 }
 
 button:hover {
@@ -79,27 +85,29 @@ p {
 
 .app-frame {
   display: grid;
-  grid-template-columns: 236px 1fr;
-  gap: 28px;
-  width: min(1384px, calc(100vw - 24px));
-  height: calc(100vh - 24px);
-  min-height: 760px;
-  margin: 12px auto;
-  padding: 16px;
+  grid-template-columns: 252px minmax(0, 1fr);
+  gap: 20px;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 0;
   background: var(--shell);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   border: 1px solid #252c35;
   border-radius: 10px;
   background: var(--sidebar);
-  padding: 22px 20px;
+  padding: 20px;
 }
 
 .brand {
@@ -135,8 +143,8 @@ p {
 
 .nav-list {
   display: grid;
-  gap: 12px;
-  margin-top: 48px;
+  gap: 10px;
+  margin-top: 42px;
 }
 
 .nav-item {
@@ -169,12 +177,12 @@ p {
 
 .lcu-card {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   margin-top: auto;
   border: 1px solid #2c3440;
   border-radius: 10px;
   background: #171b21;
-  padding: 18px;
+  padding: 16px;
 }
 
 .lcu-card strong {
@@ -190,25 +198,29 @@ p {
 .lcu-card small {
   color: var(--subtle);
   font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .content {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: 12px;
+  grid-template-rows: auto minmax(132px, 0.78fr) minmax(250px, 1.28fr) minmax(174px, 0.94fr);
+  gap: 10px;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .page-header {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 18px;
-  padding: 4px 0 0;
+  gap: 16px;
+  padding: 0;
 }
 
 .page-header h2 {
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: clamp(26px, 3vw, 32px);
   line-height: 1.1;
   letter-spacing: 0;
 }
@@ -219,7 +231,7 @@ p {
 .rune-section p {
   color: var(--muted);
   font-size: 14px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .header-pills,
@@ -229,7 +241,7 @@ p {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pill {
@@ -259,7 +271,8 @@ p {
 .summary-grid {
   display: grid;
   grid-template-columns: 1.05fr 1.1fr 1.15fr;
-  gap: 12px;
+  gap: 10px;
+  min-height: 0;
 }
 
 .summary-card,
@@ -271,12 +284,13 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  padding: 16px;
+  padding: 14px 16px;
   min-width: 0;
+  min-height: 0;
 }
 
 .summary-card {
-  min-height: 120px;
+  min-height: 0;
 }
 
 .summoner-card {
@@ -303,7 +317,7 @@ p {
 .recommend-section h3,
 .rune-section h3 {
   color: var(--text);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.2;
 }
 
@@ -316,9 +330,9 @@ p {
 .summoner-card strong,
 .win-card strong {
   display: block;
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--gold);
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
 }
 
@@ -328,7 +342,7 @@ p {
 }
 
 .delta-row {
-  margin: 10px 0 8px;
+  margin: 8px 0 6px;
 }
 
 .delta-row span,
@@ -360,15 +374,16 @@ p {
 
 .middle-grid {
   display: grid;
-  grid-template-columns: minmax(540px, 1fr) minmax(340px, 0.72fr);
-  gap: 12px;
+  grid-template-columns: minmax(520px, 1.32fr) minmax(340px, 0.94fr);
+  gap: 10px;
+  min-height: 0;
 }
 
 .section-title {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 10px;
 }
 
 .pick-counts {
@@ -381,13 +396,13 @@ p {
 
 .team-row {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 50px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .team-row + .team-row {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .team-label {
@@ -405,17 +420,18 @@ p {
 
 .hero-row {
   display: grid;
-  grid-template-columns: repeat(5, minmax(86px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
 }
 
 .hero-card {
   min-width: 0;
-  min-height: 62px;
+  min-height: 60px;
   border: 1px solid #303946;
   border-radius: 8px;
   background: #151a20;
-  padding: 10px;
+  padding: 9px 10px;
 }
 
 .ally .hero-card.picked {
@@ -450,8 +466,8 @@ p {
 .ban-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 12px;
+  gap: 14px;
+  margin-top: 10px;
 }
 
 .ban-grid span {
@@ -478,14 +494,14 @@ p {
 
 .dimension-list {
   display: grid;
-  gap: 12px;
+  gap: 11px;
 }
 
 .dimension-row {
   display: grid;
-  grid-template-columns: 88px 1fr 54px;
+  grid-template-columns: 86px minmax(0, 1fr) 42px;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dimension-row span {
@@ -529,16 +545,26 @@ p {
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: 1.25fr 0.92fr 0.92fr;
-  gap: 12px;
+  grid-template-columns: minmax(320px, 1.24fr) minmax(260px, 0.9fr) minmax(260px, 0.9fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.reason-section,
+.recommend-section,
+.rune-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .reason-list {
   display: grid;
   gap: 8px;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   padding: 0;
   list-style: none;
+  overflow: auto;
 }
 
 .reason-list li {
@@ -561,7 +587,7 @@ p {
 .recommend-list {
   display: grid;
   gap: 7px;
-  margin: 12px 0;
+  margin: 10px 0;
 }
 
 .recommend-card {
@@ -572,7 +598,7 @@ p {
   border-radius: 8px;
   background: #202733;
   color: var(--text);
-  padding: 9px 11px;
+  padding: 8px 10px;
 }
 
 .recommend-card span {
@@ -605,13 +631,14 @@ p {
 }
 
 .build-source-note {
-  min-height: 18px;
+  min-height: 16px;
 }
 
 .build-preview {
   display: grid;
-  gap: 8px;
-  margin: 12px 0;
+  gap: 7px;
+  margin: 10px 0;
+  overflow: auto;
 }
 
 .build-block,
@@ -621,7 +648,7 @@ p {
   border: 1px solid #394250;
   border-radius: 8px;
   background: #202733;
-  padding: 10px 11px;
+  padding: 9px 10px;
 }
 
 .build-block span {
@@ -645,6 +672,8 @@ p {
 
 .rune-actions {
   justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
 }
 
 .empty {
@@ -652,11 +681,18 @@ p {
 }
 
 @media (max-width: 1180px) {
+  html,
+  body {
+    overflow: auto;
+  }
+
   .app-frame {
     grid-template-columns: 1fr;
     height: auto;
     width: min(100vw - 24px, 980px);
     margin: 12px auto;
+    border-radius: 14px;
+    overflow: visible;
   }
 
   .sidebar {
