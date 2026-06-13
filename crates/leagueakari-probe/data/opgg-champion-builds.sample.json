@@ -1,6 +1,469 @@
 [
   {
     "source": "OP.GG public champion build page",
+    "source_url": "https://op.gg/lol/champions/leona/build/support",
+    "captured_at": "2026-06-13T07:23:47.234Z",
+    "patch": "16.12",
+    "region": "global",
+    "tier": "emerald_plus",
+    "queue": "ranked_solo_duo",
+    "champion_key": "leona",
+    "champion_name": "Leona",
+    "role": "support",
+    "runes": [
+      {
+        "primary_style": {
+          "style_id": 8400,
+          "name": "Resolve",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8400.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "secondary_style": {
+          "style_id": 8300,
+          "name": "Inspiration",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8300.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "perks": [
+          {
+            "perk_id": 8439,
+            "name": "Aftershock",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8439.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8463,
+            "name": "Font of Life",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8463.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8473,
+            "name": "Bone Plating",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8473.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8242,
+            "name": "Unflinching",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8242.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8345,
+            "name": "Biscuit Delivery",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8345.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8347,
+            "name": "Cosmic Insight",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8347.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          }
+        ]
+      }
+    ],
+    "summoner_spells": [
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerDot",
+            "name": "Ignite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerDot.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 74.62,
+        "games": 25588,
+        "win_rate": 51.78,
+        "raw_text": "74.62 25,588 Games 51.78%"
+      },
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerExhaust",
+            "name": "Exhaust",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerExhaust.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 15.05,
+        "games": 5161,
+        "win_rate": 51.15,
+        "raw_text": "15.05 5,161 Games 51.15%"
+      }
+    ],
+    "skill_orders": [
+      {
+        "order": "WEQQEWWWRWEWEREEQQ",
+        "skills": [
+          {
+            "spell_key": "LeonaSolarBarrier",
+            "name": "Eclipse",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/LeonaSolarBarrier.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "LeonaZenithBlade",
+            "name": "Zenith Blade",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/LeonaZenithBlade.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "LeonaShieldOfDaybreak",
+            "name": "Shield of Daybreak",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/LeonaShieldOfDaybreak.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 56.19,
+        "games": 3312,
+        "win_rate": 66.12,
+        "raw_text": "W E Q Q E W W W R W E W E R E E Q Q 56.19% 3,312 Games 66.12%"
+      }
+    ],
+    "item_builds": {
+      "starter": [
+        {
+          "items": [
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 97.37,
+          "games": 35015,
+          "win_rate": 51.72,
+          "raw_text": "2 97.37% 35,015 Games 51.72%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 1.14,
+          "games": 409,
+          "win_rate": 49.39,
+          "raw_text": "1.14% 409 Games 49.39%"
+        }
+      ],
+      "boots": [
+        {
+          "items": [
+            {
+              "item_id": 3047,
+              "name": "Plated Steelcaps",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 55.88,
+          "games": 19466,
+          "win_rate": 52.33,
+          "raw_text": "55.88% 19,466 Games 52.33%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3111,
+              "name": "Mercury's Treads",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3111.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 33.03,
+          "games": 11506,
+          "win_rate": 51.87,
+          "raw_text": "33.03% 11,506 Games 51.87%"
+        }
+      ],
+      "support": [
+        {
+          "items": [
+            {
+              "item_id": 3869,
+              "name": "Celestial Opposition",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3869.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 49.47,
+          "games": 16661,
+          "win_rate": 50.41,
+          "raw_text": "Celestial Opposition 49.47% 16,661 Games 50.41%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3876,
+              "name": "Solstice Sleigh",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3876.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 28.55,
+          "games": 9617,
+          "win_rate": 52.86,
+          "raw_text": "Solstice Sleigh 28.55% 9,617 Games 52.86%"
+        }
+      ],
+      "core": [
+        {
+          "items": [
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2524,
+              "name": "Bandlepipes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 8.42,
+          "games": 987,
+          "win_rate": 60.79,
+          "raw_text": "8.42% 987 Games 60.79%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 7.69,
+          "games": 902,
+          "win_rate": 61.42,
+          "raw_text": "7.69% 902 Games 61.42%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2524,
+              "name": "Bandlepipes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 6.09,
+          "games": 714,
+          "win_rate": 58.54,
+          "raw_text": "6.09% 714 Games 58.54%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2504,
+              "name": "Kaenic Rookern",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2504.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 5.3,
+          "games": 621,
+          "win_rate": 54.59,
+          "raw_text": "5.3% 621 Games 54.59%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 4.96,
+          "games": 582,
+          "win_rate": 57.9,
+          "raw_text": "4.96% 582 Games 57.9%"
+        }
+      ],
+      "fourth": [
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 58.41,
+          "games": 327,
+          "win_rate": 58.41,
+          "raw_text": "58.41% 327 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2525,
+              "name": "Protoplasm Harness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.51,
+          "games": 326,
+          "win_rate": 59.51,
+          "raw_text": "59.51% 326 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2504,
+              "name": "Kaenic Rookern",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2504.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 62.5,
+          "games": 216,
+          "win_rate": 62.5,
+          "raw_text": "62.5% 216 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 55.39,
+          "games": 204,
+          "win_rate": 55.39,
+          "raw_text": "55.39% 204 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2524,
+              "name": "Bandlepipes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 54.17,
+          "games": 168,
+          "win_rate": 54.17,
+          "raw_text": "54.17% 168 Games"
+        }
+      ],
+      "fifth": [
+        {
+          "items": [
+            {
+              "item_id": 2525,
+              "name": "Protoplasm Harness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 25,
+          "games": 4,
+          "win_rate": 25,
+          "raw_text": "25% 4 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 75,
+          "games": 4,
+          "win_rate": 75,
+          "raw_text": "75% 4 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3110,
+              "name": "Frozen Heart",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3110.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 100,
+          "games": 3,
+          "win_rate": 100,
+          "raw_text": "100% 3 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3143,
+              "name": "Randuin's Omen",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3143.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 50,
+          "games": 2,
+          "win_rate": 50,
+          "raw_text": "50% 2 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 50,
+          "games": 2,
+          "win_rate": 50,
+          "raw_text": "50% 2 Games"
+        }
+      ]
+    },
+    "notes": [
+      "Fetched from the public OP.GG page without login or challenge bypass.",
+      "Validate before importing or applying any recommendation."
+    ]
+  },
+  {
+    "source": "OP.GG public champion build page",
     "source_url": "https://op.gg/lol/champions/nautilus/build/support",
     "captured_at": "2026-06-12",
     "patch": "16.12",
@@ -23,20 +486,52 @@
           "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8300.png"
         },
         "perks": [
-          { "perk_id": 8439, "name": "Aftershock", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8439.png" },
-          { "perk_id": 8401, "name": "Shield Bash", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8401.png" },
-          { "perk_id": 8473, "name": "Bone Plating", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8473.png" },
-          { "perk_id": 8242, "name": "Unflinching", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8242.png" },
-          { "perk_id": 8345, "name": "Biscuit Delivery", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8345.png" },
-          { "perk_id": 8347, "name": "Cosmic Insight", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8347.png" }
+          {
+            "perk_id": 8439,
+            "name": "Aftershock",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8439.png"
+          },
+          {
+            "perk_id": 8401,
+            "name": "Shield Bash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8401.png"
+          },
+          {
+            "perk_id": 8473,
+            "name": "Bone Plating",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8473.png"
+          },
+          {
+            "perk_id": 8242,
+            "name": "Unflinching",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8242.png"
+          },
+          {
+            "perk_id": 8345,
+            "name": "Biscuit Delivery",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8345.png"
+          },
+          {
+            "perk_id": 8347,
+            "name": "Cosmic Insight",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8347.png"
+          }
         ]
       }
     ],
     "summoner_spells": [
       {
         "spells": [
-          { "spell_key": "SummonerFlash", "name": "Flash", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png" },
-          { "spell_key": "SummonerDot", "name": "Ignite", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerDot.png" }
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png"
+          },
+          {
+            "spell_key": "SummonerDot",
+            "name": "Ignite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerDot.png"
+          }
         ],
         "pick_rate": 71.83,
         "games": 19879,
@@ -45,8 +540,16 @@
       },
       {
         "spells": [
-          { "spell_key": "SummonerFlash", "name": "Flash", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png" },
-          { "spell_key": "SummonerHeal", "name": "Heal", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerHeal.png" }
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png"
+          },
+          {
+            "spell_key": "SummonerHeal",
+            "name": "Heal",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerHeal.png"
+          }
         ],
         "pick_rate": 17.13,
         "games": 4742,
@@ -58,9 +561,21 @@
       {
         "order": "QWEQWEQQRQWQWRWWEE",
         "skills": [
-          { "spell_key": "NautilusAnchorDrag", "name": "Dredge Line", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusAnchorDrag.png" },
-          { "spell_key": "NautilusPiercingGaze", "name": "Titan's Wrath", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusPiercingGaze.png" },
-          { "spell_key": "NautilusSplashZone", "name": "Riptide", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusSplashZone.png" }
+          {
+            "spell_key": "NautilusAnchorDrag",
+            "name": "Dredge Line",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusAnchorDrag.png"
+          },
+          {
+            "spell_key": "NautilusPiercingGaze",
+            "name": "Titan's Wrath",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusPiercingGaze.png"
+          },
+          {
+            "spell_key": "NautilusSplashZone",
+            "name": "Riptide",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/NautilusSplashZone.png"
+          }
         ],
         "pick_rate": 72.68,
         "games": 3076,
@@ -71,14 +586,26 @@
     "item_builds": {
       "starter": [
         {
-          "items": [{ "item_id": 2003, "name": "Health Potion", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png" }],
+          "items": [
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png"
+            }
+          ],
           "pick_rate": 96.39,
           "games": 29149,
           "win_rate": 49.93,
           "raw_text": "2 Health Potion 96.39% 29,149 Games 49.93%"
         },
         {
-          "items": [{ "item_id": 2003, "name": "Health Potion", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png" }],
+          "items": [
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png"
+            }
+          ],
           "pick_rate": 1.11,
           "games": 337,
           "win_rate": 48.96,
@@ -87,14 +614,26 @@
       ],
       "boots": [
         {
-          "items": [{ "item_id": 3047, "name": "Plated Steelcaps", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png" }],
+          "items": [
+            {
+              "item_id": 3047,
+              "name": "Plated Steelcaps",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png"
+            }
+          ],
           "pick_rate": 57.29,
           "games": 16613,
           "win_rate": 50.24,
           "raw_text": "Plated Steelcaps 57.29% 16,613 Games 50.24%"
         },
         {
-          "items": [{ "item_id": 3111, "name": "Mercury's Treads", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3111.png" }],
+          "items": [
+            {
+              "item_id": 3111,
+              "name": "Mercury's Treads",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3111.png"
+            }
+          ],
           "pick_rate": 30.96,
           "games": 8979,
           "win_rate": 50.5,
@@ -103,14 +642,26 @@
       ],
       "support": [
         {
-          "items": [{ "item_id": 3869, "name": "Celestial Opposition", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3869.png" }],
+          "items": [
+            {
+              "item_id": 3869,
+              "name": "Celestial Opposition",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3869.png"
+            }
+          ],
           "pick_rate": 59.84,
           "games": 16374,
           "win_rate": 48.91,
           "raw_text": "Celestial Opposition 59.84% 16,374 Games 48.91%"
         },
         {
-          "items": [{ "item_id": 3876, "name": "Solstice Sleigh", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3876.png" }],
+          "items": [
+            {
+              "item_id": 3876,
+              "name": "Solstice Sleigh",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3876.png"
+            }
+          ],
           "pick_rate": 28.54,
           "games": 7809,
           "win_rate": 51.2,
@@ -120,9 +671,21 @@
       "core": [
         {
           "items": [
-            { "item_id": 3190, "name": "Locket of the Iron Solari", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png" },
-            { "item_id": 2524, "name": "Bandlepipes", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png" },
-            { "item_id": 3109, "name": "Knight's Vow", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png" }
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png"
+            },
+            {
+              "item_id": 2524,
+              "name": "Bandlepipes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png"
+            }
           ],
           "pick_rate": 9.23,
           "games": 812,
@@ -131,9 +694,21 @@
         },
         {
           "items": [
-            { "item_id": 3190, "name": "Locket of the Iron Solari", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png" },
-            { "item_id": 3109, "name": "Knight's Vow", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png" },
-            { "item_id": 3075, "name": "Thornmail", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png" }
+            {
+              "item_id": 3190,
+              "name": "Locket of the Iron Solari",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3190.png"
+            },
+            {
+              "item_id": 3109,
+              "name": "Knight's Vow",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3109.png"
+            },
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png"
+            }
           ],
           "pick_rate": 6.58,
           "games": 579,
@@ -143,7 +718,13 @@
       ],
       "fourth": [
         {
-          "items": [{ "item_id": 2525, "name": "Protoplasm Harness", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png" }],
+          "items": [
+            {
+              "item_id": 2525,
+              "name": "Protoplasm Harness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png"
+            }
+          ],
           "pick_rate": 63.25,
           "games": 234,
           "win_rate": 63.25,
@@ -152,7 +733,13 @@
       ],
       "fifth": [
         {
-          "items": [{ "item_id": 2524, "name": "Bandlepipes", "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png" }],
+          "items": [
+            {
+              "item_id": 2524,
+              "name": "Bandlepipes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2524.png"
+            }
+          ],
           "pick_rate": 66.67,
           "games": 3,
           "win_rate": 66.67,
@@ -163,6 +750,1795 @@
     "notes": [
       "Extracted from the already-open public OP.GG page.",
       "Rune export is based on visible selected icons and should be validated before applying."
+    ]
+  },
+  {
+    "source": "OP.GG public champion build page",
+    "source_url": "https://op.gg/lol/champions/rammus/build/jungle",
+    "captured_at": "2026-06-13T07:23:47.191Z",
+    "patch": "16.12",
+    "region": "global",
+    "tier": "emerald_plus",
+    "queue": "ranked_solo_duo",
+    "champion_key": "rammus",
+    "champion_name": "Rammus",
+    "role": "jungle",
+    "runes": [
+      {
+        "primary_style": {
+          "style_id": 8400,
+          "name": "Resolve",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8400.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "secondary_style": {
+          "style_id": 8000,
+          "name": "Precision",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8000.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "perks": [
+          {
+            "perk_id": 8439,
+            "name": "Aftershock",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8439.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8463,
+            "name": "Font of Life",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8463.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8429,
+            "name": "Conditioning",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8429.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8242,
+            "name": "Unflinching",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8242.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 9111,
+            "name": "Triumph",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/9111.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 9104,
+            "name": "Legend: Alacrity",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/9104.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          }
+        ]
+      }
+    ],
+    "summoner_spells": [
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerSmite",
+            "name": "Smite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerSmite.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 78.28,
+        "games": 5937,
+        "win_rate": 51.57,
+        "raw_text": "78.28 5,937 Games 51.57%"
+      },
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerHaste",
+            "name": "Ghost",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerHaste.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerSmite",
+            "name": "Smite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerSmite.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 20.49,
+        "games": 1554,
+        "win_rate": 52.19,
+        "raw_text": "20.49 1,554 Games 52.19%"
+      }
+    ],
+    "skill_orders": [
+      {
+        "order": "QEWWQEQQRQEQEREEWW",
+        "skills": [
+          {
+            "spell_key": "PowerBall",
+            "name": "Powerball",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/PowerBall.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "PuncturingTaunt",
+            "name": "Frenzying Taunt",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/PuncturingTaunt.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "DefensiveBallCurl",
+            "name": "Defensive Ball Curl",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/DefensiveBallCurl.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 70.54,
+        "games": 1937,
+        "win_rate": 64.38,
+        "raw_text": "Q E W W Q E Q Q R Q E Q E R E E W W 70.54% 1,937 Games 64.38%"
+      }
+    ],
+    "item_builds": {
+      "starter": [
+        {
+          "items": [
+            {
+              "item_id": 1102,
+              "name": "Gustwalker Hatchling",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1102.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 35.45,
+          "games": 2831,
+          "win_rate": 51.85,
+          "raw_text": "35.45% 2,831 Games 51.85%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 1102,
+              "name": "Gustwalker Hatchling",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1102.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 24.53,
+          "games": 1959,
+          "win_rate": 51.66,
+          "raw_text": "24.53% 1,959 Games 51.66%"
+        }
+      ],
+      "boots": [
+        {
+          "items": [
+            {
+              "item_id": 3047,
+              "name": "Plated Steelcaps",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.67,
+          "games": 4727,
+          "win_rate": 52.8,
+          "raw_text": "61.67% 4,727 Games 52.8%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3111,
+              "name": "Mercury's Treads",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3111.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 29.89,
+          "games": 2291,
+          "win_rate": 49.37,
+          "raw_text": "29.89% 2,291 Games 49.37%"
+        }
+      ],
+      "support": [],
+      "core": [
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3068,
+              "name": "Sunfire Aegis",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3068.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 16.63,
+          "games": 877,
+          "win_rate": 56.78,
+          "raw_text": "16.63% 877 Games 56.78%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6664,
+              "name": "Hollow Radiance",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6664.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 6.96,
+          "games": 367,
+          "win_rate": 56.95,
+          "raw_text": "6.96% 367 Games 56.95%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3068,
+              "name": "Sunfire Aegis",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3068.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3742,
+              "name": "Dead Man's Plate",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3742.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 5.63,
+          "games": 297,
+          "win_rate": 67.34,
+          "raw_text": "5.63% 297 Games 67.34%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3068,
+              "name": "Sunfire Aegis",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3068.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3143,
+              "name": "Randuin's Omen",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3143.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 4.34,
+          "games": 229,
+          "win_rate": 60.7,
+          "raw_text": "4.34% 229 Games 60.7%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3075,
+              "name": "Thornmail",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3075.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3742,
+              "name": "Dead Man's Plate",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3742.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 3.89,
+          "games": 205,
+          "win_rate": 60.98,
+          "raw_text": "3.89% 205 Games 60.98%"
+        }
+      ],
+      "fourth": [
+        {
+          "items": [
+            {
+              "item_id": 2525,
+              "name": "Protoplasm Harness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 66.03,
+          "games": 627,
+          "win_rate": 66.03,
+          "raw_text": "66.03% 627 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 65.89,
+          "games": 428,
+          "win_rate": 65.89,
+          "raw_text": "65.89% 428 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3143,
+              "name": "Randuin's Omen",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3143.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.02,
+          "games": 266,
+          "win_rate": 59.02,
+          "raw_text": "59.02% 266 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3742,
+              "name": "Dead Man's Plate",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3742.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 68.95,
+          "games": 190,
+          "win_rate": 68.95,
+          "raw_text": "68.95% 190 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2504,
+              "name": "Kaenic Rookern",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2504.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.36,
+          "games": 132,
+          "win_rate": 61.36,
+          "raw_text": "61.36% 132 Games"
+        }
+      ],
+      "fifth": [
+        {
+          "items": [
+            {
+              "item_id": 3143,
+              "name": "Randuin's Omen",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3143.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 62,
+          "games": 100,
+          "win_rate": 62,
+          "raw_text": "62% 100 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2525,
+              "name": "Protoplasm Harness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2525.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 68.6,
+          "games": 86,
+          "win_rate": 68.6,
+          "raw_text": "68.6% 86 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6665,
+              "name": "Jak'Sho, The Protean",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6665.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 76.79,
+          "games": 56,
+          "win_rate": 76.79,
+          "raw_text": "76.79% 56 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2504,
+              "name": "Kaenic Rookern",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2504.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 68.63,
+          "games": 51,
+          "win_rate": 68.63,
+          "raw_text": "68.63% 51 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 4401,
+              "name": "Force of Nature",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4401.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 81.25,
+          "games": 48,
+          "win_rate": 81.25,
+          "raw_text": "81.25% 48 Games"
+        }
+      ]
+    },
+    "notes": [
+      "Fetched from the public OP.GG page without login or challenge bypass.",
+      "Validate before importing or applying any recommendation."
+    ]
+  },
+  {
+    "source": "OP.GG public champion build page",
+    "source_url": "https://op.gg/lol/champions/reksai/build/jungle",
+    "captured_at": "2026-06-13T07:23:47.145Z",
+    "patch": "16.12",
+    "region": "global",
+    "tier": "emerald_plus",
+    "queue": "ranked_solo_duo",
+    "champion_key": "reksai",
+    "champion_name": "Rek'Sai",
+    "role": "jungle",
+    "runes": [
+      {
+        "primary_style": {
+          "style_id": 8000,
+          "name": "Precision",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8000.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "secondary_style": {
+          "style_id": 8300,
+          "name": "Inspiration",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8300.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "perks": [
+          {
+            "perk_id": 8010,
+            "name": "Conqueror",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8010.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 9111,
+            "name": "Triumph",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/9111.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 9104,
+            "name": "Legend: Alacrity",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/9104.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8014,
+            "name": "Coup de Grace",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8014.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8304,
+            "name": "Magical Footwear",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8304.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8347,
+            "name": "Cosmic Insight",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8347.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          }
+        ]
+      }
+    ],
+    "summoner_spells": [
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerSmite",
+            "name": "Smite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerSmite.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 99.94,
+        "games": 13046,
+        "win_rate": 52.33,
+        "raw_text": "99.94 13,046 Games 52.33%"
+      },
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerHaste",
+            "name": "Ghost",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerHaste.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerSmite",
+            "name": "Smite",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerSmite.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 0.05,
+        "games": 6,
+        "win_rate": 100,
+        "raw_text": "0.05 6 Games 100%"
+      }
+    ],
+    "skill_orders": [
+      {
+        "order": "QEWQWEQQRQEQEREEWW",
+        "skills": [
+          {
+            "spell_key": "RekSaiQ",
+            "name": "Queen's Wrath / Prey Seeker",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/RekSaiQ.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "RekSaiE",
+            "name": "Furious Bite / Tunnel",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/RekSaiE.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "RekSaiW",
+            "name": "Burrow / Un-burrow",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/RekSaiW.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 75.4,
+        "games": 4379,
+        "win_rate": 61.7,
+        "raw_text": "Q E W Q W E Q Q R Q E Q E R E E W W 75.4% 4,379 Games 61.7%"
+      }
+    ],
+    "item_builds": {
+      "starter": [
+        {
+          "items": [
+            {
+              "item_id": 1101,
+              "name": "Scorchclaw Pup",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1101.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 42.47,
+          "games": 5858,
+          "win_rate": 51.47,
+          "raw_text": "42.47% 5,858 Games 51.47%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 1101,
+              "name": "Scorchclaw Pup",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1101.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 39.46,
+          "games": 5443,
+          "win_rate": 53.67,
+          "raw_text": "39.46% 5,443 Games 53.67%"
+        }
+      ],
+      "boots": [
+        {
+          "items": [
+            {
+              "item_id": 3047,
+              "name": "Plated Steelcaps",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 55.6,
+          "games": 6827,
+          "win_rate": 52.37,
+          "raw_text": "55.6% 6,827 Games 52.37%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3111,
+              "name": "Mercury's Treads",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3111.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 41.09,
+          "games": 5045,
+          "win_rate": 53.76,
+          "raw_text": "41.09% 5,045 Games 53.76%"
+        }
+      ],
+      "support": [],
+      "core": [
+        {
+          "items": [
+            {
+              "item_id": 6631,
+              "name": "Stridebreaker",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6631.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3161,
+              "name": "Spear of Shojin",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3161.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3053,
+              "name": "Sterak's Gage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3053.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 17.42,
+          "games": 1480,
+          "win_rate": 58.24,
+          "raw_text": "17.42% 1,480 Games 58.24%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3748,
+              "name": "Titanic Hydra",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3748.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3161,
+              "name": "Spear of Shojin",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3161.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6333,
+              "name": "Death's Dance",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6333.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 13.37,
+          "games": 1136,
+          "win_rate": 58.63,
+          "raw_text": "13.37% 1,136 Games 58.63%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6631,
+              "name": "Stridebreaker",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6631.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3161,
+              "name": "Spear of Shojin",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3161.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 6333,
+              "name": "Death's Dance",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6333.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 12.75,
+          "games": 1083,
+          "win_rate": 56.97,
+          "raw_text": "12.75% 1,083 Games 56.97%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3748,
+              "name": "Titanic Hydra",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3748.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3161,
+              "name": "Spear of Shojin",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3161.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3053,
+              "name": "Sterak's Gage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3053.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 7.94,
+          "games": 675,
+          "win_rate": 62.67,
+          "raw_text": "7.94% 675 Games 62.67%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6631,
+              "name": "Stridebreaker",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6631.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3161,
+              "name": "Spear of Shojin",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3161.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 6.37,
+          "games": 541,
+          "win_rate": 54.9,
+          "raw_text": "6.37% 541 Games 54.9%"
+        }
+      ],
+      "fourth": [
+        {
+          "items": [
+            {
+              "item_id": 6333,
+              "name": "Death's Dance",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6333.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.21,
+          "games": 812,
+          "win_rate": 61.21,
+          "raw_text": "61.21% 812 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3053,
+              "name": "Sterak's Gage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3053.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.58,
+          "games": 621,
+          "win_rate": 59.58,
+          "raw_text": "59.58% 621 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3026,
+              "name": "Guardian Angel",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3026.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 68.03,
+          "games": 610,
+          "win_rate": 68.03,
+          "raw_text": "68.03% 610 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3065,
+              "name": "Spirit Visage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3065.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 56.92,
+          "games": 325,
+          "win_rate": 56.92,
+          "raw_text": "56.92% 325 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 63.74,
+          "games": 171,
+          "win_rate": 63.74,
+          "raw_text": "63.74% 171 Games"
+        }
+      ],
+      "fifth": [
+        {
+          "items": [
+            {
+              "item_id": 3026,
+              "name": "Guardian Angel",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3026.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.09,
+          "games": 293,
+          "win_rate": 61.09,
+          "raw_text": "61.09% 293 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3065,
+              "name": "Spirit Visage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3065.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 60.61,
+          "games": 99,
+          "win_rate": 60.61,
+          "raw_text": "60.61% 99 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6333,
+              "name": "Death's Dance",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6333.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 64.29,
+          "games": 70,
+          "win_rate": 64.29,
+          "raw_text": "64.29% 70 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3053,
+              "name": "Sterak's Gage",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3053.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 56.06,
+          "games": 66,
+          "win_rate": 56.06,
+          "raw_text": "56.06% 66 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 50.94,
+          "games": 53,
+          "win_rate": 50.94,
+          "raw_text": "50.94% 53 Games"
+        }
+      ]
+    },
+    "notes": [
+      "Fetched from the public OP.GG page without login or challenge bypass.",
+      "Validate before importing or applying any recommendation."
+    ]
+  },
+  {
+    "source": "OP.GG public champion build page",
+    "source_url": "https://op.gg/lol/champions/senna/build/adc",
+    "captured_at": "2026-06-13T07:23:47.070Z",
+    "patch": "16.12",
+    "region": "global",
+    "tier": "emerald_plus",
+    "queue": "ranked_solo_duo",
+    "champion_key": "senna",
+    "champion_name": "Senna",
+    "role": "adc",
+    "runes": [
+      {
+        "primary_style": {
+          "style_id": 8200,
+          "name": "Sorcery",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8200.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "secondary_style": {
+          "style_id": 8300,
+          "name": "Inspiration",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8300.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "perks": [
+          {
+            "perk_id": 8992,
+            "name": "Deathfire Touch",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8992.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8226,
+            "name": "Manaflow Band",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8226.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8234,
+            "name": "Celerity",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8234.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8236,
+            "name": "Gathering Storm",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8236.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8304,
+            "name": "Magical Footwear",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8304.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8316,
+            "name": "Jack Of All Trades",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8316.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          }
+        ]
+      }
+    ],
+    "summoner_spells": [
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerBarrier",
+            "name": "Barrier",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerBarrier.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 88.42,
+        "games": 66859,
+        "win_rate": 54.94,
+        "raw_text": "88.42 66,859 Games 54.94%"
+      },
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerBoost",
+            "name": "Cleanse",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerBoost.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 6.32,
+        "games": 4776,
+        "win_rate": 54.65,
+        "raw_text": "6.32 4,776 Games 54.65%"
+      }
+    ],
+    "skill_orders": [
+      {
+        "order": "QWEQWEQQRQWQWRWWEE",
+        "skills": [
+          {
+            "spell_key": "SennaQ",
+            "name": "Piercing Darkness",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SennaQ.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SennaW",
+            "name": "Last Embrace",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SennaW.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SennaE",
+            "name": "Curse of the Black Mist",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SennaE.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 71.39,
+        "games": 28232,
+        "win_rate": 63.54,
+        "raw_text": "Q W E Q W E Q Q R Q W Q W R W W E E 71.39% 28,232 Games 63.54%"
+      }
+    ],
+    "item_builds": {
+      "starter": [
+        {
+          "items": [
+            {
+              "item_id": 1120,
+              "name": "Doran's Helm",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1120.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.24,
+          "games": 48953,
+          "win_rate": 56.11,
+          "raw_text": "61.24% 48,953 Games 56.11%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 1055,
+              "name": "Doran's Blade",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1055.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 27.1,
+          "games": 21665,
+          "win_rate": 53.4,
+          "raw_text": "27.1% 21,665 Games 53.4%"
+        }
+      ],
+      "boots": [
+        {
+          "items": [
+            {
+              "item_id": 3009,
+              "name": "Boots of Swiftness",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3009.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 81.17,
+          "games": 61280,
+          "win_rate": 55.8,
+          "raw_text": "81.17% 61,280 Games 55.8%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3047,
+              "name": "Plated Steelcaps",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3047.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 9.26,
+          "games": 6993,
+          "win_rate": 56.36,
+          "raw_text": "9.26% 6,993 Games 56.36%"
+        }
+      ],
+      "support": [],
+      "core": [
+        {
+          "items": [
+            {
+              "item_id": 3087,
+              "name": "Statikk Shiv",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3087.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2523,
+              "name": "Hexoptics C44",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2523.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 47.4,
+          "games": 27633,
+          "win_rate": 59.4,
+          "raw_text": "47.4% 27,633 Games 59.4%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3070,
+              "name": "Tear of the Goddess",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3070.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3087,
+              "name": "Statikk Shiv",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3087.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3042,
+              "name": "Muramana",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3042.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 16.48,
+          "games": 9607,
+          "win_rate": 60.8,
+          "raw_text": "16.48% 9,607 Games 60.8%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3070,
+              "name": "Tear of the Goddess",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3070.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3087,
+              "name": "Statikk Shiv",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3087.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3042,
+              "name": "Muramana",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3042.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 8.3,
+          "games": 4841,
+          "win_rate": 61.64,
+          "raw_text": "8.3% 4,841 Games 61.64%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3087,
+              "name": "Statikk Shiv",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3087.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2523,
+              "name": "Hexoptics C44",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2523.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3031,
+              "name": "Infinity Edge",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3031.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 4.24,
+          "games": 2470,
+          "win_rate": 57.85,
+          "raw_text": "4.24% 2,470 Games 57.85%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3087,
+              "name": "Statikk Shiv",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3087.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3031,
+              "name": "Infinity Edge",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3031.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 3.63,
+          "games": 2118,
+          "win_rate": 59.35,
+          "raw_text": "3.63% 2,118 Games 59.35%"
+        }
+      ],
+      "fourth": [
+        {
+          "items": [
+            {
+              "item_id": 3031,
+              "name": "Infinity Edge",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3031.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 60.74,
+          "games": 15458,
+          "win_rate": 60.74,
+          "raw_text": "60.74% 15,458 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2523,
+              "name": "Hexoptics C44",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2523.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 62.21,
+          "games": 5874,
+          "win_rate": 62.21,
+          "raw_text": "62.21% 5,874 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3094,
+              "name": "Rapid Firecannon",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3094.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.98,
+          "games": 3363,
+          "win_rate": 59.98,
+          "raw_text": "59.98% 3,363 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3046,
+              "name": "Phantom Dancer",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3046.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 64.49,
+          "games": 1456,
+          "win_rate": 64.49,
+          "raw_text": "64.49% 1,456 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3071,
+              "name": "Black Cleaver",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3071.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.47,
+          "games": 797,
+          "win_rate": 59.47,
+          "raw_text": "59.47% 797 Games"
+        }
+      ],
+      "fifth": [
+        {
+          "items": [
+            {
+              "item_id": 3094,
+              "name": "Rapid Firecannon",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3094.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 60.63,
+          "games": 3104,
+          "win_rate": 60.63,
+          "raw_text": "60.63% 3,104 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3031,
+              "name": "Infinity Edge",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3031.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 60.36,
+          "games": 2543,
+          "win_rate": 60.36,
+          "raw_text": "60.36% 2,543 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3026,
+              "name": "Guardian Angel",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3026.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 61.1,
+          "games": 2373,
+          "win_rate": 61.1,
+          "raw_text": "61.1% 2,373 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2523,
+              "name": "Hexoptics C44",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2523.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 60.16,
+          "games": 610,
+          "win_rate": 60.16,
+          "raw_text": "60.16% 610 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6609,
+              "name": "Chempunk Chainsword",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6609.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 48.79,
+          "games": 207,
+          "win_rate": 48.79,
+          "raw_text": "48.79% 207 Games"
+        }
+      ]
+    },
+    "notes": [
+      "Fetched from the public OP.GG page without login or challenge bypass.",
+      "Validate before importing or applying any recommendation."
+    ]
+  },
+  {
+    "source": "OP.GG public champion build page",
+    "source_url": "https://op.gg/lol/champions/syndra/build/mid",
+    "captured_at": "2026-06-13T07:23:47.277Z",
+    "patch": "16.12",
+    "region": "global",
+    "tier": "emerald_plus",
+    "queue": "ranked_solo_duo",
+    "champion_key": "syndra",
+    "champion_name": "Syndra",
+    "role": "mid",
+    "runes": [
+      {
+        "primary_style": {
+          "style_id": 8300,
+          "name": "Inspiration",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8300.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "secondary_style": {
+          "style_id": 8200,
+          "name": "Sorcery",
+          "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/8200.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+        },
+        "perks": [
+          {
+            "perk_id": 8369,
+            "name": "First Strike",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8369.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8304,
+            "name": "Magical Footwear",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8304.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8345,
+            "name": "Biscuit Delivery",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8345.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8347,
+            "name": "Cosmic Insight",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8347.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8226,
+            "name": "Manaflow Band",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8226.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          },
+          {
+            "perk_id": 8210,
+            "name": "Transcendence",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/8210.png?image=q_auto:good,f_png,w_56,h_56&v=1612"
+          }
+        ]
+      }
+    ],
+    "summoner_spells": [
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerTeleport",
+            "name": "Teleport",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerTeleport.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 78.94,
+        "games": 25212,
+        "win_rate": 51.53,
+        "raw_text": "78.94 25,212 Games 51.53%"
+      },
+      {
+        "spells": [
+          {
+            "spell_key": "SummonerFlash",
+            "name": "Flash",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerFlash.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SummonerHaste",
+            "name": "Ghost",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SummonerHaste.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 10.28,
+        "games": 3283,
+        "win_rate": 54.98,
+        "raw_text": "10.28 3,283 Games 54.98%"
+      }
+    ],
+    "skill_orders": [
+      {
+        "order": "QWEQEWQQRQWQWRWWEE",
+        "skills": [
+          {
+            "spell_key": "SyndraQ",
+            "name": "Dark Sphere",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SyndraQ.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SyndraW",
+            "name": "Force of Will",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SyndraW.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          },
+          {
+            "spell_key": "SyndraE",
+            "name": "Scatter the Weak",
+            "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/spell/SyndraE.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+          }
+        ],
+        "pick_rate": 40.79,
+        "games": 9026,
+        "win_rate": 56.74,
+        "raw_text": "Q W E Q E W Q Q R Q W Q W R W W E E 40.79% 9,026 Games 56.74%"
+      }
+    ],
+    "item_builds": {
+      "starter": [
+        {
+          "items": [
+            {
+              "item_id": 1056,
+              "name": "Doran's Ring",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1056.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 98.58,
+          "games": 33381,
+          "win_rate": 51.74,
+          "raw_text": "2 98.58% 33,381 Games 51.74%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 1056,
+              "name": "Doran's Ring",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1056.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2003,
+              "name": "Health Potion",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2003.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 0.32,
+          "games": 107,
+          "win_rate": 56.07,
+          "raw_text": "0.32% 107 Games 56.07%"
+        }
+      ],
+      "boots": [
+        {
+          "items": [
+            {
+              "item_id": 3020,
+              "name": "Sorcerer's Shoes",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3020.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 62.27,
+          "games": 20634,
+          "win_rate": 51.98,
+          "raw_text": "62.27% 20,634 Games 51.98%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3158,
+              "name": "Ionian Boots of Lucidity",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3158.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 23.54,
+          "games": 7800,
+          "win_rate": 54.09,
+          "raw_text": "23.54% 7,800 Games 54.09%"
+        }
+      ],
+      "support": [],
+      "core": [
+        {
+          "items": [
+            {
+              "item_id": 6655,
+              "name": "Luden's Echo",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6655.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4645,
+              "name": "Shadowflame",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4645.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3089,
+              "name": "Rabadon's Deathcap",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3089.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 22.98,
+          "games": 5175,
+          "win_rate": 54.9,
+          "raw_text": "22.98% 5,175 Games 54.9%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 2503,
+              "name": "Blackfire Torch",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2503.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4629,
+              "name": "Cosmic Drive",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4629.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3089,
+              "name": "Rabadon's Deathcap",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3089.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 10.85,
+          "games": 2444,
+          "win_rate": 53.81,
+          "raw_text": "10.85% 2,444 Games 53.81%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6655,
+              "name": "Luden's Echo",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6655.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4645,
+              "name": "Shadowflame",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4645.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3157,
+              "name": "Zhonya's Hourglass",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3157.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 7.24,
+          "games": 1630,
+          "win_rate": 52.7,
+          "raw_text": "7.24% 1,630 Games 52.7%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 6655,
+              "name": "Luden's Echo",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/6655.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4646,
+              "name": "Stormsurge",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4646.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4645,
+              "name": "Shadowflame",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4645.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 3.19,
+          "games": 719,
+          "win_rate": 53.41,
+          "raw_text": "3.19% 719 Games 53.41%"
+        },
+        {
+          "items": [
+            {
+              "item_id": 1082,
+              "name": "Dark Seal",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/1082.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 2503,
+              "name": "Blackfire Torch",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/2503.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 4629,
+              "name": "Cosmic Drive",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/4629.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            },
+            {
+              "item_id": 3089,
+              "name": "Rabadon's Deathcap",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3089.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 2.64,
+          "games": 595,
+          "win_rate": 62.69,
+          "raw_text": "2.64% 595 Games 62.69%"
+        }
+      ],
+      "fourth": [
+        {
+          "items": [
+            {
+              "item_id": 3157,
+              "name": "Zhonya's Hourglass",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3157.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 57.15,
+          "games": 3295,
+          "win_rate": 57.15,
+          "raw_text": "57.15% 3,295 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3089,
+              "name": "Rabadon's Deathcap",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3089.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 58.97,
+          "games": 2803,
+          "win_rate": 58.97,
+          "raw_text": "58.97% 2,803 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3135,
+              "name": "Void Staff",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3135.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 55.37,
+          "games": 1752,
+          "win_rate": 55.37,
+          "raw_text": "55.37% 1,752 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3137,
+              "name": "Cryptbloom",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3137.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 56.49,
+          "games": 632,
+          "win_rate": 56.49,
+          "raw_text": "56.49% 632 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3041,
+              "name": "Mejai's Soulstealer",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3041.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 83.9,
+          "games": 621,
+          "win_rate": 83.9,
+          "raw_text": "83.9% 621 Games"
+        }
+      ],
+      "fifth": [
+        {
+          "items": [
+            {
+              "item_id": 3157,
+              "name": "Zhonya's Hourglass",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3157.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 58.67,
+          "games": 813,
+          "win_rate": 58.67,
+          "raw_text": "58.67% 813 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3135,
+              "name": "Void Staff",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3135.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 56.67,
+          "games": 780,
+          "win_rate": 56.67,
+          "raw_text": "56.67% 780 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3089,
+              "name": "Rabadon's Deathcap",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3089.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 62.89,
+          "games": 450,
+          "win_rate": 62.89,
+          "raw_text": "62.89% 450 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3102,
+              "name": "Banshee's Veil",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3102.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 58.53,
+          "games": 422,
+          "win_rate": 58.53,
+          "raw_text": "58.53% 422 Games"
+        },
+        {
+          "items": [
+            {
+              "item_id": 3137,
+              "name": "Cryptbloom",
+              "icon_url": "https://opgg-static.akamaized.net/meta/images/lol/16.12.1/item/3137.png?image=q_auto:good,f_png,w_64,h_64&v=1612"
+            }
+          ],
+          "pick_rate": 59.93,
+          "games": 267,
+          "win_rate": 59.93,
+          "raw_text": "59.93% 267 Games"
+        }
+      ]
+    },
+    "notes": [
+      "Fetched from the public OP.GG page without login or challenge bypass.",
+      "Validate before importing or applying any recommendation."
     ]
   }
 ]

@@ -152,3 +152,22 @@ C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
 
 这个工具只读取本地 `opgg-champion-stats.sample.json` 和 `opgg-champion-builds.sample.json`，不会请求 OP.GG。
 它会输出当前覆盖率、版本上下文是否一致，以及下一批应手动打开的 OP.GG build 页面 URL。
+
+## 从公开 HTML 解析 build
+
+如果公开 OP.GG 页面能正常返回 HTML，可以先保存页面，再离线解析：
+
+```powershell
+$url = "https://op.gg/lol/champions/senna/build/adc"
+$html = "work/opgg-html/senna-adc.html"
+$json = "work/opgg-builds/senna-adc.json"
+Invoke-WebRequest -Uri $url -UseBasicParsing -MaximumRedirection 3 | Select-Object -ExpandProperty Content | Set-Content -Path $html -Encoding UTF8
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/fetch-opgg-build.js $url --html $html --output $json
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js $json --dry-run
+```
+
+直接请求也支持，但如果 OP.GG 返回 WAF challenge，工具会失败退出，不会尝试绕过：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/fetch-opgg-build.js https://op.gg/lol/champions/senna/build/adc --output work/opgg-builds/senna-adc.json
+```
