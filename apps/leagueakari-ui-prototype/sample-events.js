@@ -82,6 +82,90 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
           { champion_id: 54, champion_key: "malphite", role: "top", win_rate: 51.3, pick_rate: 7.02, ban_rate: 18.79, rank: 14 },
           { champion_id: 56, champion_key: "nocturne", role: "jungle", win_rate: 50.3, pick_rate: 6.87, ban_rate: 15.88, rank: 21 }
         ],
+        build_recommendations: [
+          {
+            champion_id: 111,
+            champion_key: "nautilus",
+            champion_name: "Nautilus",
+            side: "enemy",
+            role: "support",
+            patch: "16.12",
+            region: "global",
+            tier: "emerald_plus",
+            queue: "ranked_solo_duo",
+            source_url: "https://op.gg/lol/champions/nautilus/build/support",
+            rune: {
+              primary_style: { style_id: 8400, name: "Resolve", icon_url: null },
+              secondary_style: { style_id: 8300, name: "Inspiration", icon_url: null },
+              perks: [
+                { perk_id: 8439, name: "Aftershock", icon_url: null },
+                { perk_id: 8401, name: "Shield Bash", icon_url: null },
+                { perk_id: 8473, name: "Bone Plating", icon_url: null },
+                { perk_id: 8242, name: "Unflinching", icon_url: null },
+                { perk_id: 8345, name: "Biscuit Delivery", icon_url: null },
+                { perk_id: 8347, name: "Cosmic Insight", icon_url: null }
+              ]
+            },
+            summoner_spells: [
+              {
+                spells: [
+                  { spell_key: "SummonerFlash", name: "Flash", icon_url: null },
+                  { spell_key: "SummonerDot", name: "Ignite", icon_url: null }
+                ],
+                pick_rate: 71.83,
+                games: 19879,
+                win_rate: 49.82
+              }
+            ],
+            skill_order: {
+              order: "QWEQWEQQRQWQWRWWEE",
+              skills: [
+                { spell_key: "NautilusAnchorDrag", name: "Dredge Line", icon_url: null },
+                { spell_key: "NautilusPiercingGaze", name: "Titan's Wrath", icon_url: null },
+                { spell_key: "NautilusSplashZone", name: "Riptide", icon_url: null }
+              ],
+              pick_rate: 72.68,
+              games: 3076,
+              win_rate: 65.99
+            },
+            starter_items: [
+              {
+                items: [{ item_id: 2003, name: "Health Potion", icon_url: null }],
+                pick_rate: 96.39,
+                games: 29149,
+                win_rate: 49.93
+              }
+            ],
+            boots: [
+              {
+                items: [{ item_id: 3047, name: "Plated Steelcaps", icon_url: null }],
+                pick_rate: 57.29,
+                games: 16613,
+                win_rate: 50.24
+              }
+            ],
+            support_items: [
+              {
+                items: [{ item_id: 3869, name: "Celestial Opposition", icon_url: null }],
+                pick_rate: 59.84,
+                games: 16374,
+                win_rate: 48.91
+              }
+            ],
+            core_items: [
+              {
+                items: [
+                  { item_id: 3190, name: "Locket of the Iron Solari", icon_url: null },
+                  { item_id: 2524, name: "Bandlepipes", icon_url: null },
+                  { item_id: 3109, name: "Knight's Vow", icon_url: null }
+                ],
+                pick_rate: 9.23,
+                games: 812,
+                win_rate: 57.27
+              }
+            ]
+          }
+        ],
         strengths: [
           "我方具备较好的主动开团能力。",
           "我方前排厚度较好，团战容错更高。",

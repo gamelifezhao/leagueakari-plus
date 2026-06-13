@@ -11,6 +11,7 @@ pub struct CompositionAnalysis {
     pub enemy_dimensions: CompositionDimensions,
     pub data_notes: Vec<String>,
     pub champion_stats: Vec<ChampionStatSummary>,
+    pub build_recommendations: Vec<BuildRecommendation>,
     pub strengths: Vec<String>,
     pub risks: Vec<String>,
     pub enemy_threats: Vec<String>,
@@ -45,6 +46,94 @@ pub struct ChampionStatSummary {
     pub pick_rate: f32,
     pub ban_rate: f32,
     pub rank: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DraftSide {
+    Ally,
+    Enemy,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct BuildRecommendation {
+    pub champion_id: i64,
+    pub champion_key: String,
+    pub champion_name: String,
+    pub side: DraftSide,
+    pub role: String,
+    pub patch: String,
+    pub region: String,
+    pub tier: String,
+    pub queue: String,
+    pub source_url: Option<String>,
+    pub rune: Option<RuneRecommendation>,
+    pub summoner_spells: Vec<SpellBuildRecommendation>,
+    pub skill_order: Option<SkillOrderRecommendation>,
+    pub starter_items: Vec<ItemBuildRecommendation>,
+    pub boots: Vec<ItemBuildRecommendation>,
+    pub support_items: Vec<ItemBuildRecommendation>,
+    pub core_items: Vec<ItemBuildRecommendation>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RuneRecommendation {
+    pub primary_style: RuneStyleRecommendation,
+    pub secondary_style: RuneStyleRecommendation,
+    pub perks: Vec<PerkRecommendation>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RuneStyleRecommendation {
+    pub style_id: u16,
+    pub name: String,
+    pub icon_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PerkRecommendation {
+    pub perk_id: u16,
+    pub name: String,
+    pub icon_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SpellBuildRecommendation {
+    pub spells: Vec<SpellRecommendation>,
+    pub pick_rate: Option<f32>,
+    pub games: Option<u64>,
+    pub win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SpellRecommendation {
+    pub spell_key: String,
+    pub name: String,
+    pub icon_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SkillOrderRecommendation {
+    pub order: String,
+    pub skills: Vec<SpellRecommendation>,
+    pub pick_rate: Option<f32>,
+    pub games: Option<u64>,
+    pub win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ItemBuildRecommendation {
+    pub items: Vec<ItemRecommendation>,
+    pub pick_rate: Option<f32>,
+    pub games: Option<u64>,
+    pub win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ItemRecommendation {
+    pub item_id: u16,
+    pub name: Option<String>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,7 +202,14 @@ struct OpggChampionStat {
 
 #[derive(Debug, Clone, Deserialize)]
 struct OpggChampionBuild {
+    #[serde(default)]
+    source_url: Option<String>,
+    patch: String,
+    region: String,
+    tier: String,
+    queue: String,
     champion_key: String,
+    champion_name: String,
     role: String,
     runes: Vec<OpggRuneBuild>,
     summoner_spells: Vec<OpggSpellBuild>,
@@ -132,12 +228,16 @@ struct OpggRuneBuild {
 struct OpggRuneStyle {
     style_id: u16,
     name: String,
+    #[serde(default)]
+    icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct OpggPerk {
     perk_id: u16,
     name: String,
+    #[serde(default)]
+    icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -152,6 +252,8 @@ struct OpggSpellBuild {
 struct OpggSpell {
     spell_key: String,
     name: String,
+    #[serde(default)]
+    icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -191,6 +293,8 @@ struct OpggItemBuild {
 struct OpggItem {
     item_id: u16,
     name: Option<String>,
+    #[serde(default)]
+    icon_url: Option<String>,
 }
 
 pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
@@ -217,6 +321,8 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
     let dimensions = aggregate_dimensions(&known_tags);
     let enemy_dimensions = aggregate_dimensions(&enemy_known_tags);
     let champion_stats = champion_stats_for(&draft.my_team, &draft.their_team, &tag_db, &stat_db);
+    let build_recommendations =
+        build_recommendations_for(&draft.my_team, &draft.their_team, &tag_db, &opgg_builds());
     let data_notes = data_notes_for(&stat_db, champion_stats.len());
     let confidence = confidence_for(
         picked_champions.len() + enemy_champions.len(),
@@ -239,6 +345,7 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
         enemy_dimensions,
         data_notes,
         champion_stats,
+        build_recommendations,
         strengths,
         risks,
         enemy_threats,
@@ -566,6 +673,186 @@ fn champion_stats_for(
             })
         })
         .collect()
+}
+
+fn build_recommendations_for(
+    my_players: &[DraftPlayer],
+    enemy_players: &[DraftPlayer],
+    tag_db: &HashMap<i64, ChampionTags>,
+    builds: &[OpggChampionBuild],
+) -> Vec<BuildRecommendation> {
+    my_players
+        .iter()
+        .map(|player| (player, DraftSide::Ally))
+        .chain(
+            enemy_players
+                .iter()
+                .map(|player| (player, DraftSide::Enemy)),
+        )
+        .filter_map(|(player, side)| {
+            let champion_id = player.champion_id?;
+            let tags = tag_db.get(&champion_id)?;
+            let build = best_build_for(tags, player.assigned_position.as_deref(), builds)?;
+            Some(build_recommendation(champion_id, tags, side, build))
+        })
+        .collect()
+}
+
+fn best_build_for<'a>(
+    tags: &ChampionTags,
+    assigned_position: Option<&str>,
+    builds: &'a [OpggChampionBuild],
+) -> Option<&'a OpggChampionBuild> {
+    if let Some(build) = assigned_position
+        .into_iter()
+        .flat_map(opgg_roles_for)
+        .find_map(|role| find_build(builds, &tags.champion_key, role))
+    {
+        return Some(build);
+    }
+
+    tags.roles
+        .iter()
+        .flat_map(|role| opgg_roles_for(role))
+        .find_map(|role| find_build(builds, &tags.champion_key, role))
+}
+
+fn find_build<'a>(
+    builds: &'a [OpggChampionBuild],
+    champion_key: &str,
+    role: &str,
+) -> Option<&'a OpggChampionBuild> {
+    builds
+        .iter()
+        .find(|build| build.champion_key == champion_key && build.role == role)
+}
+
+fn build_recommendation(
+    champion_id: i64,
+    tags: &ChampionTags,
+    side: DraftSide,
+    build: &OpggChampionBuild,
+) -> BuildRecommendation {
+    BuildRecommendation {
+        champion_id,
+        champion_key: tags.champion_key.clone(),
+        champion_name: build.champion_name.clone(),
+        side,
+        role: build.role.clone(),
+        patch: build.patch.clone(),
+        region: build.region.clone(),
+        tier: build.tier.clone(),
+        queue: build.queue.clone(),
+        source_url: build.source_url.clone(),
+        rune: build.runes.first().and_then(rune_recommendation),
+        summoner_spells: build
+            .summoner_spells
+            .iter()
+            .take(2)
+            .map(spell_build_recommendation)
+            .collect(),
+        skill_order: build.skill_orders.first().map(skill_order_recommendation),
+        starter_items: build
+            .item_builds
+            .starter
+            .iter()
+            .take(2)
+            .map(item_build_recommendation)
+            .collect(),
+        boots: build
+            .item_builds
+            .boots
+            .iter()
+            .take(2)
+            .map(item_build_recommendation)
+            .collect(),
+        support_items: build
+            .item_builds
+            .support
+            .iter()
+            .take(2)
+            .map(item_build_recommendation)
+            .collect(),
+        core_items: build
+            .item_builds
+            .core
+            .iter()
+            .take(2)
+            .map(item_build_recommendation)
+            .collect(),
+    }
+}
+
+fn rune_recommendation(rune: &OpggRuneBuild) -> Option<RuneRecommendation> {
+    Some(RuneRecommendation {
+        primary_style: rune_style_recommendation(rune.primary_style.as_ref()?),
+        secondary_style: rune_style_recommendation(rune.secondary_style.as_ref()?),
+        perks: rune.perks.iter().map(perk_recommendation).collect(),
+    })
+}
+
+fn rune_style_recommendation(style: &OpggRuneStyle) -> RuneStyleRecommendation {
+    RuneStyleRecommendation {
+        style_id: style.style_id,
+        name: style.name.clone(),
+        icon_url: style.icon_url.clone(),
+    }
+}
+
+fn perk_recommendation(perk: &OpggPerk) -> PerkRecommendation {
+    PerkRecommendation {
+        perk_id: perk.perk_id,
+        name: perk.name.clone(),
+        icon_url: perk.icon_url.clone(),
+    }
+}
+
+fn spell_build_recommendation(build: &OpggSpellBuild) -> SpellBuildRecommendation {
+    SpellBuildRecommendation {
+        spells: build.spells.iter().map(spell_recommendation).collect(),
+        pick_rate: build.pick_rate,
+        games: build.games,
+        win_rate: build.win_rate,
+    }
+}
+
+fn spell_recommendation(spell: &OpggSpell) -> SpellRecommendation {
+    SpellRecommendation {
+        spell_key: spell.spell_key.clone(),
+        name: spell.name.clone(),
+        icon_url: spell.icon_url.clone(),
+    }
+}
+
+fn skill_order_recommendation(skill_order: &OpggSkillOrder) -> SkillOrderRecommendation {
+    SkillOrderRecommendation {
+        order: skill_order.order.clone(),
+        skills: skill_order
+            .skills
+            .iter()
+            .map(spell_recommendation)
+            .collect(),
+        pick_rate: skill_order.pick_rate,
+        games: skill_order.games,
+        win_rate: skill_order.win_rate,
+    }
+}
+
+fn item_build_recommendation(build: &OpggItemBuild) -> ItemBuildRecommendation {
+    ItemBuildRecommendation {
+        items: build.items.iter().map(item_recommendation).collect(),
+        pick_rate: build.pick_rate,
+        games: build.games,
+        win_rate: build.win_rate,
+    }
+}
+
+fn item_recommendation(item: &OpggItem) -> ItemRecommendation {
+    ItemRecommendation {
+        item_id: item.item_id,
+        name: item.name.clone(),
+        icon_url: item.icon_url.clone(),
+    }
 }
 
 fn best_stat_for<'a>(
@@ -954,6 +1241,14 @@ mod tests {
                 .champion_stats
                 .iter()
                 .any(|stat| stat.champion_key == "ashe" && stat.role == "adc")
+        );
+        assert!(
+            analysis
+                .build_recommendations
+                .iter()
+                .any(|build| build.champion_key == "nautilus"
+                    && build.role == "support"
+                    && build.side == DraftSide::Enemy)
         );
         assert!(
             analysis

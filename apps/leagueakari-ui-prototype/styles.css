@@ -600,6 +600,49 @@ p {
   font-size: 14px;
 }
 
+.legacy-rune-preview {
+  display: none;
+}
+
+.build-source-note {
+  min-height: 18px;
+}
+
+.build-preview {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.build-block,
+.build-empty {
+  display: grid;
+  gap: 5px;
+  border: 1px solid #394250;
+  border-radius: 8px;
+  background: #202733;
+  padding: 10px 11px;
+}
+
+.build-block span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.build-block strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.build-block small,
+.build-empty {
+  color: var(--subtle);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .rune-actions {
   justify-content: space-between;
 }

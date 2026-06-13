@@ -59,6 +59,8 @@ const elements = {
   dimensionCompare: document.querySelector("#dimensionCompare"),
   keyReasons: document.querySelector("#keyReasons"),
   heroRecommendations: document.querySelector("#heroRecommendations"),
+  buildSourceNote: document.querySelector("#buildSourceNote"),
+  buildRecommendation: document.querySelector("#buildRecommendation"),
   loadSampleButton: document.querySelector("#loadSampleButton")
 };
 
@@ -131,6 +133,7 @@ function render() {
   renderAdvice(analysis);
   renderReasons(analysis);
   renderRecommendations(analysis);
+  renderBuildRecommendation(analysis);
 
   elements.myPickCount.textContent = `${countPicked(draft?.my_team)} / 5`;
   elements.enemyPickCount.textContent = `${countPicked(draft?.their_team)} / 5`;
@@ -249,6 +252,101 @@ function renderRecommendations(analysis) {
   );
 }
 
+function renderBuildRecommendation(analysis) {
+  const build = chooseBuildRecommendation(analysis);
+  if (!build) {
+    elements.buildSourceNote.textContent = "暂无匹配到本地 OP.GG 方案快照";
+    elements.buildRecommendation.replaceChildren(emptyBuildState());
+    return;
+  }
+
+  elements.buildSourceNote.textContent = [
+    `${build.champion_name || build.champion_key} · ${roleLabel(build.role)}`,
+    build.side === "enemy" ? "敌方参考" : "我方推荐",
+    `${build.patch} / ${build.tier}`
+  ].join(" · ");
+
+  const primaryRune = build.rune?.primary_style?.name ?? "待确认";
+  const secondaryRune = build.rune?.secondary_style?.name ?? "待确认";
+  const perkNames = (build.rune?.perks ?? []).map((perk) => perk.name).slice(0, 6);
+  const spellBuild = build.summoner_spells?.[0];
+  const skillOrder = build.skill_order?.order;
+
+  elements.buildRecommendation.replaceChildren(
+    buildBlock("符文", [
+      `${primaryRune} + ${secondaryRune}`,
+      perkNames.join(" / ") || "暂无符文明细"
+    ]),
+    buildBlock("召唤师技能", [
+      spellBuild ? spellBuild.spells.map((spell) => spell.name).join(" + ") : "暂无推荐",
+      metricLine(spellBuild)
+    ]),
+    buildBlock("技能加点", [
+      skillOrder ? compactSkillOrder(skillOrder) : "暂无推荐",
+      metricLine(build.skill_order)
+    ]),
+    buildItemBlock("出门", build.starter_items?.[0]),
+    buildItemBlock("鞋子", build.boots?.[0]),
+    buildItemBlock("辅助装", build.support_items?.[0]),
+    buildItemBlock("核心装备", build.core_items?.[0])
+  );
+}
+
+function chooseBuildRecommendation(analysis) {
+  const builds = analysis?.build_recommendations ?? [];
+  return builds.find((build) => build.side === "ally") ?? builds[0] ?? null;
+}
+
+function emptyBuildState() {
+  const item = document.createElement("div");
+  item.className = "build-empty";
+  item.textContent = "继续扩展英雄 build 快照后，这里会显示符文、技能和装备路径。";
+  return item;
+}
+
+function buildBlock(title, lines) {
+  const cleanLines = lines.filter(Boolean);
+  const item = document.createElement("div");
+  item.className = "build-block";
+
+  const titleNode = document.createElement("span");
+  titleNode.textContent = title;
+  const primary = document.createElement("strong");
+  primary.textContent = cleanLines[0] ?? "暂无推荐";
+  const secondary = document.createElement("small");
+  secondary.textContent = cleanLines[1] ?? "";
+
+  item.replaceChildren(titleNode, primary, secondary);
+  return item;
+}
+
+function buildItemBlock(title, build) {
+  const names = build?.items?.map((item) => item.name || item.item_id).join(" > ");
+  return buildBlock(title, [names || "暂无推荐", metricLine(build)]);
+}
+
+function metricLine(row) {
+  if (!row) {
+    return "";
+  }
+
+  const parts = [];
+  if (row.pick_rate !== undefined && row.pick_rate !== null) {
+    parts.push(`登场 ${Number(row.pick_rate).toFixed(2)}%`);
+  }
+  if (row.win_rate !== undefined && row.win_rate !== null) {
+    parts.push(`胜率 ${Number(row.win_rate).toFixed(2)}%`);
+  }
+  if (row.games) {
+    parts.push(`${Number(row.games).toLocaleString("zh-CN")} 场`);
+  }
+  return parts.join(" · ");
+}
+
+function compactSkillOrder(order) {
+  return String(order || "").match(/.{1,3}/g)?.join(" ") ?? "";
+}
+
 function championName(championId, includeId = true) {
   if (!championId) {
     return "待选";
@@ -266,6 +364,17 @@ function positionLabel(position) {
     utility: "辅助"
   };
   return labels[position] ?? "位置待定";
+}
+
+function roleLabel(role) {
+  const labels = {
+    top: "上路",
+    jungle: "打野",
+    mid: "中路",
+    adc: "下路",
+    support: "辅助"
+  };
+  return labels[role] ?? role ?? "未知位置";
 }
 
 function phaseLabel(phase) {
