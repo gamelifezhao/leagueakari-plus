@@ -31,9 +31,12 @@ const metricLabels = {
 
 const state = {
   connection: null,
+  summoner: null,
   phase: "Unknown",
   snapshot: null,
   bridgeStatus: null,
+  watchStatus: null,
+  champSelectStatus: null,
   usingLiveData: false
 };
 
@@ -61,10 +64,15 @@ const elements = {
   heroRecommendations: document.querySelector("#heroRecommendations"),
   buildSourceNote: document.querySelector("#buildSourceNote"),
   buildRecommendation: document.querySelector("#buildRecommendation"),
+  reconnectButton: document.querySelector("#reconnectButton"),
   loadSampleButton: document.querySelector("#loadSampleButton")
 };
 
 function applyEvent(message) {
+  if (!message?.event) {
+    return;
+  }
+
   if (message.event === "probe_bridge_status") {
     state.bridgeStatus = message.payload;
   }
@@ -73,13 +81,34 @@ function applyEvent(message) {
     state.connection = message.payload;
   }
 
+  if (message.event === "summoner_summary") {
+    state.summoner = message.payload;
+  }
+
   if (message.event === "gameflow_phase") {
     state.phase = String(message.payload.phase ?? "Unknown");
+  }
+
+  if (message.event === "watch_gameflow") {
+    state.phase = String(message.payload.phase ?? "Unknown");
+  }
+
+  if (message.event === "watch_status") {
+    state.watchStatus = message.payload;
+  }
+
+  if (message.event === "champ_select_status") {
+    state.champSelectStatus = message.payload;
+  }
+
+  if (message.event === "probe_status") {
+    state.watchStatus = message.payload;
   }
 
   if (message.event === "draft_snapshot") {
     state.snapshot = message.payload;
     state.phase = message.payload.draft_state?.gameflow ?? state.phase;
+    state.champSelectStatus = null;
   }
 
   render();
@@ -92,29 +121,22 @@ function render() {
   const myDimensions = analysis?.dimensions ?? {};
   const enemyDimensions = analysis?.enemy_dimensions ?? {};
   const winScore = estimateWinScore(myDimensions, enemyDimensions, analysis?.confidence);
-  const hasLiveConnection = state.usingLiveData && state.connection;
+  const hasLiveConnection = state.usingLiveData && state.connection && !isBridgeError(state.bridgeStatus);
   const hasSampleConnection = !state.usingLiveData && state.connection;
+  const connectionCopy = connectionDisplay();
 
-  elements.connectionStatus.textContent = hasLiveConnection
-    ? "LCU 已连接"
-    : hasSampleConnection
-      ? "样例数据"
-      : "等待 LCU";
+  elements.connectionStatus.textContent = connectionCopy.title;
   elements.serverStatus.textContent = state.connection
     ? hasLiveConnection
-      ? "国服 · 召唤师峡谷"
+      ? liveConnectionSubtitle()
       : bridgeLabel(state.bridgeStatus)
     : bridgeLabel(state.bridgeStatus);
-  elements.connectionDetail.textContent = state.connection
-    ? hasLiveConnection
-      ? `端口 ${state.connection.port} · token 已隐藏`
-      : "样例事件已载入"
-    : bridgeMessage(state.bridgeStatus);
+  elements.connectionDetail.textContent = connectionCopy.detail;
   elements.gameflowPhase.textContent = phaseLabel(state.phase);
   elements.confidence.textContent = confidenceLabel(analysis?.confidence);
   elements.snapshotSource.textContent = snapshot
     ? `${snapshot.source} ${snapshot.lcu_event_type ?? ""}`.trim()
-    : "等待 LCU 实时事件";
+    : waitingSnapshotText();
 
   elements.winRange.textContent = winScore.range;
   elements.winRangeNote.textContent = winScore.note;
@@ -387,6 +409,24 @@ function phaseLabel(phase) {
   if (phase === "None") {
     return "等待对局";
   }
+  if (phase === "Lobby") {
+    return "房间中";
+  }
+  if (phase === "Matchmaking") {
+    return "匹配中";
+  }
+  if (phase === "ReadyCheck") {
+    return "确认对局";
+  }
+  if (phase === "Reconnect") {
+    return "等待重连";
+  }
+  if (phase === "WaitingForStats") {
+    return "结算中";
+  }
+  if (phase === "PreEndOfGame" || phase === "EndOfGame") {
+    return "对局结束";
+  }
   return phase;
 }
 
@@ -497,7 +537,11 @@ function bridgeLabel(status) {
     error: "probe 启动失败",
     stopped: "probe 已停止",
     parse_error: "事件解析失败",
-    already_running: "probe 已运行"
+    already_running: "probe 已运行",
+    listening: "监听选人事件",
+    closed: "监听已断开",
+    skipped: "等待进入 BP",
+    finished: "probe 已结束"
   };
   return labels[status.status] ?? "等待客户端启动";
 }
@@ -506,7 +550,99 @@ function bridgeMessage(status) {
   if (!status) {
     return state.usingLiveData ? "等待实时 LCU 事件" : "使用样例 JSON 事件";
   }
-  return status.message || "不会写入客户端配置";
+  return friendlyBridgeMessage(status.message || "不会写入客户端配置");
+}
+
+function isBridgeError(status) {
+  return status?.status === "error" || status?.status === "parse_error";
+}
+
+function liveConnectionSubtitle() {
+  const level = state.summoner?.summoner_level ? ` · 等级 ${state.summoner.summoner_level}` : "";
+  return `国服 · 召唤师峡谷${level}`;
+}
+
+function connectionDisplay() {
+  if (!state.usingLiveData && state.connection) {
+    return {
+      title: "样例数据",
+      detail: "样例事件已载入"
+    };
+  }
+
+  if (isBridgeError(state.bridgeStatus)) {
+    return {
+      title: "连接失败",
+      detail: bridgeMessage(state.bridgeStatus)
+    };
+  }
+
+  if (state.connection) {
+    const watchDetail = state.watchStatus ? bridgeMessage(state.watchStatus) : "正在监听 LCU 实时事件";
+    return {
+      title: "LCU 已连接",
+      detail: `端口 ${state.connection.port} · token 已隐藏 · ${watchDetail}`
+    };
+  }
+
+  return {
+    title: "等待 LCU",
+    detail: bridgeMessage(state.bridgeStatus)
+  };
+}
+
+function waitingSnapshotText() {
+  if (!state.usingLiveData) {
+    return "等待 LCU 实时事件";
+  }
+  if (state.champSelectStatus?.status === "skipped") {
+    return "客户端已连接，进入 BP 后会自动显示双方阵容";
+  }
+  if (state.phase && state.phase !== "Unknown" && state.phase !== "ChampSelect") {
+    return `当前阶段：${phaseLabel(state.phase)}，等待进入 BP`;
+  }
+  if (state.connection) {
+    return "LCU 已连接，等待选人事件";
+  }
+  return "等待 LCU 实时事件";
+}
+
+function friendlyBridgeMessage(message) {
+  const text = String(message || "");
+  if (text.includes("lockfile was not found") || text.includes("League Client lockfile was not found")) {
+    return "没有找到英雄联盟客户端，请先打开并登录客户端。";
+  }
+  if (text.includes("operation timed out") || text.includes("timed out")) {
+    return "LCU 请求超时，可能是客户端刚启动或 WeGame 正在切换进程，稍后点重新连接。";
+  }
+  if (text.includes("all LCU connection candidates failed")) {
+    return "找到了客户端线索，但本地 LCU 接口暂时连不上，稍后点重新连接。";
+  }
+  if (text.includes("gameflow is not ChampSelect")) {
+    return "当前还不在 BP 阶段，进入选人后会自动刷新。";
+  }
+  if (text.includes("LCU websocket connected")) {
+    return "实时监听已连接，等待游戏阶段变化。";
+  }
+  if (text.includes("waiting for frontend event bridge")) {
+    return "正在建立前端和 Rust 后端的事件桥。";
+  }
+  if (text.includes("starting ")) {
+    return "正在启动本地 LCU 探针。";
+  }
+  if (text.includes("probe process started")) {
+    return "本地探针已启动。";
+  }
+  if (text.includes("Ctrl+C received")) {
+    return "监听已停止。";
+  }
+  if (text.includes("websocket closed")) {
+    return "LCU 实时连接已断开，可重新连接。";
+  }
+  if (text.includes("probe process exited")) {
+    return "本地探针已结束，可重新连接。";
+  }
+  return text;
 }
 
 async function startTauriEventBridge() {
@@ -515,7 +651,7 @@ async function startTauriEventBridge() {
     return false;
   }
 
-  state.usingLiveData = true;
+  resetLiveState();
   state.bridgeStatus = {
     status: "starting",
     message: "waiting for frontend event bridge"
@@ -529,14 +665,63 @@ async function startTauriEventBridge() {
   return true;
 }
 
-elements.loadSampleButton.addEventListener("click", () => {
+function resetLiveState() {
+  state.connection = null;
+  state.summoner = null;
+  state.phase = "Unknown";
+  state.snapshot = null;
+  state.bridgeStatus = null;
+  state.watchStatus = null;
+  state.champSelectStatus = null;
+  state.usingLiveData = true;
+}
+
+async function reconnectLiveData() {
+  const tauriEvent = window.__TAURI__?.event;
+  if (!tauriEvent?.emit) {
+    loadSampleEvents();
+    return;
+  }
+
+  resetLiveState();
+  state.bridgeStatus = {
+    status: "starting",
+    message: "waiting for frontend event bridge"
+  };
+  render();
+  await tauriEvent.emit("leagueakari-frontend-ready");
+}
+
+function loadSampleEvents() {
+  state.connection = null;
+  state.summoner = null;
+  state.phase = "Unknown";
+  state.snapshot = null;
+  state.bridgeStatus = null;
+  state.watchStatus = null;
+  state.champSelectStatus = null;
+  state.usingLiveData = false;
   window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
+}
+
+elements.loadSampleButton.addEventListener("click", () => {
+  loadSampleEvents();
+});
+
+elements.reconnectButton.addEventListener("click", () => {
+  reconnectLiveData().catch((error) => {
+    state.bridgeStatus = {
+      status: "error",
+      message: `重新连接失败：${error}`
+    };
+    render();
+  });
 });
 
 startTauriEventBridge()
   .then((connected) => {
     if (!connected) {
-      window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
+      loadSampleEvents();
     }
   })
   .catch((error) => {
