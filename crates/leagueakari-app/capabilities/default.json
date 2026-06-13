@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window-events",
+  "description": "Allow the main LeagueAkari Plus window to use Tauri events for the local probe bridge.",
+  "windows": ["main"],
+  "permissions": ["core:event:default"]
+}
