@@ -131,10 +131,19 @@ fn run_data_validation(json: bool) -> Result<()> {
         println!("data validation:");
         println!("  champion tags: {}", report.tag_count);
         println!("  OP.GG entries: {}", report.opgg_entry_count);
+        println!("  OP.GG build entries: {}", report.opgg_build_count);
         println!("  matched OP.GG entries: {}", report.matched_opgg_entries);
+        println!(
+            "  matched OP.GG build entries: {}",
+            report.matched_opgg_builds
+        );
         println!(
             "  unmatched OP.GG entries: {}",
             format_list(report.unmatched_opgg_entries)
+        );
+        println!(
+            "  unmatched OP.GG build entries: {}",
+            format_list(report.unmatched_opgg_builds)
         );
         println!(
             "  duplicate tag ids: {}",
@@ -149,8 +158,16 @@ fn run_data_validation(json: bool) -> Result<()> {
             format_list(report.duplicate_stat_keys)
         );
         println!(
+            "  duplicate OP.GG build keys: {}",
+            format_list(report.duplicate_build_keys)
+        );
+        println!(
             "  invalid OP.GG entries: {}",
             format_list(report.invalid_stat_entries)
+        );
+        println!(
+            "  invalid OP.GG build entries: {}",
+            format_list(report.invalid_build_entries)
         );
         println!("  warnings: {}", format_list(report.warnings));
     }

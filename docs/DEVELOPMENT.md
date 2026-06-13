@@ -69,6 +69,13 @@ C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
 C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-snapshot.js work/opgg-snapshot.json
 ```
 
+如果要刷新某个英雄的 OP.GG 方案，先用浏览器打开对应 build 页面并运行 `tools/opgg-exporter/extract-opgg-champion-build.js`，再导入：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-build-nautilus-support.json --dry-run
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-build-nautilus-support.json --append
+```
+
 更新英雄标签或 OP.GG 快照后，可以先运行本地数据自检，不需要启动英雄联盟客户端：
 
 ```powershell

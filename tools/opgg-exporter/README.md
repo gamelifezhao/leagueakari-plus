@@ -4,7 +4,7 @@
 
 它不会登录 OP.GG，不会绕过 WAF、验证码或访问控制，也不会在 LeagueAkari Plus 运行时自动请求 OP.GG。
 
-## 1. 从浏览器导出
+## 1. 从浏览器导出英雄榜单
 
 1. 用浏览器打开 OP.GG 英雄榜单：
 
@@ -32,7 +32,7 @@
    work/opgg-snapshot.json
    ```
 
-## 2. 检查并导入
+## 2. 检查并导入英雄榜单
 
 先 dry-run 看报告，不写入缓存：
 
@@ -52,6 +52,52 @@ C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
 - `champion_key + role` 是否重复
 - 胜率、选率、禁率是否在 0 到 100 之间
 - OP.GG 英雄 key 是否能匹配本地 `champion-tags.v1.json`
+
+## 3. 从浏览器导出单英雄方案
+
+单英雄方案用于保存类似原版 League Akari 里的召唤师技能、符文、技能加点和装备路径。
+
+1. 用浏览器打开 OP.GG 单英雄 build 页面，例如：
+
+   ```text
+   https://op.gg/lol/champions/nautilus/build/support
+   ```
+
+2. 确认页面已经显示符文、召唤师技能、技能加点和装备表格。
+3. 打开浏览器开发者工具 Console。
+4. 复制并运行：
+
+   ```js
+   // tools/opgg-exporter/extract-opgg-champion-build.js
+   ```
+
+5. 将剪贴板里的 JSON 临时保存到：
+
+   ```text
+   work/opgg-build-nautilus-support.json
+   ```
+
+## 4. 检查并导入单英雄方案
+
+先 dry-run：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-build-nautilus-support.json --dry-run
+```
+
+确认无错误后写入或更新 build 缓存：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-build-nautilus-support.json --append
+```
+
+导入工具会检查：
+
+- 英雄 key 是否能匹配本地 `champion-tags.v1.json`
+- 符文主系、副系、核心符文是否存在
+- 召唤师技能是否为两个技能一组
+- 技能加点是否只包含 `Q/W/E/R`
+- 装备 ID、胜率、选率、场次是否在合理范围内
 
 写入后再运行 Rust 侧自检：
 
@@ -74,3 +120,12 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
 - `pick_rate`
 - `ban_rate`
 - `rank`
+
+## 单英雄方案字段
+
+- `champion_key`
+- `role`
+- `runes`
+- `summoner_spells`
+- `skill_orders`
+- `item_builds`

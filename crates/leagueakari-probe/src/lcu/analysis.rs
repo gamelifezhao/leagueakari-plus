@@ -51,17 +51,23 @@ pub struct ChampionStatSummary {
 pub struct DataValidationReport {
     pub tag_count: usize,
     pub opgg_entry_count: usize,
+    pub opgg_build_count: usize,
     pub matched_opgg_entries: usize,
+    pub matched_opgg_builds: usize,
     pub unmatched_opgg_entries: Vec<String>,
+    pub unmatched_opgg_builds: Vec<String>,
     pub duplicate_tag_ids: Vec<i64>,
     pub duplicate_tag_keys: Vec<String>,
     pub duplicate_stat_keys: Vec<String>,
+    pub duplicate_build_keys: Vec<String>,
     pub invalid_stat_entries: Vec<String>,
+    pub invalid_build_entries: Vec<String>,
     pub warnings: Vec<String>,
 }
 
 const TAGS_JSON: &str = include_str!("../../data/champion-tags.v1.json");
 const OPGG_STATS_JSON: &str = include_str!("../../data/opgg-champion-stats.sample.json");
+const OPGG_BUILDS_JSON: &str = include_str!("../../data/opgg-champion-builds.sample.json");
 
 #[derive(Debug, Clone, Default, Deserialize)]
 struct ChampionTags {
@@ -103,6 +109,88 @@ struct OpggChampionStat {
     win_rate: f32,
     pick_rate: f32,
     ban_rate: f32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggChampionBuild {
+    champion_key: String,
+    role: String,
+    runes: Vec<OpggRuneBuild>,
+    summoner_spells: Vec<OpggSpellBuild>,
+    skill_orders: Vec<OpggSkillOrder>,
+    item_builds: OpggItemBuilds,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggRuneBuild {
+    primary_style: Option<OpggRuneStyle>,
+    secondary_style: Option<OpggRuneStyle>,
+    perks: Vec<OpggPerk>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggRuneStyle {
+    style_id: u16,
+    name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggPerk {
+    perk_id: u16,
+    name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggSpellBuild {
+    spells: Vec<OpggSpell>,
+    pick_rate: Option<f32>,
+    games: Option<u64>,
+    win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggSpell {
+    spell_key: String,
+    name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggSkillOrder {
+    order: String,
+    skills: Vec<OpggSpell>,
+    pick_rate: Option<f32>,
+    games: Option<u64>,
+    win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+struct OpggItemBuilds {
+    #[serde(default)]
+    starter: Vec<OpggItemBuild>,
+    #[serde(default)]
+    boots: Vec<OpggItemBuild>,
+    #[serde(default)]
+    support: Vec<OpggItemBuild>,
+    #[serde(default)]
+    core: Vec<OpggItemBuild>,
+    #[serde(default)]
+    fourth: Vec<OpggItemBuild>,
+    #[serde(default)]
+    fifth: Vec<OpggItemBuild>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggItemBuild {
+    items: Vec<OpggItem>,
+    pick_rate: Option<f32>,
+    games: Option<u64>,
+    win_rate: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct OpggItem {
+    item_id: u16,
+    name: Option<String>,
 }
 
 pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
@@ -162,6 +250,7 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
 pub fn validate_data() -> DataValidationReport {
     let tags = champion_tags_vec();
     let snapshot = opgg_snapshot();
+    let build_snapshot = opgg_builds();
     let tag_keys = tags
         .iter()
         .map(|tag| tag.champion_key.as_str())
@@ -174,24 +263,45 @@ pub fn validate_data() -> DataValidationReport {
             .iter()
             .map(|entry| stat_key(&entry.champion_key, &entry.role)),
     );
+    let duplicate_build_keys = duplicates(
+        build_snapshot
+            .iter()
+            .map(|build| stat_key(&build.champion_key, &build.role)),
+    );
     let unmatched_opgg_entries = snapshot
         .entries
         .iter()
         .filter(|entry| !tag_keys.contains(entry.champion_key.as_str()))
         .map(|entry| format!("{}:{}", entry.champion_key, entry.role))
         .collect::<Vec<_>>();
+    let unmatched_opgg_builds = build_snapshot
+        .iter()
+        .filter(|build| !tag_keys.contains(build.champion_key.as_str()))
+        .map(|build| format!("{}:{}", build.champion_key, build.role))
+        .collect::<Vec<_>>();
     let invalid_stat_entries = snapshot
         .entries
         .iter()
         .filter_map(|entry| invalid_stat_entry(entry))
         .collect::<Vec<_>>();
+    let invalid_build_entries = build_snapshot
+        .iter()
+        .filter_map(|build| invalid_build_entry(build))
+        .collect::<Vec<_>>();
     let matched_opgg_entries = snapshot.entries.len() - unmatched_opgg_entries.len();
+    let matched_opgg_builds = build_snapshot.len() - unmatched_opgg_builds.len();
     let mut warnings = Vec::new();
 
     if !unmatched_opgg_entries.is_empty() {
         warnings.push(format!(
             "{} OP.GG entries do not have local champion tags.",
             unmatched_opgg_entries.len()
+        ));
+    }
+    if !unmatched_opgg_builds.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG build entries do not have local champion tags.",
+            unmatched_opgg_builds.len()
         ));
     }
     if !duplicate_tag_ids.is_empty() {
@@ -212,22 +322,39 @@ pub fn validate_data() -> DataValidationReport {
             duplicate_stat_keys.len()
         ));
     }
+    if !duplicate_build_keys.is_empty() {
+        warnings.push(format!(
+            "{} duplicated OP.GG champion-role build keys.",
+            duplicate_build_keys.len()
+        ));
+    }
     if !invalid_stat_entries.is_empty() {
         warnings.push(format!(
             "{} OP.GG entries have invalid rates or ranks.",
             invalid_stat_entries.len()
         ));
     }
+    if !invalid_build_entries.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG build entries have invalid or incomplete data.",
+            invalid_build_entries.len()
+        ));
+    }
 
     DataValidationReport {
         tag_count: tags.len(),
         opgg_entry_count: snapshot.entries.len(),
+        opgg_build_count: build_snapshot.len(),
         matched_opgg_entries,
+        matched_opgg_builds,
         unmatched_opgg_entries,
+        unmatched_opgg_builds,
         duplicate_tag_ids,
         duplicate_tag_keys,
         duplicate_stat_keys,
+        duplicate_build_keys,
         invalid_stat_entries,
+        invalid_build_entries,
         warnings,
     }
 }
@@ -588,6 +715,10 @@ fn opgg_snapshot() -> OpggStatsSnapshot {
     })
 }
 
+fn opgg_builds() -> Vec<OpggChampionBuild> {
+    serde_json::from_str::<Vec<OpggChampionBuild>>(OPGG_BUILDS_JSON).unwrap_or_default()
+}
+
 fn stat_key(champion_key: &str, role: &str) -> String {
     format!("{champion_key}:{role}")
 }
@@ -621,6 +752,113 @@ fn invalid_stat_entry(entry: &OpggChampionStat) -> Option<String> {
     } else {
         None
     }
+}
+
+fn invalid_build_entry(build: &OpggChampionBuild) -> Option<String> {
+    let key = stat_key(&build.champion_key, &build.role);
+
+    if build.champion_key.is_empty() || build.role.is_empty() {
+        return Some(format!("{key} missing champion_key or role"));
+    }
+    if build.runes.is_empty() {
+        return Some(format!("{key} missing runes"));
+    }
+    if build.summoner_spells.is_empty() {
+        return Some(format!("{key} missing summoner spells"));
+    }
+    if build.skill_orders.is_empty() {
+        return Some(format!("{key} missing skill orders"));
+    }
+    if build.item_builds.core.is_empty() {
+        return Some(format!("{key} missing core item builds"));
+    }
+
+    for rune in &build.runes {
+        if rune.primary_style.is_none() || rune.secondary_style.is_none() || rune.perks.len() < 6 {
+            return Some(format!("{key} incomplete rune build"));
+        }
+        if let Some(style) = &rune.primary_style {
+            if style.style_id == 0 || style.name.is_empty() {
+                return Some(format!("{key} invalid primary rune style"));
+            }
+        }
+        if let Some(style) = &rune.secondary_style {
+            if style.style_id == 0 || style.name.is_empty() {
+                return Some(format!("{key} invalid secondary rune style"));
+            }
+        }
+        if rune
+            .perks
+            .iter()
+            .any(|perk| perk.perk_id == 0 || perk.name.is_empty())
+        {
+            return Some(format!("{key} invalid rune perk"));
+        }
+    }
+
+    if build.summoner_spells.iter().any(|spell_build| {
+        spell_build.spells.len() != 2
+            || invalid_optional_rate(spell_build.pick_rate)
+            || invalid_optional_rate(spell_build.win_rate)
+            || spell_build.games == Some(0)
+            || spell_build
+                .spells
+                .iter()
+                .any(|spell| spell.spell_key.is_empty() || spell.name.is_empty())
+    }) {
+        return Some(format!("{key} invalid summoner spell build"));
+    }
+
+    if build.skill_orders.iter().any(|skill_order| {
+        skill_order.order.is_empty()
+            || !skill_order
+                .order
+                .chars()
+                .all(|value| "QWER".contains(value))
+            || invalid_optional_rate(skill_order.pick_rate)
+            || invalid_optional_rate(skill_order.win_rate)
+            || skill_order.games == Some(0)
+            || skill_order
+                .skills
+                .iter()
+                .any(|skill| skill.spell_key.is_empty() || skill.name.is_empty())
+    }) {
+        return Some(format!("{key} invalid skill order"));
+    }
+
+    if item_build_collections(&build.item_builds)
+        .into_iter()
+        .flatten()
+        .any(|item_build| {
+            item_build.items.is_empty()
+                || invalid_optional_rate(item_build.pick_rate)
+                || invalid_optional_rate(item_build.win_rate)
+                || item_build.games == Some(0)
+                || item_build
+                    .items
+                    .iter()
+                    .any(|item| item.item_id == 0 || item.name.as_deref() == Some(""))
+        })
+    {
+        return Some(format!("{key} invalid item build"));
+    }
+
+    None
+}
+
+fn item_build_collections(item_builds: &OpggItemBuilds) -> Vec<&[OpggItemBuild]> {
+    vec![
+        &item_builds.starter,
+        &item_builds.boots,
+        &item_builds.support,
+        &item_builds.core,
+        &item_builds.fourth,
+        &item_builds.fifth,
+    ]
+}
+
+fn invalid_optional_rate(value: Option<f32>) -> bool {
+    value.is_some_and(|value| !(0.0..=100.0).contains(&value))
 }
 
 fn duplicates<T>(values: impl Iterator<Item = T>) -> Vec<T>
@@ -679,10 +917,14 @@ mod tests {
 
         assert!(report.tag_count >= 40);
         assert!(report.opgg_entry_count >= 40);
+        assert!(report.opgg_build_count >= 1);
         assert!(report.matched_opgg_entries >= 40);
+        assert!(report.matched_opgg_builds >= 1);
         assert!(report.duplicate_tag_ids.is_empty());
         assert!(report.duplicate_stat_keys.is_empty());
+        assert!(report.duplicate_build_keys.is_empty());
         assert!(report.invalid_stat_entries.is_empty());
+        assert!(report.invalid_build_entries.is_empty());
     }
 
     #[test]
