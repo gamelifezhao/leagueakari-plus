@@ -59,6 +59,8 @@ C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
 C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe --check tools/opgg-exporter/extract-opgg-champion-build.js
 C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe --check tools/opgg-exporter/import-opgg-build.js
 C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/import-opgg-build.js crates/leagueakari-probe/data/opgg-champion-builds.sample.json --dry-run
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe --check tools/opgg-exporter/build-coverage.js
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/build-coverage.js --top 5
 ```
 
 当前单元测试数量：`leagueakari-probe` 21 个，`leagueakari-app` 3 个。

@@ -143,8 +143,13 @@ pub struct DataValidationReport {
     pub opgg_build_count: usize,
     pub matched_opgg_entries: usize,
     pub matched_opgg_builds: usize,
+    pub build_covered_stat_entries: usize,
+    pub build_exact_context_stat_entries: usize,
     pub unmatched_opgg_entries: Vec<String>,
     pub unmatched_opgg_builds: Vec<String>,
+    pub missing_build_stat_entries: Vec<String>,
+    pub stale_build_entries: Vec<String>,
+    pub orphan_build_entries: Vec<String>,
     pub duplicate_tag_ids: Vec<i64>,
     pub duplicate_tag_keys: Vec<String>,
     pub duplicate_stat_keys: Vec<String>,
@@ -375,6 +380,15 @@ pub fn validate_data() -> DataValidationReport {
             .iter()
             .map(|build| stat_key(&build.champion_key, &build.role)),
     );
+    let build_keys = build_snapshot
+        .iter()
+        .map(|build| stat_key(&build.champion_key, &build.role))
+        .collect::<HashSet<_>>();
+    let stat_keys = snapshot
+        .entries
+        .iter()
+        .map(|entry| stat_key(&entry.champion_key, &entry.role))
+        .collect::<HashSet<_>>();
     let unmatched_opgg_entries = snapshot
         .entries
         .iter()
@@ -384,6 +398,32 @@ pub fn validate_data() -> DataValidationReport {
     let unmatched_opgg_builds = build_snapshot
         .iter()
         .filter(|build| !tag_keys.contains(build.champion_key.as_str()))
+        .map(|build| format!("{}:{}", build.champion_key, build.role))
+        .collect::<Vec<_>>();
+    let missing_build_stat_entries = snapshot
+        .entries
+        .iter()
+        .filter(|entry| !build_keys.contains(&stat_key(&entry.champion_key, &entry.role)))
+        .map(|entry| format!("{}:{}", entry.champion_key, entry.role))
+        .collect::<Vec<_>>();
+    let stale_build_entries = build_snapshot
+        .iter()
+        .filter(|build| {
+            stat_keys.contains(&stat_key(&build.champion_key, &build.role))
+                && !build_context_matches_snapshot(build, &snapshot)
+        })
+        .map(|build| {
+            format!(
+                "{}:{} {}",
+                build.champion_key,
+                build.role,
+                build_context(build)
+            )
+        })
+        .collect::<Vec<_>>();
+    let orphan_build_entries = build_snapshot
+        .iter()
+        .filter(|build| !stat_keys.contains(&stat_key(&build.champion_key, &build.role)))
         .map(|build| format!("{}:{}", build.champion_key, build.role))
         .collect::<Vec<_>>();
     let invalid_stat_entries = snapshot
@@ -397,6 +437,9 @@ pub fn validate_data() -> DataValidationReport {
         .collect::<Vec<_>>();
     let matched_opgg_entries = snapshot.entries.len() - unmatched_opgg_entries.len();
     let matched_opgg_builds = build_snapshot.len() - unmatched_opgg_builds.len();
+    let build_covered_stat_entries = snapshot.entries.len() - missing_build_stat_entries.len();
+    let build_exact_context_stat_entries =
+        build_covered_stat_entries.saturating_sub(stale_build_entries.len());
     let mut warnings = Vec::new();
 
     if !unmatched_opgg_entries.is_empty() {
@@ -447,6 +490,18 @@ pub fn validate_data() -> DataValidationReport {
             invalid_build_entries.len()
         ));
     }
+    if !stale_build_entries.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG build entries do not match the current stat snapshot context.",
+            stale_build_entries.len()
+        ));
+    }
+    if !orphan_build_entries.is_empty() {
+        warnings.push(format!(
+            "{} OP.GG build entries are not present in the current stat snapshot.",
+            orphan_build_entries.len()
+        ));
+    }
 
     DataValidationReport {
         tag_count: tags.len(),
@@ -454,8 +509,13 @@ pub fn validate_data() -> DataValidationReport {
         opgg_build_count: build_snapshot.len(),
         matched_opgg_entries,
         matched_opgg_builds,
+        build_covered_stat_entries,
+        build_exact_context_stat_entries,
         unmatched_opgg_entries,
         unmatched_opgg_builds,
+        missing_build_stat_entries,
+        stale_build_entries,
+        orphan_build_entries,
         duplicate_tag_ids,
         duplicate_tag_keys,
         duplicate_stat_keys,
@@ -1006,6 +1066,20 @@ fn opgg_builds() -> Vec<OpggChampionBuild> {
     serde_json::from_str::<Vec<OpggChampionBuild>>(OPGG_BUILDS_JSON).unwrap_or_default()
 }
 
+fn build_context_matches_snapshot(build: &OpggChampionBuild, snapshot: &OpggStatsSnapshot) -> bool {
+    build.patch == snapshot.patch
+        && build.region == snapshot.region
+        && build.tier == snapshot.tier
+        && build.queue == snapshot.queue
+}
+
+fn build_context(build: &OpggChampionBuild) -> String {
+    format!(
+        "{}/{}/{}/{}",
+        build.patch, build.region, build.tier, build.queue
+    )
+}
+
 fn stat_key(champion_key: &str, role: &str) -> String {
     format!("{champion_key}:{role}")
 }
@@ -1207,6 +1281,14 @@ mod tests {
         assert!(report.opgg_build_count >= 1);
         assert!(report.matched_opgg_entries >= 40);
         assert!(report.matched_opgg_builds >= 1);
+        assert!(report.build_covered_stat_entries >= 1);
+        assert_eq!(
+            report.build_covered_stat_entries,
+            report.build_exact_context_stat_entries
+        );
+        assert!(!report.missing_build_stat_entries.is_empty());
+        assert!(report.stale_build_entries.is_empty());
+        assert!(report.orphan_build_entries.is_empty());
         assert!(report.duplicate_tag_ids.is_empty());
         assert!(report.duplicate_stat_keys.is_empty());
         assert!(report.duplicate_build_keys.is_empty());

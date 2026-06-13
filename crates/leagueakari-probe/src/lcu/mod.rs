@@ -138,12 +138,32 @@ fn run_data_validation(json: bool) -> Result<()> {
             report.matched_opgg_builds
         );
         println!(
+            "  stat entries covered by builds: {}",
+            report.build_covered_stat_entries
+        );
+        println!(
+            "  stat entries covered by exact-context builds: {}",
+            report.build_exact_context_stat_entries
+        );
+        println!(
             "  unmatched OP.GG entries: {}",
             format_list(report.unmatched_opgg_entries)
         );
         println!(
             "  unmatched OP.GG build entries: {}",
             format_list(report.unmatched_opgg_builds)
+        );
+        println!(
+            "  missing OP.GG build stat entries: {}",
+            format_list(report.missing_build_stat_entries)
+        );
+        println!(
+            "  stale OP.GG build entries: {}",
+            format_list(report.stale_build_entries)
+        );
+        println!(
+            "  orphan OP.GG build entries: {}",
+            format_list(report.orphan_build_entries)
         );
         println!(
             "  duplicate tag ids: {}",

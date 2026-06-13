@@ -129,3 +129,26 @@ C:\Users\admin\.cargo\bin\cargo.exe run -p leagueakari-probe -- --validate-data
 - `summoner_spells`
 - `skill_orders`
 - `item_builds`
+
+## Build 覆盖率工具
+
+继续扩展单英雄方案库前，可以先生成缺失清单：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/build-coverage.js --top 10
+```
+
+只看某个位置：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/build-coverage.js --role support --top 5
+```
+
+输出机器可读 JSON：
+
+```powershell
+C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe tools/opgg-exporter/build-coverage.js --top 10 --json
+```
+
+这个工具只读取本地 `opgg-champion-stats.sample.json` 和 `opgg-champion-builds.sample.json`，不会请求 OP.GG。
+它会输出当前覆盖率、版本上下文是否一致，以及下一批应手动打开的 OP.GG build 页面 URL。
