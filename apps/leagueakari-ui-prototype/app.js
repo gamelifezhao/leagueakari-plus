@@ -75,6 +75,9 @@ function applyEvent(message) {
 
   if (message.event === "probe_bridge_status") {
     state.bridgeStatus = message.payload;
+    if (isDisconnectedBridgeStatus(message.payload)) {
+      clearLiveConnection();
+    }
   }
 
   if (message.event === "lcu_connection") {
@@ -95,6 +98,9 @@ function applyEvent(message) {
 
   if (message.event === "watch_status") {
     state.watchStatus = message.payload;
+    if (message.payload?.status === "closed" || message.payload?.status === "stopped") {
+      clearLiveConnection();
+    }
   }
 
   if (message.event === "champ_select_status") {
@@ -103,6 +109,9 @@ function applyEvent(message) {
 
   if (message.event === "probe_status") {
     state.watchStatus = message.payload;
+    if (message.payload?.status === "finished") {
+      clearLiveConnection();
+    }
   }
 
   if (message.event === "draft_snapshot") {
@@ -553,6 +562,19 @@ function bridgeMessage(status) {
 
 function isBridgeError(status) {
   return status?.status === "error" || status?.status === "parse_error";
+}
+
+function isDisconnectedBridgeStatus(status) {
+  return ["error", "parse_error", "retrying", "stopped"].includes(status?.status);
+}
+
+function clearLiveConnection() {
+  state.connection = null;
+  state.summoner = null;
+  state.phase = "Unknown";
+  state.snapshot = null;
+  state.watchStatus = null;
+  state.champSelectStatus = null;
 }
 
 function liveConnectionSubtitle() {

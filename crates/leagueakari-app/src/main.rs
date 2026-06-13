@@ -191,6 +191,7 @@ fn run_probe_once(
             .expect("probe child process lock poisoned");
         child_slot.take().and_then(|mut child| child.wait().ok())
     };
+    let stop_requested = !probe_process.started.load(Ordering::SeqCst);
 
     if let Some(stderr_reader) = stderr_reader {
         let _ = stderr_reader.join();
@@ -205,7 +206,7 @@ fn run_probe_once(
 
     emit_bridge_status(app, final_status, &exit_message);
 
-    if should_retry_probe(final_status) {
+    if should_retry_probe(final_status, stop_requested) {
         ProbeRunOutcome::Failed(exit_message)
     } else {
         ProbeRunOutcome::ListeningEnded
@@ -281,8 +282,8 @@ fn format_probe_exit_status(
     }
 }
 
-fn should_retry_probe(final_status: &str) -> bool {
-    final_status != "stopped"
+fn should_retry_probe(final_status: &str, stop_requested: bool) -> bool {
+    !stop_requested && (final_status == "stopped" || final_status == "error")
 }
 
 fn emit_bridge_status(app: &AppHandle, status: &str, message: &str) {
@@ -345,10 +346,12 @@ mod tests {
     }
 
     #[test]
-    fn retries_probe_errors_but_not_clean_stops() {
-        assert!(should_retry_probe("error"));
-        assert!(should_retry_probe("parse_error"));
-        assert!(!should_retry_probe("stopped"));
+    fn retries_probe_exit_until_stop_is_requested() {
+        assert!(should_retry_probe("error", false));
+        assert!(should_retry_probe("stopped", false));
+        assert!(!should_retry_probe("parse_error", false));
+        assert!(!should_retry_probe("stopped", true));
+        assert!(!should_retry_probe("error", true));
     }
 
     fn unique_temp_dir() -> PathBuf {
