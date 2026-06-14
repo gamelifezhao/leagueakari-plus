@@ -31,6 +31,15 @@ pub struct DraftPlayer {
     pub summoner_id: Option<i64>,
 }
 
+#[derive(Debug, Clone)]
+pub struct DraftPlayerIdentity {
+    pub cell_id: i64,
+    pub champion_id: Option<i64>,
+    pub assigned_position: Option<String>,
+    pub puuid: Option<String>,
+    pub display_name: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DraftBan {
     pub champion_id: i64,

@@ -62,6 +62,12 @@ impl ChampionCatalog {
     pub fn get(&self, champion_id: i64) -> Option<&ChampionInfo> {
         self.champions.get(&champion_id)
     }
+
+    pub fn find_by_alias(&self, alias: &str) -> Option<&ChampionInfo> {
+        self.champions
+            .values()
+            .find(|champion| champion.alias.eq_ignore_ascii_case(alias))
+    }
 }
 
 #[cfg(test)]
@@ -79,5 +85,6 @@ mod tests {
 
         assert_eq!(catalog.label(103), "阿狸 (103)");
         assert_eq!(catalog.label(99999), "Unknown champion (99999)");
+        assert_eq!(catalog.find_by_alias("ahri").unwrap().id, 103);
     }
 }

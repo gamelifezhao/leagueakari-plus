@@ -3,5 +3,5 @@
   "identifier": "main-window-events",
   "description": "Allow the main LeagueAkari Plus window to use Tauri events for the local probe bridge.",
   "windows": ["main"],
-  "permissions": ["core:event:default"]
+  "permissions": ["core:event:default", "core:event:allow-listen"]
 }

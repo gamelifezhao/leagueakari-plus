@@ -68,7 +68,7 @@
               <h3>当前对局</h3>
               <p id="snapshotSource">等待 LCU 实时事件</p>
               <strong id="confidence">low</strong>
-              <span>分析置信度</span>
+              <span>数据完整度</span>
             </div>
           </article>
 
@@ -83,9 +83,8 @@
           </article>
 
           <article class="summary-card advice-card">
-            <h3>当前建议</h3>
-            <p id="currentAdvice">等待更多选人信息。</p>
-            <div id="adviceTags" class="tag-row"></div>
+            <h3>本局提示</h3>
+            <p id="currentAdvice">等待双方阵容成型后生成提示。</p>
           </article>
         </section>
 
@@ -135,34 +134,42 @@
         </section>
 
         <section class="bottom-grid">
-          <article class="reason-section">
-            <h3>关键原因</h3>
+          <article class="reason-section detail-card" data-detail-panel="ally" tabindex="0" role="button">
+            <h3>我方阵容分析</h3>
             <ul id="keyReasons" class="reason-list"></ul>
+            <button class="detail-button" type="button" data-detail-panel="ally">查看详情</button>
           </article>
 
-          <article class="recommend-section">
-            <h3>基于英雄池推荐</h3>
-            <div id="heroRecommendations" class="recommend-list"></div>
-            <p>推荐优先看“你会玩且适合这一局”。</p>
+          <article class="enemy-section detail-card" data-detail-panel="enemy" tabindex="0" role="button">
+            <h3>对方阵容分析</h3>
+            <ul id="enemyAnalysis" class="reason-list enemy-analysis-list"></ul>
+            <button class="detail-button" type="button" data-detail-panel="enemy">查看详情</button>
           </article>
 
-          <article class="rune-section">
-            <h3>符文页确认</h3>
-            <p>选择英雄后展示将要写入客户端的内容。</p>
-            <p id="buildSourceNote" class="build-source-note"></p>
-            <div id="buildRecommendation" class="build-preview"></div>
-            <div class="rune-preview legacy-rune-preview">
-              <strong>主系：等待选择</strong>
-              <span>副系：等待选择</span>
-            </div>
-            <div class="rune-actions">
-              <button type="button">预览</button>
-              <button type="button" class="primary" disabled>确认应用</button>
-            </div>
+          <article class="teammate-section detail-card" data-detail-panel="teammates" tabindex="0" role="button">
+            <h3>队友质量分析</h3>
+            <p id="teammateSummary">等待队友质量数据。</p>
+            <div id="teammateOverview" class="quality-overview"></div>
+            <div id="teammatePerformance" class="teammate-list"></div>
+            <button class="detail-button" type="button" data-detail-panel="teammates">查看详情</button>
           </article>
+
         </section>
       </section>
     </main>
+
+    <div id="detailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <h3 id="detailModalTitle">详情</h3>
+            <p id="detailModalSubtitle">本局分析</p>
+          </div>
+          <button id="detailModalClose" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <div id="detailModalBody" class="modal-body"></div>
+      </div>
+    </div>
 
     <script src="./sample-events.js"></script>
     <script src="./app.js"></script>

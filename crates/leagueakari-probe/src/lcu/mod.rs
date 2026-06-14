@@ -4,8 +4,10 @@ mod champ_select;
 mod champions;
 mod client;
 mod connection;
+mod live_client;
 mod models;
 mod output;
+mod teammate_performance;
 mod websocket;
 
 use anyhow::{Result, bail};
@@ -60,6 +62,7 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
         print_json("gameflow phase", &gameflow_phase)?;
     }
     let champion_catalog = load_champion_catalog(&client).await;
+    let mut teammate_cache = teammate_performance::TeammatePerformanceCache::default();
 
     if let Some(gameflow) = gameflow_phase.as_str() {
         let empty_draft = models::DraftState::empty(gameflow.to_string());
@@ -73,6 +76,7 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
                     &empty_draft,
                     &analysis,
                     &champion_catalog,
+                    &[],
                 ),
             )?;
         } else {
@@ -85,6 +89,13 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
         let draft_state =
             champ_select::parse_draft_state(gameflow_phase.as_str().unwrap_or("Unknown"), &session);
         let analysis = analysis::analyze_draft(&draft_state);
+        let teammate_performance = teammate_performance::analyze_teammates(
+            &client,
+            &draft_state,
+            summoner.as_ref(),
+            &mut teammate_cache,
+        )
+        .await;
         if options.json {
             if options.raw {
                 output::print_event("raw_champ_select_session", &session)?;
@@ -97,6 +108,7 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
                     &draft_state,
                     &analysis,
                     &champion_catalog,
+                    &teammate_performance,
                 ),
             )?;
         } else {
@@ -112,6 +124,48 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
                 &serde_json::to_value(draft_state)?,
             )?;
         }
+    } else if gameflow_phase.as_str() == Some("InProgress") {
+        if let Some(draft_state) = live_client::fetch_in_progress_draft(&champion_catalog).await {
+            let analysis = analysis::analyze_draft(&draft_state);
+            let teammate_performance = teammate_performance::analyze_teammates(
+                &client,
+                &draft_state,
+                summoner.as_ref(),
+                &mut teammate_cache,
+            )
+            .await;
+            if options.json {
+                output::print_event(
+                    "draft_snapshot",
+                    &output::draft_snapshot(
+                        "live-client",
+                        None,
+                        &draft_state,
+                        &analysis,
+                        &champion_catalog,
+                        &teammate_performance,
+                    ),
+                )?;
+            } else {
+                print_draft_summary(&draft_state, &champion_catalog);
+                print_json("composition analysis", &serde_json::to_value(analysis)?)?;
+                print_json(
+                    "normalized draft state",
+                    &serde_json::to_value(draft_state)?,
+                )?;
+            }
+        } else if options.json {
+            output::print_event(
+                "champ_select_status",
+                &output::status_message(
+                    "skipped",
+                    "gameflow is InProgress and live client data is unavailable",
+                ),
+            )?;
+        } else {
+            println!("champ select session: skipped because gameflow is InProgress");
+            println!("live client data: unavailable");
+        }
     } else if options.json {
         output::print_event(
             "champ_select_status",
@@ -122,7 +176,15 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
     }
 
     if options.watch {
-        websocket::watch(&connection, &champion_catalog, options.raw, options.json).await?;
+        websocket::watch(
+            &connection,
+            &client,
+            summoner.as_ref(),
+            &champion_catalog,
+            options.raw,
+            options.json,
+        )
+        .await?;
     }
 
     if options.json {

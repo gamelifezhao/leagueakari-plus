@@ -35,10 +35,16 @@ const state = {
   phase: "Unknown",
   snapshot: null,
   lastDraftSnapshot: null,
+  draftFingerprint: null,
   bridgeStatus: null,
   watchStatus: null,
   champSelectStatus: null,
-  usingLiveData: false
+  usingLiveData: false,
+  detailItems: {
+    ally: [],
+    enemy: [],
+    teammates: []
+  }
 };
 
 const elements = {
@@ -53,7 +59,9 @@ const elements = {
   engageDelta: document.querySelector("#engageDelta"),
   damageDelta: document.querySelector("#damageDelta"),
   currentAdvice: document.querySelector("#currentAdvice"),
-  adviceTags: document.querySelector("#adviceTags"),
+  teammateSummary: document.querySelector("#teammateSummary"),
+  teammateOverview: document.querySelector("#teammateOverview"),
+  teammatePerformance: document.querySelector("#teammatePerformance"),
   myPicks: document.querySelector("#myPicks"),
   enemyPicks: document.querySelector("#enemyPicks"),
   myBans: document.querySelector("#myBans"),
@@ -62,11 +70,17 @@ const elements = {
   enemyPickCount: document.querySelector("#enemyPickCount"),
   dimensionCompare: document.querySelector("#dimensionCompare"),
   keyReasons: document.querySelector("#keyReasons"),
+  enemyAnalysis: document.querySelector("#enemyAnalysis"),
   heroRecommendations: document.querySelector("#heroRecommendations"),
   buildSourceNote: document.querySelector("#buildSourceNote"),
   buildRecommendation: document.querySelector("#buildRecommendation"),
   reconnectButton: document.querySelector("#reconnectButton"),
-  loadSampleButton: document.querySelector("#loadSampleButton")
+  loadSampleButton: document.querySelector("#loadSampleButton"),
+  detailModal: document.querySelector("#detailModal"),
+  detailModalTitle: document.querySelector("#detailModalTitle"),
+  detailModalSubtitle: document.querySelector("#detailModalSubtitle"),
+  detailModalBody: document.querySelector("#detailModalBody"),
+  detailModalClose: document.querySelector("#detailModalClose")
 };
 
 function applyEvent(message) {
@@ -90,11 +104,11 @@ function applyEvent(message) {
   }
 
   if (message.event === "gameflow_phase") {
-    state.phase = String(message.payload.phase ?? "Unknown");
+    applyPhase(message.payload.phase);
   }
 
   if (message.event === "watch_gameflow") {
-    state.phase = String(message.payload.phase ?? "Unknown");
+    applyPhase(message.payload.phase);
   }
 
   if (message.event === "watch_status") {
@@ -117,10 +131,16 @@ function applyEvent(message) {
 
   if (message.event === "draft_snapshot") {
     cacheChampionNames(message.payload?.champion_names);
-    state.phase = message.payload.draft_state?.gameflow ?? state.phase;
-    if (isUsableDraftSnapshot(message.payload)) {
+    const draftPhase = message.payload?.draft_state?.gameflow ?? state.phase;
+    resetSnapshotsForNewDraft(message.payload);
+    applyPhase(draftPhase);
+    if (shouldClearDraftForPhase(draftPhase)) {
+      clearDraftSnapshots();
+    } else if (isUsableDraftSnapshot(message.payload)) {
       state.lastDraftSnapshot = message.payload;
       state.snapshot = message.payload;
+    } else if (hasTeammatePerformance(message.payload) && state.lastDraftSnapshot) {
+      mergeTeammatePerformance(message.payload);
     } else if (!state.lastDraftSnapshot) {
       state.snapshot = message.payload;
     }
@@ -165,11 +185,13 @@ function render() {
 
   renderPicks(elements.myPicks, draft?.my_team ?? [], "ally");
   renderPicks(elements.enemyPicks, draft?.their_team ?? [], "enemy");
-  renderBans(elements.myBans, draft?.bans ?? [], 100);
-  renderBans(elements.enemyBans, draft?.bans ?? [], 200);
+  renderBans(elements.myBans, draft?.bans ?? [], 100, snapshot);
+  renderBans(elements.enemyBans, draft?.bans ?? [], 200, snapshot);
   renderDimensions(myDimensions, enemyDimensions);
-  renderAdvice(analysis);
+  renderCurrentAdvice(analysis, draft);
+  renderTeammatePerformance(snapshot?.teammate_performance ?? [], draft);
   renderReasons(analysis);
+  renderEnemyAnalysis(analysis, draft);
   renderRecommendations(analysis);
   renderBuildRecommendation(analysis);
 
@@ -194,7 +216,15 @@ function renderPicks(container, players, side) {
   );
 }
 
-function renderBans(container, bans, teamId) {
+function renderBans(container, bans, teamId, snapshot) {
+  if (isLiveClientRestoredSnapshot(snapshot) && bans.length === 0) {
+    const message = document.createElement("span");
+    message.className = "ban-chip unavailable";
+    message.textContent = "游戏内恢复，Ban 不可用";
+    container.replaceChildren(message);
+    return;
+  }
+
   const teamBans = bans.filter((ban) => ban.team_id === teamId).slice(0, 5);
   const slots = Array.from({ length: 5 }, (_, index) => teamBans[index] ?? null);
 
@@ -229,50 +259,203 @@ function renderDimensions(myDimensions, enemyDimensions) {
   );
 }
 
-function renderAdvice(analysis) {
+function renderTeammatePerformance(teammates = [], draft) {
+  if (teammates.length === 0) {
+    const hasDraftPicks = countDraftPicks(draft) > 0;
+    elements.teammateSummary.textContent = hasDraftPicks
+      ? "正在读取队友质量数据。"
+      : "进入 BP 后开始分析队友质量。";
+    elements.teammateOverview.replaceChildren(qualityBadge("等待", hasDraftPicks ? "读取中" : "BP 后"));
+    elements.teammatePerformance.replaceChildren(
+      emptyTeammateState(hasDraftPicks ? "正在读取队友最近战绩" : "等待 BP 队友名单")
+    );
+    state.detailItems.teammates = [];
+    return;
+  }
+
+  const sortedTeammates = [...teammates].sort(teammateQualitySort);
+  elements.teammateSummary.textContent = teammateQualitySummary(sortedTeammates);
+  elements.teammateOverview.replaceChildren(...teammateQualityBadges(sortedTeammates));
+  elements.teammatePerformance.replaceChildren(
+    ...sortedTeammates.slice(0, 2).map((teammate) => teammateQualityCard(teammate))
+  );
+  state.detailItems.teammates = sortedTeammates.map((teammate) => ({
+    title: `${shortName(teammate.display_name)} · ${teammate.tier_label ?? "数据少"}`,
+    text: `${championName(teammate.champion_id, false)} · ${positionLabel(teammate.assigned_position)} · ${formatAverageKda(teammate)}`,
+    type: teammate.tier === "workhorse" || teammate.tier === "low_horse" ? "negative" : "positive"
+  }));
+}
+
+function renderCurrentAdvice(analysis, draft) {
+  if (!elements.currentAdvice) {
+    return;
+  }
+  if (!hasEnoughPicksForAdvice(draft)) {
+    elements.currentAdvice.textContent = "等待双方阵容成型后生成提示。";
+    return;
+  }
   const suggestions = analysis?.suggestions ?? [];
   const winConditions = analysis?.win_conditions ?? [];
   elements.currentAdvice.textContent =
-    suggestions[0] ?? winConditions[0] ?? "等待更多选人信息。";
+    winConditions[0] ?? suggestions[0] ?? "围绕阵容强势期打资源节奏。";
+}
 
-  const tags = adviceTagsFor(analysis);
-  elements.adviceTags.replaceChildren(
-    ...tags.map((tag) => {
-      const item = document.createElement("span");
-      item.className = tag.type;
-      item.textContent = tag.text;
-      return item;
-    })
-  );
+function teammateQualityCard(teammate) {
+  const item = document.createElement("div");
+  item.className = `teammate-card ${teammate.tier ?? "data_light"}`;
+
+  const identity = document.createElement("div");
+  identity.className = "teammate-card-identity";
+  const name = document.createElement("strong");
+  name.textContent = shortName(teammate.display_name);
+  const role = document.createElement("span");
+  role.textContent = `${championName(teammate.champion_id, false)} · ${positionLabel(teammate.assigned_position)}`;
+  identity.append(name, role);
+
+  const metrics = document.createElement("small");
+  metrics.className = "teammate-card-metrics";
+  metrics.textContent = formatAverageKda(teammate);
+
+  const tier = document.createElement("b");
+  tier.textContent = teammate.tier_label ?? "数据少";
+
+  item.append(identity, metrics, tier);
+  return item;
+}
+
+function emptyTeammateState(text = "暂无队友质量数据") {
+  const item = document.createElement("div");
+  item.className = "teammate-empty";
+  item.textContent = text;
+  return item;
+}
+
+function teammateQualityBadges(teammates) {
+  const counts = teammateQualityCounts(teammates);
+  return [
+    qualityBadge("上等马", counts.top_horse),
+    qualityBadge("普通", counts.stable),
+    qualityBadge("下等马", counts.low_horse),
+    qualityBadge("牛马", counts.workhorse)
+  ];
+}
+
+function qualityBadge(label, value) {
+  const badge = document.createElement("span");
+  badge.className = "quality-badge";
+  badge.textContent = `${label} ${value}`;
+  return badge;
 }
 
 function renderReasons(analysis) {
-  const dataNotes = (analysis?.data_notes ?? []).slice(0, 1);
+  const draft = displaySnapshot()?.draft_state;
+  if (!hasEnoughPicksForAdvice(draft)) {
+    const waiting = [{ title: "等待阵容成型", text: "我方至少选出 3 个英雄后开始分析。", type: "suggestion" }];
+    state.detailItems.ally = waiting;
+    elements.keyReasons.replaceChildren(...waiting.map((reason) => reasonItem(reason.title, reason.text, reason.type)));
+    return;
+  }
+
   const strengths = (analysis?.strengths ?? []).slice(0, 2);
   const risks = (analysis?.risks ?? []).slice(0, 2);
   const suggestions = (analysis?.suggestions ?? []).slice(0, 1);
   const reasons = [
-    ...dataNotes.map((text) => ({ text: `数据：${text}`, type: "suggestion" })),
-    ...strengths.map((text) => ({ text: `+ ${text}`, type: "positive" })),
-    ...risks.map((text) => ({ text: `- ${text}`, type: "negative" })),
-    ...suggestions.map((text) => ({ text: `建议：${text}`, type: "suggestion" }))
+    ...strengths.map((text) => ({ title: "优势", text, type: "positive" })),
+    ...risks.map((text) => ({ title: "风险", text, type: "negative" })),
+    ...suggestions.map((text) => ({ title: "打法", text, type: "suggestion" }))
   ];
 
   if (reasons.length === 0) {
-    reasons.push({ text: "等待双方阵容成型后生成关键原因。", type: "suggestion" });
+    reasons.push({ title: "等待阵容成型", text: "继续观察双方选人。", type: "suggestion" });
   }
 
+  state.detailItems.ally = reasons;
   elements.keyReasons.replaceChildren(
-    ...reasons.map((reason) => {
-      const item = document.createElement("li");
-      item.className = reason.type;
-      item.textContent = reason.text;
-      return item;
+    ...reasons.slice(0, 2).map((reason) => reasonItem(reason.title, reason.text, reason.type))
+  );
+}
+
+function renderEnemyAnalysis(analysis, draft) {
+  if (!hasEnoughEnemyPicksForAnalysis(draft)) {
+    const waiting = [{ title: "等待敌方阵容", text: "敌方至少选出 2 个英雄后开始分析。", type: "suggestion" }];
+    state.detailItems.enemy = waiting;
+    elements.enemyAnalysis.replaceChildren(...waiting.map((item) => reasonItem(item.title, item.text, item.type)));
+    return;
+  }
+
+  const enemyPlayers = draft?.their_team ?? [];
+  const enemyPicks = enemyPlayers
+    .filter((player) => player?.champion_id)
+    .map((player) => championName(player.champion_id, false));
+  const enemyDimensions = analysis?.enemy_dimensions ?? {};
+  const enemyThreats = (analysis?.enemy_threats ?? []).slice(0, 2);
+  const items = [];
+
+  if (enemyPicks.length > 0) {
+    items.push({
+      type: "suggestion",
+      title: "已识别",
+      text: enemyPicks.join(" / ")
+    });
+  }
+
+  if (analysis) {
+    items.push({
+      type: enemyDamageWarningType(enemyDimensions),
+      title: "伤害结构",
+      text: enemyDamageProfile(enemyDimensions)
+    });
+
+    if ((enemyDimensions.engage ?? 0) >= 70) {
+      items.push({ type: "negative", title: "开团压力", text: "对面第一波先手很关键，河道和野区入口别站太密。" });
+    } else if ((enemyDimensions.engage ?? 0) <= 35) {
+      items.push({ type: "positive", title: "开团不足", text: "可以主动逼资源，迫使对面先交关键技能。" });
+    }
+
+    if ((enemyDimensions.crowd_control ?? 0) >= 70) {
+      items.push({ type: "negative", title: "控制链", text: "被第一段控制命中后容易连续吃技能。" });
+    }
+
+    if ((enemyDimensions.frontline ?? 0) >= 70) {
+      items.push({ type: "suggestion", title: "前排厚", text: "正面团需要先处理前排，或者绕开主坦打后排。" });
+    }
+
+    if ((enemyDimensions.scaling ?? 0) >= 75) {
+      items.push({ type: "negative", title: "后期强", text: "中期资源节奏要更主动，别拖到对面成型。" });
+    }
+  }
+
+  enemyThreats.forEach((text) => {
+    items.push({ type: "negative", title: "威胁点", text });
+  });
+
+  if (items.length === 0) {
+    items.push({ type: "suggestion", title: "等待阵容成型", text: "继续观察敌方后续选人。" });
+  }
+
+  state.detailItems.enemy = items;
+  elements.enemyAnalysis.replaceChildren(
+    ...items.slice(0, 2).map((item) => {
+      return reasonItem(item.title, item.text, item.type);
     })
   );
 }
 
+function reasonItem(title, text, type) {
+  const item = document.createElement("li");
+  item.className = type;
+  const titleNode = document.createElement("strong");
+  titleNode.textContent = title;
+  const textNode = document.createElement("span");
+  textNode.textContent = text;
+  item.append(titleNode, textNode);
+  return item;
+}
+
 function renderRecommendations(analysis) {
+  if (!elements.heroRecommendations) {
+    return;
+  }
   const recommendations = recommendHeroes(analysis);
   elements.heroRecommendations.replaceChildren(
     ...recommendations.map((recommendation) => {
@@ -288,6 +471,9 @@ function renderRecommendations(analysis) {
 }
 
 function renderBuildRecommendation(analysis) {
+  if (!elements.buildRecommendation || !elements.buildSourceNote) {
+    return;
+  }
   const build = chooseBuildRecommendation(analysis);
   if (!build) {
     elements.buildSourceNote.textContent = "暂无匹配到本地 OP.GG 方案快照";
@@ -400,8 +586,39 @@ function cacheChampionNames(names = {}) {
   });
 }
 
+function applyPhase(phase) {
+  const nextPhase = String(phase ?? "Unknown");
+  state.phase = nextPhase;
+  if (shouldClearDraftForPhase(nextPhase)) {
+    clearDraftSnapshots();
+  }
+}
+
 function displaySnapshot() {
   return state.snapshot ?? state.lastDraftSnapshot;
+}
+
+function isLiveClientRestoredSnapshot(snapshot) {
+  return snapshot?.source === "live-client";
+}
+
+function isInGameSnapshot(snapshot) {
+  return snapshot?.draft_state?.gameflow === "InProgress" || isLiveClientRestoredSnapshot(snapshot);
+}
+
+function clearDraftSnapshots() {
+  state.snapshot = null;
+  state.lastDraftSnapshot = null;
+  state.draftFingerprint = null;
+}
+
+function shouldClearDraftForPhase(phase) {
+  return [
+    "None",
+    "WaitingForStats",
+    "PreEndOfGame",
+    "EndOfGame"
+  ].includes(String(phase ?? "Unknown"));
 }
 
 function isUsableDraftSnapshot(snapshot) {
@@ -417,8 +634,73 @@ function isUsableDraftSnapshot(snapshot) {
   );
 }
 
+function hasTeammatePerformance(snapshot) {
+  return (snapshot?.teammate_performance?.length ?? 0) > 0;
+}
+
+function mergeTeammatePerformance(snapshot) {
+  state.lastDraftSnapshot = {
+    ...state.lastDraftSnapshot,
+    teammate_performance: snapshot.teammate_performance
+  };
+  if (state.snapshot) {
+    state.snapshot = {
+      ...state.snapshot,
+      teammate_performance: snapshot.teammate_performance
+    };
+  }
+}
+
+function resetSnapshotsForNewDraft(snapshot) {
+  const fingerprint = draftFingerprint(snapshot);
+  if (!fingerprint) {
+    return;
+  }
+  if (state.draftFingerprint && state.draftFingerprint !== fingerprint) {
+    state.snapshot = null;
+    state.lastDraftSnapshot = null;
+  }
+  state.draftFingerprint = fingerprint;
+}
+
+function draftFingerprint(snapshot) {
+  const draft = snapshot?.draft_state;
+  if (!draft) {
+    return "";
+  }
+  const allyIds = (draft.my_team ?? [])
+    .map((player) => player?.summoner_id)
+    .filter(Boolean)
+    .join(",");
+  const localCell = draft.local_player_cell_id ?? "";
+  const banIds = (draft.bans ?? [])
+    .map((ban) => ban?.champion_id)
+    .filter(Boolean)
+    .join(",");
+  if (!allyIds && !banIds) {
+    return "";
+  }
+  return `${localCell}|${allyIds}|${banIds}`;
+}
+
 function hasPickedChampion(players = []) {
   return players.some((player) => player?.champion_id);
+}
+
+function countDraftPicks(draft) {
+  return countPicked(draft?.my_team ?? []) + countPicked(draft?.their_team ?? []);
+}
+
+function isDraftComplete(draft) {
+  return countPicked(draft?.my_team ?? []) >= 5 && countPicked(draft?.their_team ?? []) >= 5;
+}
+
+function hasEnoughPicksForAdvice(draft) {
+  return countDraftPicks(draft) >= 3;
+}
+
+function hasEnoughEnemyPicksForAnalysis(draft) {
+  return countPicked(draft?.their_team ?? []) >= 2;
 }
 
 function positionLabel(position) {
@@ -476,11 +758,11 @@ function phaseLabel(phase) {
 
 function confidenceLabel(confidence) {
   const labels = {
-    low: "低",
-    medium: "中",
-    high: "高"
+    low: "不足",
+    medium: "部分",
+    high: "完整"
   };
-  return labels[confidence] ?? "低";
+  return labels[confidence] ?? "不足";
 }
 
 function countPicked(players = []) {
@@ -494,6 +776,34 @@ function formatDelta(label, mine = 0, enemy = 0) {
   }
   const prefix = delta > 0 ? "+" : "";
   return `${label} ${prefix}${delta}`;
+}
+
+function enemyDamageProfile(enemyDimensions = {}) {
+  const magic = enemyDimensions.magic_damage ?? 0;
+  const physical = enemyDimensions.physical_damage ?? 0;
+
+  if (magic >= 60 && physical >= 60) {
+    return "伤害结构：混合伤害完整，抗性不能只堆一边。";
+  }
+  if (magic >= 65 && physical < 45) {
+    return "伤害结构：AP 压力更高，注意魔抗和关键控制。";
+  }
+  if (physical >= 65 && magic < 45) {
+    return "伤害结构：AD 压力更高，护甲和站位更关键。";
+  }
+  if (magic < 45 && physical < 45) {
+    return "伤害结构：输出暂不完整，可以观察后续补位。";
+  }
+  return "伤害结构：相对均衡，优先看谁先拿资源节奏。";
+}
+
+function enemyDamageWarningType(enemyDimensions = {}) {
+  const magic = enemyDimensions.magic_damage ?? 0;
+  const physical = enemyDimensions.physical_damage ?? 0;
+  if (magic >= 65 || physical >= 65) {
+    return "negative";
+  }
+  return "suggestion";
 }
 
 function dimensionVerdict(mine = 0, enemy = 0) {
@@ -514,31 +824,8 @@ function estimateWinScore(myDimensions = {}, enemyDimensions = {}, confidence = 
   const spread = confidence === "high" ? 2 : confidence === "medium" ? 3 : 5;
   return {
     range: `${center - spread}% - ${center + spread}%`,
-    note: `可信度：${confidenceLabel(confidence)} · 只用于阵容解释`
+    note: `数据完整度：${confidenceLabel(confidence)} · 只用于阵容解释`
   };
-}
-
-function adviceTagsFor(analysis) {
-  if (!analysis) {
-    return [{ text: "等待阵容", type: "gold-tag" }];
-  }
-
-  const tags = [];
-  const magic = analysis.dimensions?.magic_damage ?? 0;
-  const engage = analysis.dimensions?.engage ?? 0;
-  const enemyEngage = analysis.enemy_dimensions?.engage ?? 0;
-
-  if (magic <= 40) {
-    tags.push({ text: "优先补 AP", type: "gold-tag" });
-  }
-  if (engage >= 65) {
-    tags.push({ text: "可以主动开团", type: "teal-tag" });
-  }
-  if (enemyEngage >= 75) {
-    tags.push({ text: "注意反开站位", type: "gold-tag" });
-  }
-
-  return tags.length > 0 ? tags : [{ text: "稳住资源节奏", type: "teal-tag" }];
 }
 
 function recommendHeroes(analysis) {
@@ -568,6 +855,62 @@ function recommendHeroes(analysis) {
     { name: "阿狸", score: "节奏 84" },
     { name: "维克托", score: "后期 82" }
   ];
+}
+
+function shortName(name = "队友") {
+  const cleanName = String(name || "队友");
+  return cleanName.length > 10 ? `${cleanName.slice(0, 10)}…` : cleanName;
+}
+
+function formatAverageKda(teammate) {
+  if (!teammate?.games) {
+    return "暂无战绩";
+  }
+  return `KD ${Number(teammate.kd_ratio).toFixed(2)} · KDA ${Number(teammate.avg_kills).toFixed(1)}/${Number(teammate.avg_deaths).toFixed(1)}/${Number(teammate.avg_assists).toFixed(1)}`;
+}
+
+function teammateQualitySort(a, b) {
+  const tierScore = {
+    top_horse: 4,
+    stable: 3,
+    low_horse: 2,
+    workhorse: 1,
+    data_light: 0
+  };
+  const scoreDelta = (tierScore[b?.tier] ?? 0) - (tierScore[a?.tier] ?? 0);
+  if (scoreDelta !== 0) {
+    return scoreDelta;
+  }
+  return Number(b?.kd_ratio ?? 0) - Number(a?.kd_ratio ?? 0);
+}
+
+function teammateQualitySummary(teammates) {
+  const counts = teammateQualityCounts(teammates);
+
+  if (counts.top_horse > 0) {
+    return `${counts.top_horse} 个强势队友，优先围绕节奏点。`;
+  }
+  if (counts.workhorse > 0) {
+    return `${counts.workhorse} 个高风险位，前期降低单点压力。`;
+  }
+  if (counts.low_horse > 0) {
+    return `${counts.low_horse} 个偏弱风险位，少让他单独扛局面。`;
+  }
+  if (counts.data_light === teammates.length) {
+    return "队友数据不足，先看阵容和对线分配。";
+  }
+  return "整体质量中等，按阵容强势期推进。";
+}
+
+function teammateQualityCounts(teammates) {
+  return teammates.reduce(
+    (acc, teammate) => {
+      const tier = teammate?.tier ?? "data_light";
+      acc[tier] = (acc[tier] ?? 0) + 1;
+      return acc;
+    },
+    { top_horse: 0, stable: 0, low_horse: 0, workhorse: 0, data_light: 0 }
+  );
 }
 
 function bridgeLabel(status) {
@@ -770,6 +1113,81 @@ function loadSampleEvents() {
   state.usingLiveData = false;
   window.LEAGUEAKARI_SAMPLE_EVENTS.forEach(applyEvent);
 }
+
+function openDetailModal(panel) {
+  const config = {
+    ally: {
+      title: "我方阵容分析",
+      subtitle: "优势、风险和本局打法建议",
+      items: state.detailItems.ally
+    },
+    enemy: {
+      title: "对方阵容分析",
+      subtitle: "敌方威胁点和处理方式",
+      items: state.detailItems.enemy
+    },
+    teammates: {
+      title: "队友质量分析",
+      subtitle: "基于队友近期表现的本地判断",
+      items: state.detailItems.teammates
+    }
+  }[panel];
+
+  if (!config || !elements.detailModal) {
+    return;
+  }
+
+  elements.detailModalTitle.textContent = config.title;
+  elements.detailModalSubtitle.textContent = config.subtitle;
+  elements.detailModalBody.replaceChildren(...detailRows(config.items));
+  elements.detailModal.classList.remove("hidden");
+}
+
+function closeDetailModal() {
+  elements.detailModal?.classList.add("hidden");
+}
+
+function detailRows(items = []) {
+  const rows = items.length
+    ? items
+    : [{ title: "暂无详情", text: "等待更多本局数据。", type: "suggestion" }];
+
+  return rows.map((item) => {
+    const row = document.createElement("div");
+    row.className = `detail-row ${item.type ?? "suggestion"}`;
+    const title = document.createElement("strong");
+    title.textContent = item.title;
+    const text = document.createElement("span");
+    text.textContent = item.text;
+    row.append(title, text);
+    return row;
+  });
+}
+
+document.querySelectorAll("[data-detail-panel]").forEach((node) => {
+  node.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openDetailModal(node.dataset.detailPanel);
+  });
+  node.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openDetailModal(node.dataset.detailPanel);
+    }
+  });
+});
+
+elements.detailModalClose?.addEventListener("click", closeDetailModal);
+elements.detailModal?.addEventListener("click", (event) => {
+  if (event.target === elements.detailModal) {
+    closeDetailModal();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeDetailModal();
+  }
+});
 
 elements.loadSampleButton.addEventListener("click", () => {
   loadSampleEvents();

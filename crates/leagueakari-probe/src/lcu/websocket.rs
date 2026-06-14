@@ -10,8 +10,9 @@ use tokio_tungstenite::{
 };
 
 use super::{
-    analysis, auth, champ_select, champions::ChampionCatalog, connection::LcuConnection, output,
-    print_champ_select_summary, print_draft_summary, print_json,
+    analysis, auth, champ_select, champions::ChampionCatalog, client::LcuClient,
+    connection::LcuConnection, live_client, output, print_champ_select_summary,
+    print_draft_summary, print_json, teammate_performance,
 };
 
 #[derive(Debug)]
@@ -71,6 +72,8 @@ impl ServerCertVerifier for AcceptAnyCertificate {
 
 pub async fn watch(
     connection: &LcuConnection,
+    client: &LcuClient,
+    current_summoner: Option<&Value>,
     champion_catalog: &ChampionCatalog,
     raw: bool,
     json: bool,
@@ -108,6 +111,8 @@ pub async fn watch(
         println!("press Ctrl+C to stop");
     }
 
+    let mut teammate_cache = teammate_performance::TeammatePerformanceCache::default();
+
     loop {
         tokio::select! {
             _ = tokio::signal::ctrl_c() => {
@@ -135,7 +140,15 @@ pub async fn watch(
                 };
                 let message = message?;
                 if let Message::Text(text) = message {
-                    handle_text_message(&text, champion_catalog, raw, json)?;
+                    handle_text_message(
+                        &text,
+                        client,
+                        current_summoner,
+                        champion_catalog,
+                        &mut teammate_cache,
+                        raw,
+                        json
+                    ).await?;
                 }
             }
         }
@@ -144,9 +157,12 @@ pub async fn watch(
     Ok(())
 }
 
-fn handle_text_message(
+async fn handle_text_message(
     text: &str,
+    client: &LcuClient,
+    current_summoner: Option<&Value>,
     champion_catalog: &ChampionCatalog,
+    teammate_cache: &mut teammate_performance::TeammatePerformanceCache,
     raw: bool,
     json: bool,
 ) -> Result<()> {
@@ -171,40 +187,157 @@ fn handle_text_message(
                     event.event_type, event.data
                 );
             }
-        }
-        "/lol-champ-select/v1/session" => {
-            let draft_state = champ_select::parse_draft_state("ChampSelect", &event.data);
-            let analysis = analysis::analyze_draft(&draft_state);
-            if json {
-                if raw {
-                    output::print_event("raw_champ_select_session", &event.data)?;
-                }
-                output::print_event(
-                    "draft_snapshot",
-                    &output::draft_snapshot(
-                        "watch",
-                        Some(event.event_type.as_str()),
-                        &draft_state,
-                        &analysis,
-                        champion_catalog,
-                    ),
-                )?;
-            } else {
-                println!();
-                println!("watch event: champ select {}", event.event_type);
-                print_champ_select_summary(&event.data);
-                if raw {
-                    print_json("watch champ select session", &event.data)?;
-                }
 
-                print_draft_summary(&draft_state, champion_catalog);
-                print_json(
-                    "watch composition analysis",
-                    &serde_json::to_value(analysis)?,
-                )?;
+            if event.data.as_str() == Some("ChampSelect") {
+                match client
+                    .get_json::<Value>("/lol-champ-select/v1/session")
+                    .await
+                {
+                    Ok(session) => {
+                        emit_champ_select_snapshot(
+                            client,
+                            current_summoner,
+                            champion_catalog,
+                            teammate_cache,
+                            &session,
+                            "watch",
+                            Some("phase_enter"),
+                            raw,
+                            json,
+                        )
+                        .await?;
+                    }
+                    Err(error) => {
+                        if json {
+                            output::print_event(
+                                "champ_select_status",
+                                &output::status_message(
+                                    "retrying",
+                                    &format!("ChampSelect session is not ready yet: {error}"),
+                                ),
+                            )?;
+                        }
+                    }
+                }
+            } else if matches!(event.data.as_str(), Some("GameStart" | "InProgress")) {
+                if let Some(draft_state) =
+                    live_client::fetch_in_progress_draft(champion_catalog).await
+                {
+                    emit_draft_snapshot(
+                        client,
+                        current_summoner,
+                        champion_catalog,
+                        teammate_cache,
+                        &draft_state,
+                        "live-client",
+                        Some("phase_enter"),
+                        json,
+                    )
+                    .await?;
+                }
             }
         }
+        "/lol-champ-select/v1/session" => {
+            emit_champ_select_snapshot(
+                client,
+                current_summoner,
+                champion_catalog,
+                teammate_cache,
+                &event.data,
+                "watch",
+                Some(event.event_type.as_str()),
+                raw,
+                json,
+            )
+            .await?;
+        }
         _ => {}
+    }
+
+    Ok(())
+}
+
+async fn emit_champ_select_snapshot(
+    client: &LcuClient,
+    current_summoner: Option<&Value>,
+    champion_catalog: &ChampionCatalog,
+    teammate_cache: &mut teammate_performance::TeammatePerformanceCache,
+    session: &Value,
+    source: &str,
+    event_type: Option<&str>,
+    raw: bool,
+    json: bool,
+) -> Result<()> {
+    let draft_state = champ_select::parse_draft_state("ChampSelect", session);
+    let analysis = analysis::analyze_draft(&draft_state);
+
+    if json {
+        if raw {
+            output::print_event("raw_champ_select_session", session)?;
+        }
+        emit_draft_snapshot(
+            client,
+            current_summoner,
+            champion_catalog,
+            teammate_cache,
+            &draft_state,
+            source,
+            event_type,
+            json,
+        )
+        .await?;
+    } else {
+        println!();
+        println!(
+            "watch event: champ select {}",
+            event_type.unwrap_or("snapshot")
+        );
+        print_champ_select_summary(session);
+        if raw {
+            print_json("watch champ select session", session)?;
+        }
+
+        print_draft_summary(&draft_state, champion_catalog);
+        print_json(
+            "watch composition analysis",
+            &serde_json::to_value(analysis)?,
+        )?;
+    }
+
+    Ok(())
+}
+
+async fn emit_draft_snapshot(
+    client: &LcuClient,
+    current_summoner: Option<&Value>,
+    champion_catalog: &ChampionCatalog,
+    teammate_cache: &mut teammate_performance::TeammatePerformanceCache,
+    draft_state: &super::models::DraftState,
+    source: &str,
+    event_type: Option<&str>,
+    json: bool,
+) -> Result<()> {
+    let analysis = analysis::analyze_draft(draft_state);
+    let teammate_performance = teammate_performance::analyze_teammates(
+        client,
+        draft_state,
+        current_summoner,
+        teammate_cache,
+    )
+    .await;
+
+    if json {
+        output::print_event(
+            "draft_snapshot",
+            &output::draft_snapshot(
+                source,
+                event_type,
+                draft_state,
+                &analysis,
+                champion_catalog,
+                &teammate_performance,
+            ),
+        )?;
     }
 
     Ok(())

@@ -9,6 +9,7 @@ use super::{
     champions::{ChampionCatalog, ChampionInfo},
     connection::LcuConnection,
     models::DraftState,
+    teammate_performance::TeammatePerformance,
 };
 
 #[derive(Debug, Serialize)]
@@ -47,6 +48,7 @@ pub struct DraftSnapshot<'a> {
     draft_state: &'a DraftState,
     analysis: &'a CompositionAnalysis,
     champion_names: BTreeMap<i64, &'a ChampionInfo>,
+    teammate_performance: &'a [TeammatePerformance],
 }
 
 #[derive(Debug, Serialize)]
@@ -89,6 +91,7 @@ pub fn draft_snapshot<'a>(
     draft_state: &'a DraftState,
     analysis: &'a CompositionAnalysis,
     champion_catalog: &'a ChampionCatalog,
+    teammate_performance: &'a [TeammatePerformance],
 ) -> DraftSnapshot<'a> {
     DraftSnapshot {
         source,
@@ -96,6 +99,7 @@ pub fn draft_snapshot<'a>(
         draft_state,
         analysis,
         champion_names: champion_names_for(draft_state, champion_catalog),
+        teammate_performance,
     }
 }
 
@@ -206,7 +210,7 @@ mod tests {
 
         let line = event_line(
             "draft_snapshot",
-            &draft_snapshot("test", None, &draft_state, &analysis, &catalog),
+            &draft_snapshot("test", None, &draft_state, &analysis, &catalog, &[]),
         )
         .unwrap();
 
