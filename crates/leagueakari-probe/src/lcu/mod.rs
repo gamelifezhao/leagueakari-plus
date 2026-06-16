@@ -5,6 +5,7 @@ mod champions;
 mod client;
 mod connection;
 mod live_client;
+mod match_history;
 mod models;
 mod output;
 mod teammate_performance;
@@ -19,6 +20,7 @@ pub struct ProbeOptions {
     pub watch: bool,
     pub json: bool,
     pub validate_data: bool,
+    pub recent_matches: bool,
 }
 
 pub async fn run_probe(options: ProbeOptions) -> Result<()> {
@@ -62,6 +64,18 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
         print_json("gameflow phase", &gameflow_phase)?;
     }
     let champion_catalog = load_champion_catalog(&client).await;
+    if options.recent_matches {
+        let recent_matches =
+            match_history::fetch_recent_matches(&client, summoner.as_ref(), &champion_catalog)
+                .await?;
+        if options.json {
+            output::print_event("recent_matches", &recent_matches)?;
+        } else {
+            print_recent_matches(&recent_matches);
+        }
+        return Ok(());
+    }
+
     let mut teammate_cache = teammate_performance::TeammatePerformanceCache::default();
 
     if let Some(gameflow) = gameflow_phase.as_str() {
@@ -363,6 +377,32 @@ fn print_summoner_unavailable() {
     println!("current summoner summary: unavailable");
     println!("  account fields: hidden");
     println!("  note: continuing because gameflow is reachable");
+}
+
+fn print_recent_matches(history: &match_history::RecentMatches) {
+    println!();
+    println!("recent matches:");
+    println!(
+        "  {} games, {} wins, {} losses, win rate {:.1}%",
+        history.summary.total_games,
+        history.summary.wins,
+        history.summary.losses,
+        history.summary.win_rate
+    );
+
+    for game in &history.matches {
+        println!(
+            "  {} {} {} {}/{}/{} KP {:.0}% {}",
+            game.result_label,
+            game.champion_name,
+            game.queue_label,
+            game.kills,
+            game.deaths,
+            game.assists,
+            game.kill_participation,
+            game.ended_at_label
+        );
+    }
 }
 
 fn print_champ_select_summary(session: &Value) {

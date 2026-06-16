@@ -18,23 +18,23 @@
         </div>
 
         <nav class="nav-list">
-          <a class="nav-item active" href="#">
+          <a class="nav-item active" href="#" data-view="draft">
             <span>◇</span>
             选人分析
           </a>
-          <a class="nav-item" href="#">
+          <a class="nav-item" href="#" data-view="account">
             <span>◎</span>
             账号概览
           </a>
-          <a class="nav-item" href="#">
+          <a class="nav-item" href="#" data-view="history">
             <span>▣</span>
             近期战绩
           </a>
-          <a class="nav-item" href="#">
+          <a class="nav-item" href="#" data-view="champions">
             <span>✦</span>
             英雄池
           </a>
-          <a class="nav-item" href="#">
+          <a class="nav-item" href="#" data-view="settings">
             <span>⚙</span>
             设置
           </a>
@@ -48,112 +48,162 @@
       </aside>
 
       <section class="content">
-        <header class="page-header">
-          <div>
-            <h2>选人阶段 · 阵容胜率分析</h2>
-            <p>不是帮你作弊，而是帮你理解这一局应该怎么赢。</p>
-          </div>
-          <div class="header-pills">
-            <span id="gameflowPhase" class="pill teal">Unknown</span>
-            <span class="pill gold">本地规则模型</span>
-            <button id="reconnectButton" type="button">重新连接</button>
-            <button id="loadSampleButton" type="button">载入样例</button>
-          </div>
-        </header>
-
-        <section class="summary-grid" aria-label="对局摘要">
-          <article class="summary-card summoner-card">
-            <div class="avatar-ring">LA</div>
+        <section id="draftView" class="view-page draft-view" data-view-page="draft">
+          <header class="page-header">
             <div>
-              <h3>当前对局</h3>
-              <p id="snapshotSource">等待 LCU 实时事件</p>
-              <strong id="confidence">low</strong>
-              <span>数据完整度</span>
+              <h2>选人阶段 · 阵容胜率分析</h2>
+              <p>不是帮你作弊，而是帮你理解这一局应该怎么赢。</p>
             </div>
-          </article>
-
-          <article class="summary-card win-card">
-            <h3>预计胜率区间</h3>
-            <strong id="winRange">--</strong>
-            <div class="delta-row">
-              <span id="engageDelta">开团 --</span>
-              <span id="damageDelta">伤害 --</span>
+            <div class="header-pills">
+              <span id="gameflowPhase" class="pill teal">Unknown</span>
+              <span class="pill gold">本地规则模型</span>
+              <button id="reconnectButton" type="button">重新连接</button>
+              <button id="loadSampleButton" type="button">载入样例</button>
             </div>
-            <p id="winRangeNote">等待双方阵容成型</p>
-          </article>
+          </header>
 
-          <article class="summary-card advice-card">
-            <h3>本局提示</h3>
-            <div id="currentAdvice" class="advice-text">等待双方阵容成型后生成提示。</div>
-          </article>
+          <section class="summary-grid" aria-label="对局摘要">
+            <article class="summary-card summoner-card">
+              <div class="avatar-ring">LA</div>
+              <div>
+                <h3>当前对局</h3>
+                <p id="snapshotSource">等待 LCU 实时事件</p>
+                <strong id="confidence">low</strong>
+                <span>数据完整度</span>
+              </div>
+            </article>
+
+            <article class="summary-card win-card">
+              <h3>预计胜率区间</h3>
+              <strong id="winRange">--</strong>
+              <div class="delta-row">
+                <span id="engageDelta">开团 --</span>
+                <span id="damageDelta">伤害 --</span>
+              </div>
+              <p id="winRangeNote">等待双方阵容成型</p>
+            </article>
+
+            <article class="summary-card advice-card">
+              <h3>本局提示</h3>
+              <div id="currentAdvice" class="advice-text">等待双方阵容成型后生成提示。</div>
+            </article>
+          </section>
+
+          <section class="middle-grid">
+            <article class="draft-section">
+              <div class="section-title">
+                <div>
+                  <h3>双方阵容</h3>
+                  <p>自动识别位置，必要时允许手动修正</p>
+                </div>
+                <div class="pick-counts">
+                  <span id="myPickCount">0 / 5</span>
+                  <span id="enemyPickCount">0 / 5</span>
+                </div>
+              </div>
+
+              <div class="team-row ally">
+                <div class="team-label">我方</div>
+                <div id="myPicks" class="hero-row"></div>
+              </div>
+              <div class="team-row enemy">
+                <div class="team-label">敌方</div>
+                <div id="enemyPicks" class="hero-row"></div>
+              </div>
+
+              <div class="ban-grid">
+                <div>
+                  <span>我方 Ban</span>
+                  <div id="myBans" class="ban-list"></div>
+                </div>
+                <div>
+                  <span>敌方 Ban</span>
+                  <div id="enemyBans" class="ban-list"></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="dimension-section">
+              <div class="section-title">
+                <div>
+                  <h3>阵容维度评分</h3>
+                  <p>数值只用于解释，不做绝对胜负承诺</p>
+                </div>
+              </div>
+              <div id="dimensionCompare" class="dimension-list"></div>
+            </article>
+          </section>
+
+          <section class="bottom-grid">
+            <article class="reason-section detail-card" data-detail-panel="ally" tabindex="0" role="button">
+              <h3>我方阵容分析</h3>
+              <ul id="keyReasons" class="reason-list"></ul>
+              <button class="detail-button" type="button" data-detail-panel="ally">查看详情</button>
+            </article>
+
+            <article class="enemy-section detail-card" data-detail-panel="enemy" tabindex="0" role="button">
+              <h3>对方阵容分析</h3>
+              <ul id="enemyAnalysis" class="reason-list enemy-analysis-list"></ul>
+              <button class="detail-button" type="button" data-detail-panel="enemy">查看详情</button>
+            </article>
+
+            <article class="teammate-section detail-card" data-detail-panel="teammates" tabindex="0" role="button">
+              <h3>队友质量分析</h3>
+              <p id="teammateSummary">等待队友质量数据。</p>
+              <div id="teammateOverview" class="quality-overview"></div>
+              <div id="teammatePerformance" class="teammate-list"></div>
+              <button class="detail-button" type="button" data-detail-panel="teammates">查看详情</button>
+            </article>
+          </section>
         </section>
 
-        <section class="middle-grid">
-          <article class="draft-section">
-            <div class="section-title">
-              <div>
-                <h3>双方阵容</h3>
-                <p>自动识别位置，必要时允许手动修正</p>
-              </div>
-              <div class="pick-counts">
-                <span id="myPickCount">0 / 5</span>
-                <span id="enemyPickCount">0 / 5</span>
-              </div>
+        <section id="historyView" class="view-page history-view hidden" data-view-page="history">
+          <header class="page-header history-header">
+            <div>
+              <h2>近期战绩</h2>
+              <p>按 LeagueAkari 风格整理最近 20 场，先看整体状态，再看每一局细节。</p>
             </div>
+            <div class="header-pills">
+              <span id="historyStatus" class="pill teal">等待读取</span>
+              <button id="refreshMatchesButton" type="button">刷新战绩</button>
+            </div>
+          </header>
 
-            <div class="team-row ally">
-              <div class="team-label">我方</div>
-              <div id="myPicks" class="hero-row"></div>
-            </div>
-            <div class="team-row enemy">
-              <div class="team-label">敌方</div>
-              <div id="enemyPicks" class="hero-row"></div>
-            </div>
+          <section class="history-layout" aria-label="近期战绩">
+            <aside class="history-side">
+              <div class="history-filter">
+                <button type="button" class="history-filter-button active">所有模式</button>
+                <button type="button" class="history-filter-button">20 项</button>
+              </div>
 
-            <div class="ban-grid">
-              <div>
-                <span>我方 Ban</span>
-                <div id="myBans" class="ban-list"></div>
-              </div>
-              <div>
-                <span>敌方 Ban</span>
-                <div id="enemyBans" class="ban-list"></div>
-              </div>
-            </div>
-          </article>
+              <article class="history-summary-card">
+                <h3>总览</h3>
+                <div id="historySummary" class="history-summary-list">
+                  <span>等待读取最近战绩</span>
+                </div>
+              </article>
 
-          <article class="dimension-section">
-            <div class="section-title">
-              <div>
-                <h3>阵容维度评分</h3>
-                <p>数值只用于解释，不做绝对胜负承诺</p>
-              </div>
-            </div>
-            <div id="dimensionCompare" class="dimension-list"></div>
-          </article>
+              <article class="history-summary-card">
+                <h3>常用英雄</h3>
+                <div id="favoriteChampions" class="favorite-champions">
+                  <span>暂无数据</span>
+                </div>
+              </article>
+            </aside>
+
+            <section id="matchHistoryList" class="match-history-list" aria-label="对局列表">
+              <article class="history-empty">等待读取最近 20 场对局。</article>
+            </section>
+          </section>
         </section>
 
-        <section class="bottom-grid">
-          <article class="reason-section detail-card" data-detail-panel="ally" tabindex="0" role="button">
-            <h3>我方阵容分析</h3>
-            <ul id="keyReasons" class="reason-list"></ul>
-            <button class="detail-button" type="button" data-detail-panel="ally">查看详情</button>
-          </article>
-
-          <article class="enemy-section detail-card" data-detail-panel="enemy" tabindex="0" role="button">
-            <h3>对方阵容分析</h3>
-            <ul id="enemyAnalysis" class="reason-list enemy-analysis-list"></ul>
-            <button class="detail-button" type="button" data-detail-panel="enemy">查看详情</button>
-          </article>
-
-          <article class="teammate-section detail-card" data-detail-panel="teammates" tabindex="0" role="button">
-            <h3>队友质量分析</h3>
-            <p id="teammateSummary">等待队友质量数据。</p>
-            <div id="teammateOverview" class="quality-overview"></div>
-            <div id="teammatePerformance" class="teammate-list"></div>
-            <button class="detail-button" type="button" data-detail-panel="teammates">查看详情</button>
-          </article>
-
+        <section id="placeholderView" class="view-page placeholder-view hidden" data-view-page="placeholder">
+          <header class="page-header">
+            <div>
+              <h2 id="placeholderTitle">账号概览</h2>
+              <p id="placeholderText">这块之后再做，当前先完成近期战绩。</p>
+            </div>
+          </header>
         </section>
       </section>
     </main>

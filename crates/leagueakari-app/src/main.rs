@@ -36,6 +36,7 @@ struct ProbeProcess {
 fn main() {
     tauri::Builder::default()
         .manage(ProbeProcess::default())
+        .invoke_handler(tauri::generate_handler![fetch_recent_matches])
         .setup(|app| {
             let app_handle = app.handle().clone();
             let probe_process = app.state::<ProbeProcess>().inner().clone();
@@ -55,6 +56,46 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("failed to run LeagueAkari Plus desktop app");
+}
+
+#[tauri::command]
+async fn fetch_recent_matches() -> Result<String, String> {
+    let probe_path = resolve_probe_path();
+    tauri::async_runtime::spawn_blocking(move || run_recent_matches_probe(&probe_path))
+        .await
+        .map_err(|error| format!("recent matches task failed: {error}"))?
+}
+
+fn run_recent_matches_probe(probe_path: &PathBuf) -> Result<String, String> {
+    let mut command = Command::new(probe_path);
+    command
+        .args(["--recent-matches", "--json"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let output = command
+        .output()
+        .map_err(|error| format!("failed to start recent matches probe: {error}"))?;
+    if output.status.success() {
+        return String::from_utf8(output.stdout)
+            .map_err(|error| format!("recent matches probe returned invalid UTF-8: {error}"));
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let message = if !stderr.trim().is_empty() {
+        stderr.trim().to_string()
+    } else if !stdout.trim().is_empty() {
+        stdout.trim().to_string()
+    } else {
+        format!("recent matches probe exited with {}", output.status)
+    };
+
+    Err(message)
 }
 
 fn start_probe_bridge(app: AppHandle, probe_process: ProbeProcess) {

@@ -30,6 +30,7 @@ const metricLabels = {
 };
 
 const state = {
+  currentView: "draft",
   connection: null,
   summoner: null,
   phase: "Unknown",
@@ -44,10 +45,19 @@ const state = {
     ally: [],
     enemy: [],
     teammates: []
-  }
+  },
+  matchHistory: null,
+  matchHistoryStatus: "idle",
+  matchHistoryError: null
 };
 
 const elements = {
+  navItems: document.querySelectorAll("[data-view]"),
+  draftView: document.querySelector("#draftView"),
+  historyView: document.querySelector("#historyView"),
+  placeholderView: document.querySelector("#placeholderView"),
+  placeholderTitle: document.querySelector("#placeholderTitle"),
+  placeholderText: document.querySelector("#placeholderText"),
   connectionStatus: document.querySelector("#connectionStatus"),
   serverStatus: document.querySelector("#serverStatus"),
   connectionDetail: document.querySelector("#connectionDetail"),
@@ -76,6 +86,11 @@ const elements = {
   buildRecommendation: document.querySelector("#buildRecommendation"),
   reconnectButton: document.querySelector("#reconnectButton"),
   loadSampleButton: document.querySelector("#loadSampleButton"),
+  refreshMatchesButton: document.querySelector("#refreshMatchesButton"),
+  historyStatus: document.querySelector("#historyStatus"),
+  historySummary: document.querySelector("#historySummary"),
+  favoriteChampions: document.querySelector("#favoriteChampions"),
+  matchHistoryList: document.querySelector("#matchHistoryList"),
   detailModal: document.querySelector("#detailModal"),
   detailModalTitle: document.querySelector("#detailModalTitle"),
   detailModalSubtitle: document.querySelector("#detailModalSubtitle"),
@@ -200,9 +215,281 @@ function render() {
   renderEnemyAnalysis(analysis, draft);
   renderRecommendations(analysis);
   renderBuildRecommendation(analysis);
+  renderCurrentView();
+  renderMatchHistory();
 
   elements.myPickCount.textContent = `${countPicked(draft?.my_team)} / 5`;
   elements.enemyPickCount.textContent = `${countPicked(draft?.their_team)} / 5`;
+}
+
+function renderCurrentView() {
+  const placeholderViews = new Set(["account", "champions", "settings"]);
+  elements.draftView?.classList.toggle("hidden", state.currentView !== "draft");
+  elements.historyView?.classList.toggle("hidden", state.currentView !== "history");
+  elements.placeholderView?.classList.toggle("hidden", !placeholderViews.has(state.currentView));
+
+  elements.navItems.forEach((item) => {
+    item.classList.toggle("active", item.dataset.view === state.currentView);
+  });
+
+  if (placeholderViews.has(state.currentView)) {
+    const copy = {
+      account: ["账号概览", "这块之后再做，当前先完成近期战绩。"],
+      champions: ["英雄池", "英雄池会继续沿用本地标签库和 OP.GG 快照。"],
+      settings: ["设置", "设置页后续用于管理数据源、模型和显示偏好。"]
+    }[state.currentView];
+    elements.placeholderTitle.textContent = copy[0];
+    elements.placeholderText.textContent = copy[1];
+  }
+}
+
+function renderMatchHistory() {
+  if (!elements.matchHistoryList || !elements.historySummary || !elements.historyStatus) {
+    return;
+  }
+
+  elements.historyStatus.textContent = matchHistoryStatusText();
+
+  if (state.matchHistoryStatus === "loading") {
+    renderHistoryEmpty("正在读取最近 20 场对局。");
+    return;
+  }
+
+  if (state.matchHistoryError) {
+    renderHistoryEmpty(state.matchHistoryError);
+    return;
+  }
+
+  const history = state.matchHistory;
+  if (!history?.matches?.length) {
+    renderHistoryEmpty("暂无最近战绩数据。进入客户端后可重新刷新。");
+    return;
+  }
+
+  renderHistorySummary(history.summary);
+  renderFavoriteChampions(history.summary?.favorite_champions ?? []);
+  elements.matchHistoryList.replaceChildren(...history.matches.map((match) => matchHistoryCard(match)));
+}
+
+function renderHistoryEmpty(message) {
+  elements.historySummary.replaceChildren(historyMetric("状态", message));
+  elements.favoriteChampions.replaceChildren(emptyInline("暂无数据"));
+  const empty = document.createElement("article");
+  empty.className = "history-empty";
+  empty.textContent = message;
+  elements.matchHistoryList.replaceChildren(empty);
+}
+
+function matchHistoryStatusText() {
+  if (state.matchHistoryStatus === "loading") {
+    return "读取中";
+  }
+  if (state.matchHistoryError) {
+    return "读取失败";
+  }
+  if (state.matchHistory?.matches?.length) {
+    return `${state.matchHistory.matches.length} 场`;
+  }
+  return "等待读取";
+}
+
+function renderHistorySummary(summary = {}) {
+  elements.historySummary.replaceChildren(
+    historyMetric("Akari Score", akariScore(summary)),
+    historyMetric("平均 KDA", Number(summary.avg_kda ?? 0).toFixed(2)),
+    historyMetric("参团率", `${Number(summary.avg_kill_participation ?? 0).toFixed(0)}%`),
+    historyMetric("伤害占比", `${Number(summary.avg_damage_share ?? 0).toFixed(0)}%`),
+    historyMetric("活跃对局", `${summary.wins ?? 0} 胜 ${summary.losses ?? 0} 负 (${Number(summary.win_rate ?? 0).toFixed(0)}%)`)
+  );
+}
+
+function renderFavoriteChampions(champions = []) {
+  if (!champions.length) {
+    elements.favoriteChampions.replaceChildren(emptyInline("暂无常用英雄"));
+    return;
+  }
+
+  elements.favoriteChampions.replaceChildren(
+    ...champions.map((champion) => {
+      const item = document.createElement("div");
+      item.className = "favorite-champion";
+      item.append(
+        championIcon(champion.champion_alias, champion.champion_name),
+        inlineStack(champion.champion_name, `${champion.games} 场 · ${champion.wins} 胜`)
+      );
+      return item;
+    })
+  );
+}
+
+function historyMetric(label, value) {
+  const row = document.createElement("div");
+  row.className = "history-metric";
+  const name = document.createElement("span");
+  name.textContent = label;
+  const amount = document.createElement("strong");
+  amount.textContent = value;
+  row.append(name, amount);
+  return row;
+}
+
+function matchHistoryCard(match) {
+  const card = document.createElement("article");
+  card.className = `match-card ${match.result}`;
+  card.append(
+    matchChampionBlock(match),
+    matchStatsBlock(match),
+    matchLoadoutBlock(match),
+    matchParticipantsBlock(match)
+  );
+  return card;
+}
+
+function matchChampionBlock(match) {
+  const block = document.createElement("div");
+  block.className = "match-champion";
+  block.append(championIcon(match.champion_alias, match.champion_name));
+  const text = inlineStack(match.champion_name, `${match.queue_label} · ${match.position} · ${durationLabel(match.duration_seconds)} · ${match.ended_at_label}`);
+  block.append(text);
+  return block;
+}
+
+function matchStatsBlock(match) {
+  const block = document.createElement("div");
+  block.className = "match-stats";
+  const kda = document.createElement("strong");
+  kda.textContent = `${match.kills} / ${match.deaths} / ${match.assists}`;
+  const details = document.createElement("span");
+  details.textContent = `KDA ${Number(match.kda).toFixed(2)} · 参团 ${Number(match.kill_participation).toFixed(0)}%`;
+  const damage = document.createElement("span");
+  damage.textContent = `${Number(match.total_damage).toLocaleString("zh-CN")} 伤害 · ${match.cs} 补刀`;
+  block.append(kda, details, damage, tagRow(match.tags ?? []));
+  return block;
+}
+
+function matchLoadoutBlock(match) {
+  const block = document.createElement("div");
+  block.className = "match-loadout";
+  const items = document.createElement("div");
+  items.className = "item-row";
+  const itemIds = (match.items ?? []).slice(0, 7);
+  const slots = Array.from({ length: 7 }, (_, index) => itemIds[index] ?? null);
+  items.replaceChildren(...slots.map(itemIcon));
+  block.append(items);
+  return block;
+}
+
+function matchParticipantsBlock(match) {
+  const block = document.createElement("div");
+  block.className = "match-participants";
+  (match.teams ?? []).slice(0, 2).forEach((team) => {
+    const column = document.createElement("div");
+    column.className = "participant-column";
+    column.replaceChildren(...team.slice(0, 5).map(participantRow));
+    block.append(column);
+  });
+  return block;
+}
+
+function participantRow(participant) {
+  const row = document.createElement("span");
+  row.className = participant.is_current_player ? "participant current" : "participant";
+  row.append(championMiniIcon(participant.champion_alias, participant.champion_name));
+  const name = document.createElement("span");
+  name.textContent = shortName(participant.display_name);
+  row.append(name);
+  return row;
+}
+
+function tagRow(tags) {
+  const row = document.createElement("div");
+  row.className = "match-tags";
+  row.replaceChildren(...tags.map((tag) => {
+    const pill = document.createElement("span");
+    pill.textContent = tag;
+    return pill;
+  }));
+  return row;
+}
+
+function championIcon(alias, name) {
+  const icon = document.createElement("div");
+  icon.className = "champion-icon";
+  if (alias) {
+    const image = document.createElement("img");
+    image.src = championIconUrl(alias);
+    image.alt = name;
+    image.loading = "lazy";
+    icon.append(image);
+  }
+  const fallback = document.createElement("span");
+  fallback.textContent = shortIconText(name);
+  icon.append(fallback);
+  return icon;
+}
+
+function championMiniIcon(alias, name) {
+  const icon = championIcon(alias, name);
+  icon.classList.add("mini");
+  return icon;
+}
+
+function itemIcon(itemId) {
+  const slot = document.createElement("span");
+  slot.className = itemId ? "item-icon" : "item-icon empty";
+  if (itemId) {
+    const image = document.createElement("img");
+    image.src = itemIconUrl(itemId);
+    image.alt = `装备 ${itemId}`;
+    image.loading = "lazy";
+    slot.append(image);
+  }
+  return slot;
+}
+
+function inlineStack(title, subtitle) {
+  const stack = document.createElement("div");
+  stack.className = "inline-stack";
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  const span = document.createElement("span");
+  span.textContent = subtitle;
+  stack.append(strong, span);
+  return stack;
+}
+
+function emptyInline(text) {
+  const span = document.createElement("span");
+  span.className = "empty-inline";
+  span.textContent = text;
+  return span;
+}
+
+function akariScore(summary = {}) {
+  const score = (Number(summary.avg_kda ?? 0) * 4)
+    + Number(summary.avg_kill_participation ?? 0) * 0.08
+    + Number(summary.avg_damage_share ?? 0) * 0.12
+    + Number(summary.win_rate ?? 0) * 0.04;
+  return score.toFixed(2);
+}
+
+function durationLabel(seconds) {
+  const safeSeconds = Number(seconds || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = String(safeSeconds % 60).padStart(2, "0");
+  return `${minutes}:${rest}`;
+}
+
+function shortIconText(name = "英") {
+  return String(name || "英").slice(0, 1);
+}
+
+function championIconUrl(alias) {
+  return `https://ddragon.leagueoflegends.com/cdn/16.12.1/img/champion/${alias}.png`;
+}
+
+function itemIconUrl(itemId) {
+  return `https://ddragon.leagueoflegends.com/cdn/16.12.1/img/item/${itemId}.png`;
 }
 
 function renderPicks(container, players, side) {
@@ -1235,6 +1522,58 @@ async function reconnectLiveData() {
   await tauriEvent.emit("leagueakari-frontend-ready");
 }
 
+async function fetchRecentMatches(force = false) {
+  if (state.matchHistoryStatus === "loading") {
+    return;
+  }
+  if (!force && state.matchHistory?.matches?.length) {
+    return;
+  }
+
+  const tauriCore = window.__TAURI__?.core;
+  if (!tauriCore?.invoke) {
+    state.matchHistoryStatus = "error";
+    state.matchHistoryError = "当前不是桌面客户端，无法读取 LCU 最近战绩。";
+    render();
+    return;
+  }
+
+  state.matchHistoryStatus = "loading";
+  state.matchHistoryError = null;
+  render();
+
+  try {
+    const output = await tauriCore.invoke("fetch_recent_matches");
+    const recentEvent = parseProbeEventLines(output).find((event) => event.event === "recent_matches");
+    if (!recentEvent?.payload) {
+      throw new Error("probe 没有返回 recent_matches 事件");
+    }
+    state.matchHistory = recentEvent.payload;
+    state.matchHistoryStatus = "ready";
+    state.matchHistoryError = null;
+  } catch (error) {
+    state.matchHistoryStatus = "error";
+    state.matchHistoryError = `读取最近战绩失败：${humanizeBridgeMessage(String(error?.message ?? error))}`;
+  }
+
+  render();
+}
+
+function parseProbeEventLines(output) {
+  return String(output || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
 function loadSampleEvents() {
   state.connection = null;
   state.summoner = null;
@@ -1323,6 +1662,17 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+elements.navItems.forEach((item) => {
+  item.addEventListener("click", (event) => {
+    event.preventDefault();
+    state.currentView = item.dataset.view || "draft";
+    render();
+    if (state.currentView === "history") {
+      fetchRecentMatches(false);
+    }
+  });
+});
+
 elements.loadSampleButton.addEventListener("click", () => {
   loadSampleEvents();
 });
@@ -1335,6 +1685,10 @@ elements.reconnectButton.addEventListener("click", () => {
     };
     render();
   });
+});
+
+elements.refreshMatchesButton?.addEventListener("click", () => {
+  fetchRecentMatches(true);
 });
 
 startTauriEventBridge()

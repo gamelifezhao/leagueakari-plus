@@ -17,6 +17,7 @@ async fn main() -> Result<()> {
         watch: args.iter().any(|arg| arg == "--watch"),
         json: args.iter().any(|arg| arg == "--json"),
         validate_data: args.iter().any(|arg| arg == "--validate-data"),
+        recent_matches: args.iter().any(|arg| arg == "--recent-matches"),
     };
 
     lcu::run_probe(options).await
