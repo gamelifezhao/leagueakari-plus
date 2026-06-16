@@ -31,6 +31,8 @@ Options:
   --role <role>          Filter missing entries to one role: top, jungle, mid, adc, support.
   --min-pick-rate <n>    Filter missing entries by minimum pick rate.
   --json                 Print machine-readable JSON.
+  --markdown             Print a manual collection queue as Markdown.
+  --output <path>        Write output to a file instead of stdout.
   -h, --help             Show this help.
 
 The tool is offline-only. It never requests OP.GG; it only reports which public pages to open manually.`);
@@ -44,6 +46,8 @@ function parseArgs(argv) {
     role: null,
     minPickRate: null,
     json: false,
+    markdown: false,
+    outputPath: null,
     help: false
   };
 
@@ -67,9 +71,17 @@ function parseArgs(argv) {
       );
     } else if (arg === "--json") {
       options.json = true;
+    } else if (arg === "--markdown") {
+      options.markdown = true;
+    } else if (arg === "--output") {
+      options.outputPath = requireValue(argv, (index += 1), "--output");
     } else {
       throw new Error(`Unknown option: ${arg}`);
     }
+  }
+
+  if (options.json && options.markdown) {
+    throw new Error("--json and --markdown cannot be used together.");
   }
 
   return options;
@@ -239,36 +251,76 @@ function coverageReport(options) {
 }
 
 function printText(report) {
-  console.log("OP.GG build coverage:");
-  console.log(
-    `  stats context: ${report.stats.patch} / ${report.stats.region} / ${report.stats.tier} / ${report.stats.queue}`
-  );
-  console.log(`  stat entries: ${report.stats.entries}`);
-  console.log(`  build snapshots: ${report.builds.entries}`);
-  console.log(
-    `  covered stat entries: ${report.coverage.covered_entries} (${report.coverage.covered_percent}%)`
-  );
-  console.log(
-    `  exact-context covered: ${report.coverage.exact_context_entries} (${report.coverage.exact_context_percent}%)`
-  );
-  console.log(`  missing stat entries: ${report.coverage.missing_entries}`);
-  console.log(`  filtered missing entries: ${report.coverage.filtered_missing_entries}`);
-  console.log(`  stale build snapshots: ${report.coverage.stale_builds}`);
-  console.log(`  orphan build snapshots: ${report.coverage.orphan_builds}`);
-  console.log("");
+  const lines = [
+    "OP.GG build coverage:",
+    `  stats context: ${report.stats.patch} / ${report.stats.region} / ${report.stats.tier} / ${report.stats.queue}`,
+    `  stat entries: ${report.stats.entries}`,
+    `  build snapshots: ${report.builds.entries}`,
+    `  covered stat entries: ${report.coverage.covered_entries} (${report.coverage.covered_percent}%)`,
+    `  exact-context covered: ${report.coverage.exact_context_entries} (${report.coverage.exact_context_percent}%)`,
+    `  missing stat entries: ${report.coverage.missing_entries}`,
+    `  filtered missing entries: ${report.coverage.filtered_missing_entries}`,
+    `  stale build snapshots: ${report.coverage.stale_builds}`,
+    `  orphan build snapshots: ${report.coverage.orphan_builds}`,
+    ""
+  ];
 
   if (report.top_missing.length === 0) {
-    console.log("Top missing build pages: none");
-    return;
+    lines.push("Top missing build pages: none");
+    return lines.join("\n");
   }
 
-  console.log("Top missing build pages:");
+  lines.push("Top missing build pages:");
   for (const entry of report.top_missing) {
-    console.log(
+    lines.push(
       `  #${entry.rank} ${entry.champion_name} ${entry.role} | win ${entry.win_rate.toFixed(2)}% | pick ${entry.pick_rate.toFixed(2)}% | ban ${entry.ban_rate.toFixed(2)}%`
     );
-    console.log(`     ${entry.url}`);
+    lines.push(`     ${entry.url}`);
   }
+  return lines.join("\n");
+}
+
+function printMarkdown(report) {
+  const lines = [
+    "# OP.GG Build 补全队列",
+    "",
+    `上下文：${report.stats.patch} / ${report.stats.region} / ${report.stats.tier} / ${report.stats.queue}`,
+    "",
+    `当前覆盖：${report.coverage.covered_entries}/${report.stats.entries} (${report.coverage.covered_percent}%)`,
+    `完全同上下文覆盖：${report.coverage.exact_context_entries}/${report.stats.entries} (${report.coverage.exact_context_percent}%)`,
+    "",
+    "## 下一批优先补",
+    ""
+  ];
+
+  if (report.top_missing.length === 0) {
+    lines.push("当前没有待补 build 页面。");
+    return lines.join("\n");
+  }
+
+  for (const entry of report.top_missing) {
+    const fileName = `${entry.champion_key}-${entry.role}.json`;
+    lines.push(
+      `- [ ] #${entry.rank} ${entry.champion_name} ${entry.role}：胜率 ${entry.win_rate.toFixed(2)}%，选率 ${entry.pick_rate.toFixed(2)}%，禁用率 ${entry.ban_rate.toFixed(2)}%`
+    );
+    lines.push(`  - 页面：${entry.url}`);
+    lines.push(`  - 建议保存：work/opgg-builds/${fileName}`);
+  }
+
+  lines.push("");
+  lines.push("## 手动导入流程");
+  lines.push("");
+  lines.push("1. 在浏览器打开上面的 OP.GG 公开页面。");
+  lines.push("2. 在页面里运行 `tools/opgg-exporter/extract-opgg-champion-build.js` 导出 JSON。");
+  lines.push("3. 先 dry-run，再 append 到本地 build 缓存：");
+  lines.push("");
+  lines.push("```powershell");
+  lines.push("C:\\Users\\admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-builds/<champion-role>.json --dry-run");
+  lines.push("C:\\Users\\admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe tools/opgg-exporter/import-opgg-build.js work/opgg-builds/<champion-role>.json --append");
+  lines.push("```");
+  lines.push("");
+  lines.push("运行时客户端只读本地缓存，不直接请求 OP.GG，也不绕过 WAF 或验证码。");
+  return lines.join("\n");
 }
 
 function main() {
@@ -279,11 +331,22 @@ function main() {
   }
 
   const report = coverageReport(options);
+  let output;
   if (options.json) {
-    console.log(JSON.stringify(report, null, 2));
+    output = JSON.stringify(report, null, 2);
+  } else if (options.markdown) {
+    output = printMarkdown(report);
   } else {
-    printText(report);
+    output = printText(report);
   }
+
+  if (options.outputPath) {
+    fs.mkdirSync(path.dirname(options.outputPath), { recursive: true });
+    fs.writeFileSync(options.outputPath, `${output}\n`, "utf8");
+    return;
+  }
+
+  console.log(output);
 }
 
 try {

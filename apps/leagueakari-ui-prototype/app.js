@@ -59,6 +59,7 @@ const elements = {
   engageDelta: document.querySelector("#engageDelta"),
   damageDelta: document.querySelector("#damageDelta"),
   currentAdvice: document.querySelector("#currentAdvice"),
+  currentAdviceDetails: document.querySelector("#currentAdviceDetails"),
   teammateSummary: document.querySelector("#teammateSummary"),
   teammateOverview: document.querySelector("#teammateOverview"),
   teammatePerformance: document.querySelector("#teammatePerformance"),
@@ -131,6 +132,12 @@ function applyEvent(message) {
 
   if (message.event === "draft_snapshot") {
     cacheChampionNames(message.payload?.champion_names);
+    if (isEmptyDeletedDraftSnapshot(message.payload) && state.lastDraftSnapshot) {
+      state.snapshot = state.lastDraftSnapshot;
+      state.champSelectStatus = null;
+      render();
+      return;
+    }
     const draftPhase = message.payload?.draft_state?.gameflow ?? state.phase;
     resetSnapshotsForNewDraft(message.payload);
     applyPhase(draftPhase);
@@ -290,14 +297,65 @@ function renderCurrentAdvice(analysis, draft) {
   if (!elements.currentAdvice) {
     return;
   }
+  const details = elements.currentAdviceDetails;
   if (!hasEnoughPicksForAdvice(draft)) {
-    elements.currentAdvice.textContent = "等待双方阵容成型后生成提示。";
+    const picked = countDraftPicks(draft);
+    elements.currentAdvice.textContent = "等待阵容继续成型。";
+    details?.replaceChildren(
+      adviceDetailItem("识别进度", `已识别 ${picked}/10 个英雄，至少我方 3 个、敌方 2 个后给结论。`, "neutral"),
+      adviceDetailItem("当前动作", "先观察分路和关键控制位，暂不下判断。", "neutral")
+    );
     return;
   }
   const suggestions = analysis?.suggestions ?? [];
   const winConditions = analysis?.win_conditions ?? [];
-  elements.currentAdvice.textContent =
-    winConditions[0] ?? suggestions[0] ?? "围绕阵容强势期打资源节奏。";
+  const headline = winConditions[0] ?? suggestions[0] ?? "围绕阵容强势期打资源节奏。";
+  elements.currentAdvice.textContent = headline;
+  details?.replaceChildren(...currentAdviceDetails(analysis, draft).map((item) => adviceDetailItem(item.title, item.text, item.type)));
+}
+
+function currentAdviceDetails(analysis, draft) {
+  const myDimensions = analysis?.dimensions ?? {};
+  const enemyDimensions = analysis?.enemy_dimensions ?? {};
+  const biggestGap = strongestDimensionGap(myDimensions, enemyDimensions);
+  const picked = `${countPicked(draft?.my_team ?? [])}/5 对 ${countPicked(draft?.their_team ?? [])}/5`;
+  const items = [
+    { title: "阵容进度", text: `当前选人 ${picked}，结论会随后续补位刷新。`, type: "neutral" }
+  ];
+
+  if (biggestGap && Math.abs(biggestGap.delta) > 8) {
+    items.push({
+      title: biggestGap.delta < 0 ? "主要风险" : "主要优势",
+      text: `${metricLabels[biggestGap.key]}：${dimensionHint(biggestGap.key, biggestGap.mine, biggestGap.enemy)}`,
+      type: biggestGap.delta < 0 ? "risk" : "good"
+    });
+  } else {
+    items.push({
+      title: "维度差距",
+      text: "双方暂未拉开明显差距，先看资源前站位和第一波关键技能。",
+      type: "neutral"
+    });
+  }
+
+  const enemyDamage = enemyDamageProfile(enemyDimensions).replace(/^伤害结构：/, "");
+  items.push({
+    title: "伤害结构",
+    text: enemyDamage,
+    type: enemyDamage.includes("压力") || enemyDamage.includes("不能只堆") ? "risk" : "neutral"
+  });
+
+  return items.slice(0, 3);
+}
+
+function adviceDetailItem(title, text, type = "neutral") {
+  const item = document.createElement("div");
+  item.className = `advice-detail-item ${type}`;
+  const titleNode = document.createElement("strong");
+  titleNode.textContent = title;
+  const textNode = document.createElement("span");
+  textNode.textContent = text;
+  item.append(titleNode, textNode);
+  return item;
 }
 
 function teammateQualityCard(teammate) {
@@ -606,6 +664,18 @@ function isInGameSnapshot(snapshot) {
   return snapshot?.draft_state?.gameflow === "InProgress" || isLiveClientRestoredSnapshot(snapshot);
 }
 
+function isEmptyDeletedDraftSnapshot(snapshot) {
+  const draft = snapshot?.draft_state;
+  if (!draft || snapshot?.lcu_event_type !== "Delete") {
+    return false;
+  }
+  return (
+    countDraftPicks(draft) === 0 &&
+    (draft.bans?.length ?? 0) === 0 &&
+    (draft.local_player_cell_id === -1 || draft.local_player_cell_id === null)
+  );
+}
+
 function clearDraftSnapshots() {
   state.snapshot = null;
   state.lastDraftSnapshot = null;
@@ -776,6 +846,34 @@ function formatDelta(label, mine = 0, enemy = 0) {
   }
   const prefix = delta > 0 ? "+" : "";
   return `${label} ${prefix}${delta}`;
+}
+
+function strongestDimensionGap(myDimensions = {}, enemyDimensions = {}) {
+  return Object.keys(metricLabels)
+    .map((key) => ({
+      key,
+      mine: myDimensions[key] ?? 0,
+      enemy: enemyDimensions[key] ?? 0,
+      delta: (myDimensions[key] ?? 0) - (enemyDimensions[key] ?? 0)
+    }))
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0] ?? null;
+}
+
+function dimensionHint(key, mine = 0, enemy = 0) {
+  const delta = mine - enemy;
+  if (Math.abs(delta) <= 8) {
+    return "双方接近，更多看操作和资源前站位。";
+  }
+  const allyAhead = delta > 0;
+  const hints = {
+    engage: allyAhead ? "我方更容易先手开团，资源前可以主动逼位置。" : "敌方更容易先手，河道和野区入口别站太密。",
+    magic_damage: allyAhead ? "我方 AP 压力更足，适合逼敌方补魔抗。" : "敌方 AP 压力更高，关键位要注意魔抗和控制。",
+    physical_damage: allyAhead ? "我方 AD 输出更稳定，正面持续输出空间重要。" : "敌方 AD 输出更高，护甲和后排站位更关键。",
+    scaling: allyAhead ? "我方后期更好，前中期别无谓送节奏。" : "敌方后期更强，中期资源要更主动。",
+    crowd_control: allyAhead ? "我方控制链更完整，抓落单和反开价值高。" : "敌方控制更多，吃第一段控制后容易被接死。",
+    frontline: allyAhead ? "我方前排更厚，正面团容错更高。" : "我方承伤偏薄，避免无视野硬接正面团。"
+  };
+  return hints[key] ?? (allyAhead ? "我方这一项更强。" : "敌方这一项更强。");
 }
 
 function enemyDamageProfile(enemyDimensions = {}) {
