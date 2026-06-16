@@ -180,6 +180,29 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
           "敌方前排较硬，正面阵地战不适合无脑硬灌坦克。",
           "敌方控制链很足，被先手命中后容易连续吃技能。"
         ],
+        enemy_focus_targets: [
+          {
+            champion_id: 111,
+            champion_key: "nautilus",
+            focus_type: "crowd_control",
+            priority: 95,
+            reason: "关键控制点，被第一段控制命中后容易被接后续技能。"
+          },
+          {
+            champion_id: 901,
+            champion_key: "smolder",
+            focus_type: "scaling",
+            priority: 90,
+            reason: "后期成长点，中期资源节奏不能完全放给他发育。"
+          },
+          {
+            champion_id: 54,
+            champion_key: "malphite",
+            focus_type: "frontline",
+            priority: 90,
+            reason: "主要前排承伤点，能绕开就别把第一波技能全交给他。"
+          }
+        ],
         win_conditions: [
           "利用我方控制链先手，优先逼出敌方关键进场或保命技能。",
           "团战站位要分散，留关键控制给敌方第一波进场。",

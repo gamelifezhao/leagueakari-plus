@@ -124,55 +124,39 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
                 &serde_json::to_value(draft_state)?,
             )?;
         }
-    } else if gameflow_phase.as_str() == Some("InProgress") {
-        if let Some(draft_state) = live_client::fetch_in_progress_draft(&champion_catalog).await {
-            let analysis = analysis::analyze_draft(&draft_state);
-            let teammate_performance = teammate_performance::analyze_teammates(
-                &client,
-                &draft_state,
-                summoner.as_ref(),
-                &mut teammate_cache,
-            )
-            .await;
-            if options.json {
+    } else {
+        let emitted_live_client = try_emit_live_client_snapshot(
+            &client,
+            summoner.as_ref(),
+            &champion_catalog,
+            &mut teammate_cache,
+            options.json,
+        )
+        .await?;
+
+        if !emitted_live_client {
+            if gameflow_phase.as_str() == Some("InProgress") {
+                if options.json {
+                    output::print_event(
+                        "champ_select_status",
+                        &output::status_message(
+                            "skipped",
+                            "gameflow is InProgress and live client data is unavailable",
+                        ),
+                    )?;
+                } else {
+                    println!("champ select session: skipped because gameflow is InProgress");
+                    println!("live client data: unavailable");
+                }
+            } else if options.json {
                 output::print_event(
-                    "draft_snapshot",
-                    &output::draft_snapshot(
-                        "live-client",
-                        None,
-                        &draft_state,
-                        &analysis,
-                        &champion_catalog,
-                        &teammate_performance,
-                    ),
+                    "champ_select_status",
+                    &output::status_message("skipped", "gameflow is not ChampSelect"),
                 )?;
             } else {
-                print_draft_summary(&draft_state, &champion_catalog);
-                print_json("composition analysis", &serde_json::to_value(analysis)?)?;
-                print_json(
-                    "normalized draft state",
-                    &serde_json::to_value(draft_state)?,
-                )?;
+                println!("champ select session: skipped because gameflow is not ChampSelect");
             }
-        } else if options.json {
-            output::print_event(
-                "champ_select_status",
-                &output::status_message(
-                    "skipped",
-                    "gameflow is InProgress and live client data is unavailable",
-                ),
-            )?;
-        } else {
-            println!("champ select session: skipped because gameflow is InProgress");
-            println!("live client data: unavailable");
         }
-    } else if options.json {
-        output::print_event(
-            "champ_select_status",
-            &output::status_message("skipped", "gameflow is not ChampSelect"),
-        )?;
-    } else {
-        println!("champ select session: skipped because gameflow is not ChampSelect");
     }
 
     if options.watch {
@@ -463,6 +447,66 @@ fn format_bans(
         .collect::<Vec<_>>();
 
     format_list(labels)
+}
+
+async fn try_emit_live_client_snapshot(
+    client: &client::LcuClient,
+    current_summoner: Option<&Value>,
+    champion_catalog: &champions::ChampionCatalog,
+    teammate_cache: &mut teammate_performance::TeammatePerformanceCache,
+    json: bool,
+) -> Result<bool> {
+    match live_client::fetch_in_progress_draft_result(champion_catalog).await {
+        Ok(Some(draft_state)) => {
+            let analysis = analysis::analyze_draft(&draft_state);
+            let teammate_performance = teammate_performance::analyze_teammates(
+                client,
+                &draft_state,
+                current_summoner,
+                teammate_cache,
+            )
+            .await;
+            if json {
+                output::print_event(
+                    "draft_snapshot",
+                    &output::draft_snapshot(
+                        "live-client",
+                        None,
+                        &draft_state,
+                        &analysis,
+                        champion_catalog,
+                        &teammate_performance,
+                    ),
+                )?;
+            } else {
+                print_draft_summary(&draft_state, champion_catalog);
+                print_json("composition analysis", &serde_json::to_value(analysis)?)?;
+                print_json(
+                    "normalized draft state",
+                    &serde_json::to_value(draft_state)?,
+                )?;
+            }
+            Ok(true)
+        }
+        Ok(None) => {
+            if json {
+                output::print_event(
+                    "live_client_status",
+                    &output::status_message("skipped", "live client returned no players"),
+                )?;
+            }
+            Ok(false)
+        }
+        Err(error) => {
+            if json {
+                output::print_event(
+                    "live_client_status",
+                    &output::status_message("unavailable", &error.to_string()),
+                )?;
+            }
+            Ok(false)
+        }
+    }
 }
 
 fn format_list<T>(items: Vec<T>) -> String

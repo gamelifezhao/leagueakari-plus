@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use thiserror::Error;
 
 use super::{
     champions::ChampionCatalog,
@@ -6,6 +7,25 @@ use super::{
 };
 
 const LIVE_CLIENT_ALL_GAME_DATA_URL: &str = "https://127.0.0.1:2999/liveclientdata/allgamedata";
+
+#[derive(Debug, Error)]
+pub enum LiveClientError {
+    #[error("failed to build live client HTTP client: {0}")]
+    Build(#[source] reqwest::Error),
+    #[error("live client request failed for {url}: {source}")]
+    Request { url: String, source: reqwest::Error },
+    #[error("live client returned {status} for {url}: {body}")]
+    Status {
+        url: String,
+        status: reqwest::StatusCode,
+        body: String,
+    },
+    #[error("failed to parse live client JSON from {url}: {source}")]
+    Json {
+        url: String,
+        source: serde_json::Error,
+    },
+}
 
 #[derive(Debug, Deserialize)]
 struct LiveClientAllGameData {
@@ -42,23 +62,47 @@ struct LiveClientPlayer {
 }
 
 pub async fn fetch_in_progress_draft(champion_catalog: &ChampionCatalog) -> Option<DraftState> {
+    fetch_in_progress_draft_result(champion_catalog)
+        .await
+        .ok()
+        .flatten()
+}
+
+pub async fn fetch_in_progress_draft_result(
+    champion_catalog: &ChampionCatalog,
+) -> Result<Option<DraftState>, LiveClientError> {
     let http = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
+        .no_proxy()
+        .connect_timeout(std::time::Duration::from_millis(800))
         .timeout(std::time::Duration::from_millis(2000))
         .build()
-        .ok()?;
-    let data = http
-        .get(LIVE_CLIENT_ALL_GAME_DATA_URL)
+        .map_err(LiveClientError::Build)?;
+    let url = LIVE_CLIENT_ALL_GAME_DATA_URL.to_string();
+    let response = http
+        .get(&url)
         .send()
         .await
-        .ok()?
-        .error_for_status()
-        .ok()?
-        .json::<LiveClientAllGameData>()
+        .map_err(|source| LiveClientError::Request {
+            url: url.clone(),
+            source,
+        })?;
+    let status = response.status();
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_else(|_| String::new());
+        return Err(LiveClientError::Status { url, status, body });
+    }
+    let body = response
+        .text()
         .await
-        .ok()?;
+        .map_err(|source| LiveClientError::Request {
+            url: url.clone(),
+            source,
+        })?;
+    let data = serde_json::from_str::<LiveClientAllGameData>(&body)
+        .map_err(|source| LiveClientError::Json { url, source })?;
 
-    parse_live_client_draft(&data, champion_catalog)
+    Ok(parse_live_client_draft(&data, champion_catalog))
 }
 
 fn parse_live_client_draft(
@@ -126,19 +170,25 @@ fn champion_id_from_live_player(
         .raw_champion_name
         .as_deref()
         .and_then(raw_champion_alias)
-        .and_then(|alias| champion_catalog.find_by_alias(alias))
+        .and_then(|alias| champion_catalog.find_by_alias_or_name(alias))
         .map(|champion| champion.id)
         .or_else(|| {
             player.champion_name.as_deref().and_then(|name| {
                 champion_catalog
-                    .find_by_alias(name)
+                    .find_by_alias_or_name(name)
                     .map(|champion| champion.id)
             })
         })
 }
 
 fn raw_champion_alias(raw_champion_name: &str) -> Option<&str> {
-    raw_champion_name.strip_prefix("game_character_displayname_")
+    raw_champion_name
+        .strip_prefix("game_character_displayname_")
+        .or_else(|| {
+            raw_champion_name
+                .strip_prefix("Character_")?
+                .strip_suffix("_Name")
+        })
 }
 
 fn position_label(position: &str) -> Option<String> {
@@ -246,5 +296,49 @@ mod tests {
         assert_eq!(draft.their_team.len(), 1);
         assert_eq!(draft.their_team[0].champion_id, Some(412));
         assert!(draft.bans.is_empty());
+    }
+
+    #[test]
+    fn parses_character_name_raw_champion_format() {
+        let catalog = ChampionCatalog::from_lcu_summary(&json!([
+            { "id": 266, "alias": "Aatrox", "name": "暗裔剑魔" },
+            { "id": 103, "alias": "Ahri", "name": "九尾妖狐" }
+        ]));
+        let data = serde_json::from_value::<LiveClientAllGameData>(json!({
+            "activePlayer": {
+                "riotId": "me#12345",
+                "riotIdGameName": "me",
+                "riotIdTagLine": "12345"
+            },
+            "allPlayers": [
+                {
+                    "rawChampionName": "game_character_displayname_Ahri",
+                    "championName": "九尾妖狐",
+                    "position": "MIDDLE",
+                    "team": "ORDER",
+                    "riotId": "me#12345",
+                    "riotIdGameName": "me",
+                    "riotIdTagLine": "12345"
+                },
+                {
+                    "rawChampionName": "Character_Aatrox_Name",
+                    "championName": "暗裔剑魔",
+                    "position": "TOP",
+                    "team": "CHAOS",
+                    "riotId": "enemy#12345",
+                    "riotIdGameName": "enemy",
+                    "riotIdTagLine": "12345"
+                }
+            ]
+        }))
+        .unwrap();
+
+        let draft = parse_live_client_draft(&data, &catalog).unwrap();
+
+        assert_eq!(draft.their_team[0].champion_id, Some(266));
+        assert_eq!(
+            draft.their_team[0].assigned_position.as_deref(),
+            Some("top")
+        );
     }
 }

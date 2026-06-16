@@ -15,6 +15,7 @@ pub struct CompositionAnalysis {
     pub strengths: Vec<String>,
     pub risks: Vec<String>,
     pub enemy_threats: Vec<String>,
+    pub enemy_focus_targets: Vec<EnemyFocusTarget>,
     pub win_conditions: Vec<String>,
     pub suggestions: Vec<String>,
 }
@@ -46,6 +47,25 @@ pub struct ChampionStatSummary {
     pub pick_rate: f32,
     pub ban_rate: f32,
     pub rank: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct EnemyFocusTarget {
+    pub champion_id: i64,
+    pub champion_key: String,
+    pub focus_type: EnemyFocusType,
+    pub priority: u8,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum EnemyFocusType {
+    BacklineCarry,
+    Frontline,
+    Engage,
+    CrowdControl,
+    Scaling,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -338,6 +358,7 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
     risks.extend(matchup_risks_for(&dimensions, &enemy_dimensions));
     risks.extend(meta_risks_for(&champion_stats));
     let enemy_threats = enemy_threats_for(&dimensions, &enemy_dimensions);
+    let enemy_focus_targets = enemy_focus_targets_for(&draft.their_team, &tag_db);
     let win_conditions = win_conditions_for(&dimensions, &enemy_dimensions);
     let mut suggestions = suggestions_for(&dimensions, picked_champions.len() >= 5);
     suggestions.extend(counterplay_suggestions_for(&dimensions, &enemy_dimensions));
@@ -354,6 +375,7 @@ pub fn analyze_draft(draft: &DraftState) -> CompositionAnalysis {
         strengths,
         risks,
         enemy_threats,
+        enemy_focus_targets,
         win_conditions,
         suggestions,
     }
@@ -628,6 +650,100 @@ fn enemy_threats_for(my: &CompositionDimensions, enemy: &CompositionDimensions) 
     }
 
     threats
+}
+
+fn enemy_focus_targets_for(
+    enemy_players: &[DraftPlayer],
+    tag_db: &HashMap<i64, ChampionTags>,
+) -> Vec<EnemyFocusTarget> {
+    let mut targets = Vec::new();
+
+    push_focus_target(
+        &mut targets,
+        enemy_players,
+        tag_db,
+        EnemyFocusType::BacklineCarry,
+        |tags| {
+            tags.physical_damage
+                .max(tags.magic_damage)
+                .saturating_add(tags.scaling / 3)
+        },
+        70,
+        "后排核心输出，团战优先限制输出环境。",
+    );
+    push_focus_target(
+        &mut targets,
+        enemy_players,
+        tag_db,
+        EnemyFocusType::Frontline,
+        |tags| tags.frontline,
+        70,
+        "主要前排承伤点，能绕开就别把第一波技能全交给他。",
+    );
+    push_focus_target(
+        &mut targets,
+        enemy_players,
+        tag_db,
+        EnemyFocusType::Engage,
+        |tags| tags.engage,
+        65,
+        "关键开团点，资源前盯住进场角度。",
+    );
+    push_focus_target(
+        &mut targets,
+        enemy_players,
+        tag_db,
+        EnemyFocusType::CrowdControl,
+        |tags| tags.crowd_control,
+        70,
+        "关键控制点，被第一段控制命中后容易被接后续技能。",
+    );
+    push_focus_target(
+        &mut targets,
+        enemy_players,
+        tag_db,
+        EnemyFocusType::Scaling,
+        |tags| tags.scaling,
+        80,
+        "后期成长点，中期资源节奏不能完全放给他发育。",
+    );
+
+    targets.sort_by(|a, b| b.priority.cmp(&a.priority));
+    let mut seen_champions = HashSet::new();
+    targets.retain(|target| seen_champions.insert(target.champion_id));
+    targets.truncate(4);
+    targets
+}
+
+fn push_focus_target(
+    targets: &mut Vec<EnemyFocusTarget>,
+    enemy_players: &[DraftPlayer],
+    tag_db: &HashMap<i64, ChampionTags>,
+    focus_type: EnemyFocusType,
+    score: impl Fn(&ChampionTags) -> u8,
+    threshold: u8,
+    reason: &str,
+) {
+    let Some((champion_id, tags, priority)) = enemy_players
+        .iter()
+        .filter_map(|player| {
+            let champion_id = player.champion_id?;
+            let tags = tag_db.get(&champion_id)?;
+            let priority = score(tags);
+            (priority >= threshold).then_some((champion_id, tags, priority))
+        })
+        .max_by_key(|(_, _, priority)| *priority)
+    else {
+        return;
+    };
+
+    targets.push(EnemyFocusTarget {
+        champion_id,
+        champion_key: tags.champion_key.clone(),
+        focus_type,
+        priority,
+        reason: reason.to_string(),
+    });
 }
 
 fn win_conditions_for(my: &CompositionDimensions, enemy: &CompositionDimensions) -> Vec<String> {
@@ -1344,6 +1460,16 @@ mod tests {
                 .iter()
                 .any(|threat| threat.contains("强先手"))
         );
+        assert!(
+            analysis
+                .enemy_focus_targets
+                .iter()
+                .any(|target| target.champion_id == 111
+                    && target.focus_type == EnemyFocusType::CrowdControl)
+        );
+        assert!(analysis.enemy_focus_targets.iter().any(
+            |target| target.champion_id == 901 && target.focus_type == EnemyFocusType::Scaling
+        ));
         assert!(
             analysis
                 .win_conditions

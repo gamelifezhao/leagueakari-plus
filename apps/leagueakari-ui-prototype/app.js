@@ -59,7 +59,6 @@ const elements = {
   engageDelta: document.querySelector("#engageDelta"),
   damageDelta: document.querySelector("#damageDelta"),
   currentAdvice: document.querySelector("#currentAdvice"),
-  currentAdviceDetails: document.querySelector("#currentAdviceDetails"),
   teammateSummary: document.querySelector("#teammateSummary"),
   teammateOverview: document.querySelector("#teammateOverview"),
   teammatePerformance: document.querySelector("#teammatePerformance"),
@@ -297,65 +296,52 @@ function renderCurrentAdvice(analysis, draft) {
   if (!elements.currentAdvice) {
     return;
   }
-  const details = elements.currentAdviceDetails;
   if (!hasEnoughPicksForAdvice(draft)) {
     const picked = countDraftPicks(draft);
-    elements.currentAdvice.textContent = "等待阵容继续成型。";
-    details?.replaceChildren(
-      adviceDetailItem("识别进度", `已识别 ${picked}/10 个英雄，至少我方 3 个、敌方 2 个后给结论。`, "neutral"),
-      adviceDetailItem("当前动作", "先观察分路和关键控制位，暂不下判断。", "neutral")
-    );
+    renderAdviceLines([
+      { text: `等待阵容继续成型，当前已识别 ${picked}/10 个英雄。` },
+      { text: "先观察分路和关键控制位，暂不下判断。" }
+    ]);
     return;
   }
   const suggestions = analysis?.suggestions ?? [];
   const winConditions = analysis?.win_conditions ?? [];
   const headline = winConditions[0] ?? suggestions[0] ?? "围绕阵容强势期打资源节奏。";
-  elements.currentAdvice.textContent = headline;
-  details?.replaceChildren(...currentAdviceDetails(analysis, draft).map((item) => adviceDetailItem(item.title, item.text, item.type)));
+  renderAdviceLines([{ text: headline }, ...currentAdviceLines(analysis)]);
 }
 
-function currentAdviceDetails(analysis, draft) {
+function currentAdviceLines(analysis) {
   const myDimensions = analysis?.dimensions ?? {};
   const enemyDimensions = analysis?.enemy_dimensions ?? {};
   const biggestGap = strongestDimensionGap(myDimensions, enemyDimensions);
-  const picked = `${countPicked(draft?.my_team ?? [])}/5 对 ${countPicked(draft?.their_team ?? [])}/5`;
-  const items = [
-    { title: "阵容进度", text: `当前选人 ${picked}，结论会随后续补位刷新。`, type: "neutral" }
-  ];
+  const lines = [];
 
   if (biggestGap && Math.abs(biggestGap.delta) > 8) {
-    items.push({
-      title: biggestGap.delta < 0 ? "主要风险" : "主要优势",
-      text: `${metricLabels[biggestGap.key]}：${dimensionHint(biggestGap.key, biggestGap.mine, biggestGap.enemy)}`,
-      type: biggestGap.delta < 0 ? "risk" : "good"
-    });
-  } else {
-    items.push({
-      title: "维度差距",
-      text: "双方暂未拉开明显差距，先看资源前站位和第一波关键技能。",
-      type: "neutral"
+    lines.push({
+      text: `${biggestGap.delta < 0 ? "风险" : "优势"}：${metricLabels[biggestGap.key]}，${dimensionHint(
+        biggestGap.key,
+        biggestGap.mine,
+        biggestGap.enemy
+      )}`,
+      tone: biggestGap.delta < 0 ? "danger" : "normal"
     });
   }
 
   const enemyDamage = enemyDamageProfile(enemyDimensions).replace(/^伤害结构：/, "");
-  items.push({
-    title: "伤害结构",
-    text: enemyDamage,
-    type: enemyDamage.includes("压力") || enemyDamage.includes("不能只堆") ? "risk" : "neutral"
-  });
+  lines.push({ text: `伤害结构：${enemyDamage}`, tone: enemyDamage.includes("压力") || enemyDamage.includes("不能只堆") ? "danger" : "normal" });
 
-  return items.slice(0, 3);
+  return lines.slice(0, 2);
 }
 
-function adviceDetailItem(title, text, type = "neutral") {
-  const item = document.createElement("div");
-  item.className = `advice-detail-item ${type}`;
-  const titleNode = document.createElement("strong");
-  titleNode.textContent = title;
-  const textNode = document.createElement("span");
-  textNode.textContent = text;
-  item.append(titleNode, textNode);
-  return item;
+function renderAdviceLines(lines) {
+  elements.currentAdvice.replaceChildren(
+    ...lines.map((line) => {
+      const item = document.createElement("p");
+      item.className = line.tone === "danger" ? "advice-line danger" : "advice-line";
+      item.textContent = line.text;
+      return item;
+    })
+  );
 }
 
 function teammateQualityCard(teammate) {
@@ -447,6 +433,7 @@ function renderEnemyAnalysis(analysis, draft) {
     .map((player) => championName(player.champion_id, false));
   const enemyDimensions = analysis?.enemy_dimensions ?? {};
   const enemyThreats = (analysis?.enemy_threats ?? []).slice(0, 2);
+  const enemyFocusTargets = enemyFocusItems(analysis, enemyPlayers);
   const items = [];
 
   if (enemyPicks.length > 0) {
@@ -458,6 +445,8 @@ function renderEnemyAnalysis(analysis, draft) {
   }
 
   if (analysis) {
+    items.push(...enemyFocusTargets);
+
     items.push({
       type: enemyDamageWarningType(enemyDimensions),
       title: "伤害结构",
@@ -474,16 +463,15 @@ function renderEnemyAnalysis(analysis, draft) {
       items.push({ type: "negative", title: "控制链", text: "被第一段控制命中后容易连续吃技能。" });
     }
 
-    if ((enemyDimensions.frontline ?? 0) >= 70) {
-      items.push({ type: "suggestion", title: "前排厚", text: "正面团需要先处理前排，或者绕开主坦打后排。" });
-    }
-
     if ((enemyDimensions.scaling ?? 0) >= 75) {
       items.push({ type: "negative", title: "后期强", text: "中期资源节奏要更主动，别拖到对面成型。" });
     }
   }
 
-  enemyThreats.forEach((text) => {
+  const hasSpecificFocus = enemyFocusTargets.length > 0;
+  enemyThreats
+    .filter((text) => !(hasSpecificFocus && text.includes("前排")))
+    .forEach((text) => {
     items.push({ type: "negative", title: "威胁点", text });
   });
 
@@ -497,6 +485,54 @@ function renderEnemyAnalysis(analysis, draft) {
       return reasonItem(item.title, item.text, item.type);
     })
   );
+}
+
+function enemyFocusItems(analysis, enemyPlayers = []) {
+  const targets = analysis?.enemy_focus_targets ?? [];
+  if (targets.length > 0) {
+    return targets.slice(0, 4).map((target) => ({
+      type: enemyFocusTypeTone(target.focus_type),
+      title: enemyFocusTypeLabel(target.focus_type),
+      text: `${championName(target.champion_id, false)}：${target.reason}`
+    }));
+  }
+
+  const picked = enemyPlayers.filter((player) => player?.champion_id);
+  const carries = picked.filter((player) => ["bottom", "middle"].includes(player.assigned_position));
+  const frontline = picked.find((player) => ["top", "utility", "jungle"].includes(player.assigned_position));
+  const items = [];
+
+  if (carries.length > 0) {
+    items.push({
+      type: "negative",
+      title: "优先限制",
+      text: `${carries.map((player) => championName(player.champion_id, false)).join(" / ")}：优先压低输出环境，团前别让他们免费站位。`
+    });
+  }
+  if (frontline) {
+    items.push({
+      type: "suggestion",
+      title: "前排处理",
+      text: `${championName(frontline.champion_id, false)}：如果很难秒掉，就绕开他找后排或等他关键技能交完。`
+    });
+  }
+
+  return items;
+}
+
+function enemyFocusTypeLabel(type) {
+  const labels = {
+    backline_carry: "优先限制",
+    frontline: "前排处理",
+    engage: "开团点",
+    crowd_control: "控制点",
+    scaling: "后期点"
+  };
+  return labels[type] ?? "重点英雄";
+}
+
+function enemyFocusTypeTone(type) {
+  return type === "frontline" ? "suggestion" : "negative";
 }
 
 function reasonItem(title, text, type) {
