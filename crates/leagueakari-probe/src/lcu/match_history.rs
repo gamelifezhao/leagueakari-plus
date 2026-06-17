@@ -61,6 +61,7 @@ pub struct RecentMatch {
     pub queue_id: i64,
     pub queue_label: String,
     pub game_mode: String,
+    pub game_version: String,
     pub result: String,
     pub result_label: String,
     pub ended_at_label: String,
@@ -82,10 +83,13 @@ pub struct RecentMatch {
     pub items: Vec<i64>,
     pub tags: Vec<String>,
     pub teams: Vec<Vec<MatchParticipant>>,
+    pub timeline: Option<MatchTimeline>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct MatchParticipant {
+    pub participant_id: i64,
+    pub team_id: i64,
     pub display_name: String,
     pub champion_id: i64,
     pub champion_name: String,
@@ -107,6 +111,39 @@ pub struct MatchParticipant {
     pub vision_score: i64,
     pub spell_ids: Vec<i64>,
     pub items: Vec<i64>,
+    pub rune_style_ids: Vec<i64>,
+    pub perk_ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MatchTimeline {
+    pub events: Vec<MatchTimelineEvent>,
+    pub gold_series: Vec<MatchGoldFrame>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MatchTimelineEvent {
+    pub timestamp: i64,
+    pub event_type: String,
+    pub participant_id: Option<i64>,
+    pub killer_id: Option<i64>,
+    pub victim_id: Option<i64>,
+    pub assisting_participant_ids: Vec<i64>,
+    pub item_id: Option<i64>,
+    pub skill_slot: Option<i64>,
+    pub team_id: Option<i64>,
+    pub monster_type: String,
+    pub monster_sub_type: String,
+    pub building_type: String,
+    pub lane_type: String,
+    pub tower_type: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MatchGoldFrame {
+    pub timestamp: i64,
+    pub blue_gold: i64,
+    pub red_gold: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -158,22 +195,29 @@ async fn hydrate_match_history(client: &LcuClient, value: &Value) -> Value {
     let mut hydrated_games = Vec::new();
 
     for game in games.iter().take(MATCH_LIMIT) {
-        if should_request_game_detail(game) {
-            let game_id = i64_field(game, "gameId");
+        let game_id = i64_field(game, "gameId");
+        let mut game_object = if should_request_game_detail(game) {
             match client
                 .get_json::<Value>(&format!("/lol-match-history/v1/games/{game_id}"))
                 .await
             {
-                Ok(detail) => {
-                    hydrated_games.push(detail_game_object(detail));
-                    continue;
-                }
+                Ok(detail) => detail_game_object(detail),
                 Err(error) => {
                     tracing::debug!("match detail request failed for {game_id}: {error}");
+                    game.clone()
                 }
             }
+        } else {
+            game.clone()
+        };
+
+        if let Some(timeline) = fetch_game_timeline(client, game_id).await {
+            if let Some(game_map) = game_object.as_object_mut() {
+                game_map.insert("timeline".to_string(), timeline);
+            }
         }
-        hydrated_games.push(game.clone());
+
+        hydrated_games.push(game_object);
     }
 
     let mut hydrated = value.clone();
@@ -217,6 +261,19 @@ fn detail_game_object(detail: Value) -> Value {
         .filter(|game| game.is_object())
         .cloned()
         .unwrap_or(detail)
+}
+
+async fn fetch_game_timeline(client: &LcuClient, game_id: i64) -> Option<Value> {
+    if game_id <= 0 {
+        return None;
+    }
+
+    let timeline = client
+        .get_json::<Value>(&format!("/lol-match-history/v1/game-timelines/{game_id}"))
+        .await
+        .ok()?;
+    timeline.get("frames").and_then(Value::as_array)?;
+    Some(timeline)
 }
 
 fn summarize_match_history(
@@ -312,6 +369,7 @@ fn summarize_game(
         queue_id: i64_field(game, "queueId"),
         queue_label: queue_label(i64_field(game, "queueId")).to_string(),
         game_mode: string_field(game, "gameMode", "UNKNOWN"),
+        game_version: string_field(game, "gameVersion", ""),
         result: result.to_string(),
         result_label: if result == "win" { "胜利" } else { "失败" }.to_string(),
         ended_at_label: ended_at_label(game),
@@ -348,6 +406,7 @@ fn summarize_game(
             champion_catalog,
             i64_field(game, "gameDuration"),
         ),
+        timeline: match_timeline(game, participants),
     })
 }
 
@@ -400,6 +459,7 @@ fn participant_teams(
                 .take(5)
                 .map(|participant| {
                     let participant_id = i64_field(participant, "participantId");
+                    let team_id = i64_field(participant, "teamId");
                     let identity = identities.get(&participant_id);
                     let champion_id = i64_field(participant, "championId");
                     let champion = champion_metadata(champion_catalog, champion_id);
@@ -411,6 +471,8 @@ fn participant_teams(
                     let cs = i64_field(stats, "totalMinionsKilled")
                         + i64_field(stats, "neutralMinionsKilled");
                     MatchParticipant {
+                        participant_id,
+                        team_id,
                         display_name: identity
                             .map(|identity| identity.display_name.clone())
                             .filter(|name| !name.is_empty())
@@ -446,11 +508,104 @@ fn participant_teams(
                         .filter(|spell_id| *spell_id > 0)
                         .collect(),
                         items: item_ids(stats),
+                        rune_style_ids: rune_style_ids(stats),
+                        perk_ids: perk_ids(stats),
                     }
                 })
                 .collect()
         })
         .collect()
+}
+
+fn match_timeline(game: &Value, participants: &[Value]) -> Option<MatchTimeline> {
+    let frames = game
+        .get("timeline")
+        .and_then(|timeline| timeline.get("frames"))
+        .and_then(Value::as_array)?;
+    let team_by_participant = participants
+        .iter()
+        .map(|participant| {
+            (
+                i64_field(participant, "participantId"),
+                i64_field(participant, "teamId"),
+            )
+        })
+        .collect::<HashMap<_, _>>();
+    let mut events = Vec::new();
+    let mut gold_series = Vec::new();
+
+    for frame in frames {
+        let timestamp = i64_field(frame, "timestamp");
+        if let Some(participant_frames) = frame.get("participantFrames").and_then(Value::as_object)
+        {
+            let mut blue_gold = 0;
+            let mut red_gold = 0;
+            for frame_value in participant_frames.values() {
+                let participant_id = i64_field(frame_value, "participantId");
+                let total_gold = i64_field(frame_value, "totalGold");
+                match team_by_participant.get(&participant_id).copied() {
+                    Some(100) => blue_gold += total_gold,
+                    Some(200) => red_gold += total_gold,
+                    _ => {}
+                }
+            }
+            if blue_gold > 0 || red_gold > 0 {
+                gold_series.push(MatchGoldFrame {
+                    timestamp,
+                    blue_gold,
+                    red_gold,
+                });
+            }
+        }
+
+        if let Some(frame_events) = frame.get("events").and_then(Value::as_array) {
+            for event in frame_events {
+                let event_type = string_field(event, "type", "");
+                if is_notable_timeline_event(&event_type) {
+                    events.push(MatchTimelineEvent {
+                        timestamp: i64_field(event, "timestamp"),
+                        event_type,
+                        participant_id: positive_i64_field(event, "participantId"),
+                        killer_id: positive_i64_field(event, "killerId"),
+                        victim_id: positive_i64_field(event, "victimId"),
+                        assisting_participant_ids: i64_array_field(event, "assistingParticipantIds"),
+                        item_id: positive_i64_field(event, "itemId"),
+                        skill_slot: positive_i64_field(event, "skillSlot"),
+                        team_id: positive_i64_field(event, "teamId"),
+                        monster_type: string_field(event, "monsterType", ""),
+                        monster_sub_type: string_field(event, "monsterSubType", ""),
+                        building_type: string_field(event, "buildingType", ""),
+                        lane_type: string_field(event, "laneType", ""),
+                        tower_type: string_field(event, "towerType", ""),
+                    });
+                }
+            }
+        }
+    }
+
+    events.sort_by_key(|event| event.timestamp);
+    events.truncate(320);
+    Some(MatchTimeline {
+        events,
+        gold_series,
+    })
+}
+
+fn is_notable_timeline_event(event_type: &str) -> bool {
+    matches!(
+        event_type,
+        "CHAMPION_KILL"
+            | "ELITE_MONSTER_KILL"
+            | "BUILDING_KILL"
+            | "TURRET_PLATE_DESTROYED"
+            | "WARD_PLACED"
+            | "WARD_KILL"
+            | "ITEM_PURCHASED"
+            | "ITEM_SOLD"
+            | "ITEM_DESTROYED"
+            | "ITEM_UNDO"
+            | "SKILL_LEVEL_UP"
+    )
 }
 
 fn summarize_matches(matches: &[RecentMatch]) -> MatchHistorySummary {
@@ -661,6 +816,25 @@ fn item_ids(stats: &Value) -> Vec<i64> {
         .collect()
 }
 
+fn rune_style_ids(stats: &Value) -> Vec<i64> {
+    ["perkPrimaryStyle", "perkSubStyle"]
+        .into_iter()
+        .filter_map(|key| {
+            let style_id = i64_field(stats, key);
+            (style_id > 0).then_some(style_id)
+        })
+        .collect()
+}
+
+fn perk_ids(stats: &Value) -> Vec<i64> {
+    (0..=5)
+        .filter_map(|index| {
+            let perk_id = i64_field(stats, &format!("perk{index}"));
+            (perk_id > 0).then_some(perk_id)
+        })
+        .collect()
+}
+
 fn win_field(stats: &Value) -> bool {
     if let Some(win) = stats.get("win").and_then(Value::as_bool) {
         return win;
@@ -673,6 +847,22 @@ fn win_field(stats: &Value) -> bool {
 
 fn i64_field(value: &Value, key: &str) -> i64 {
     value.get(key).and_then(Value::as_i64).unwrap_or_default()
+}
+
+fn positive_i64_field(value: &Value, key: &str) -> Option<i64> {
+    let value = i64_field(value, key);
+    (value > 0).then_some(value)
+}
+
+fn i64_array_field(value: &Value, key: &str) -> Vec<i64> {
+    value
+        .get(key)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_i64)
+        .filter(|value| *value > 0)
+        .collect()
 }
 
 fn string_field(value: &Value, key: &str, fallback: &str) -> String {

@@ -49,7 +49,8 @@ const state = {
   matchHistory: null,
   matchHistoryStatus: "idle",
   matchHistoryError: null,
-  expandedMatchId: null
+  expandedMatchId: null,
+  matchDetailTabs: {}
 };
 
 const elements = {
@@ -439,24 +440,94 @@ function matchExpandButton(match) {
 function matchDetailPanel(match) {
   const panel = document.createElement("section");
   panel.className = "match-detail-panel";
-  panel.append(matchDetailTabs(), matchDetailSummary(match));
+  const activeTab = state.matchDetailTabs[match.game_id] ?? "overview";
+  panel.append(matchDetailTabs(match, activeTab), matchDetailContent(match, activeTab));
   return panel;
 }
 
-function matchDetailTabs() {
+const matchDetailTabLabels = {
+  overview: "总览",
+  table: "详尽表格",
+  runes: "符文",
+  events: "事件",
+  builds: "构建",
+  graph: "线图"
+};
+
+function matchDetailTabs(match, activeTab) {
   const tabs = document.createElement("div");
   tabs.className = "match-detail-tabs";
-  ["总览", "详尽表格", "符文", "事件", "构建", "线图"].forEach((label, index) => {
+  Object.entries(matchDetailTabLabels).forEach(([key, label]) => {
     const tab = document.createElement("button");
     tab.type = "button";
-    tab.className = index === 0 ? "active" : "";
+    tab.className = key === activeTab ? "active" : "";
     tab.textContent = label;
+    tab.addEventListener("click", (event) => {
+      event.stopPropagation();
+      state.matchDetailTabs[match.game_id] = key;
+      render();
+    });
     tabs.append(tab);
   });
   return tabs;
 }
 
+function matchDetailContent(match, activeTab) {
+  return {
+    overview: () => matchDetailSummary(match),
+    table: () => matchDetailTable(match),
+    runes: () => matchRunesPanel(match),
+    events: () => matchEventsPanel(match),
+    builds: () => matchBuildsPanel(match),
+    graph: () => matchGraphPanel(match)
+  }[activeTab]?.() ?? matchDetailSummary(match);
+}
+
 function matchDetailSummary(match) {
+  const panel = document.createElement("div");
+  panel.className = "match-detail-overview";
+  const current = (match.teams ?? []).flat().find((participant) => participant.is_current_player);
+  const timeline = match.timeline ?? {};
+  const killEvents = (timeline.events ?? []).filter((event) => event.event_type === "CHAMPION_KILL");
+  panel.append(
+    detailSummaryCard("本局信息", [
+      `游戏 ID：${match.game_id}`,
+      `版本：${match.game_version || "未知"}`,
+      `时长：${durationLabel(match.duration_seconds)}`,
+      `事件：${(timeline.events ?? []).length} 条`
+    ]),
+    detailSummaryCard("个人表现", [
+      `${match.kills}/${match.deaths}/${match.assists} · KDA ${Number(match.kda ?? 0).toFixed(2)}`,
+      `参团 ${Number(match.kill_participation ?? 0).toFixed(0)}% · 伤害 ${Number(match.total_damage ?? 0).toLocaleString("zh-CN")}`,
+      `补刀 ${match.cs ?? 0} · 视野 ${match.vision_score ?? 0}`,
+      current ? `符文：${runeStyleName(current.rune_style_ids?.[0])} / ${runeStyleName(current.rune_style_ids?.[1])}` : "符文：暂无"
+    ]),
+    detailSummaryCard("时间线摘要", [
+      `英雄击杀：${killEvents.length}`,
+      `金币曲线点：${(timeline.gold_series ?? []).length}`,
+      `构建事件：${timelineBuildEvents(match).length}`,
+      `技能升级：${timelineSkillEvents(match).length}`
+    ])
+  );
+  return panel;
+}
+
+function detailSummaryCard(title, lines) {
+  const card = document.createElement("div");
+  card.className = "detail-summary-card";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const list = document.createElement("div");
+  list.replaceChildren(...lines.map((line) => {
+    const item = document.createElement("span");
+    item.textContent = line;
+    return item;
+  }));
+  card.append(heading, list);
+  return card;
+}
+
+function matchDetailTable(match) {
   const table = document.createElement("div");
   table.className = "match-detail-table";
   const allParticipants = (match.teams ?? []).flat();
@@ -472,6 +543,239 @@ function matchDetailSummary(match) {
   });
 
   return table;
+}
+
+function matchRunesPanel(match) {
+  const panel = document.createElement("div");
+  panel.className = "match-runes-panel";
+  const participants = (match.teams ?? []).flat();
+  panel.replaceChildren(...participants.map((participant) => {
+    const card = document.createElement("article");
+    card.className = participant.is_current_player ? "rune-player-card current" : "rune-player-card";
+    const header = document.createElement("div");
+    header.className = "rune-player-header";
+    header.append(championIcon(participant.champion_alias, participant.champion_name));
+    header.append(inlineStack(shortName(textOr(participant.display_name, "未知玩家")), `${participant.champion_name} · ${participant.position}`));
+
+    const styles = document.createElement("div");
+    styles.className = "rune-style-row";
+    styles.replaceChildren(...(participant.rune_style_ids ?? []).map((styleId) => runePill(runeStyleName(styleId), styleId, true)));
+
+    const perks = document.createElement("div");
+    perks.className = "rune-perk-grid";
+    const perkIds = participant.perk_ids ?? [];
+    if (perkIds.length) {
+      perks.replaceChildren(...perkIds.map((perkId) => runePill(runeName(perkId), perkId)));
+    } else {
+      perks.append(emptyInline("暂无符文数据"));
+    }
+
+    card.append(header, styles, perks);
+    return card;
+  }));
+  return panel;
+}
+
+function runePill(label, id, isStyle = false) {
+  const pill = document.createElement("span");
+  pill.className = "rune-pill";
+  if (id) {
+    const icon = document.createElement("img");
+    icon.src = isStyle ? runeStyleIconUrl(id) : runeIconUrl(id);
+    icon.alt = label || "符文";
+    icon.loading = "lazy";
+    pill.title = `${label || "未知"} #${id}`;
+    pill.append(icon);
+  }
+  const text = document.createElement("span");
+  text.textContent = label || "未知";
+  pill.append(text);
+  return pill;
+}
+
+function matchEventsPanel(match) {
+  const panel = document.createElement("div");
+  panel.className = "match-events-panel";
+  const timelineEvents = (match.timeline?.events ?? []).filter((event) => {
+    return ["CHAMPION_KILL", "ELITE_MONSTER_KILL", "BUILDING_KILL", "TURRET_PLATE_DESTROYED"].includes(event.event_type);
+  }).slice(0, 80);
+  if (!timelineEvents.length) {
+    panel.append(emptyDetailState("暂无事件时间线数据"));
+    return panel;
+  }
+
+  const list = document.createElement("div");
+  list.className = "event-timeline";
+  list.replaceChildren(...timelineEvents.map((event) => eventRow(event, match)));
+  panel.append(list, eventSideSummary(match));
+  return panel;
+}
+
+function eventRow(event, match) {
+  const row = document.createElement("article");
+  row.className = "event-row";
+  const marker = document.createElement("span");
+  marker.className = "event-marker";
+  const content = document.createElement("div");
+  const title = document.createElement("strong");
+  title.className = "event-title";
+  title.append(...eventTitleNodes(event, match));
+  const meta = document.createElement("span");
+  meta.textContent = `${timestampLabel(event.timestamp)} · ${eventMeta(event, match)}`;
+  content.append(title, meta);
+  row.append(marker, content);
+  return row;
+}
+
+function eventSideSummary(match) {
+  const side = document.createElement("aside");
+  side.className = "event-side-summary";
+  const events = match.timeline?.events ?? [];
+  const killsByParticipant = countBy(events.filter((event) => event.event_type === "CHAMPION_KILL").map((event) => event.killer_id).filter(Boolean));
+  const topKillers = Object.entries(killsByParticipant)
+    .map(([id, count]) => ({ participant: participantById(match, Number(id)), count }))
+    .filter((entry) => entry.participant)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const title = document.createElement("strong");
+  title.textContent = "事件统计";
+  side.append(title);
+  if (!topKillers.length) {
+    side.append(emptyInline("暂无击杀统计"));
+    return side;
+  }
+  topKillers.forEach(({ participant, count }) => {
+    const item = document.createElement("span");
+    item.className = "event-stat-row";
+    item.append(championMiniIcon(participant.champion_alias, participant.champion_name), document.createTextNode(`${participant.champion_name} · ${count} 次参与击杀`));
+    side.append(item);
+  });
+  return side;
+}
+
+function matchBuildsPanel(match) {
+  const panel = document.createElement("div");
+  panel.className = "match-builds-panel";
+  const hasTimelineBuilds = timelineBuildEvents(match).length || timelineSkillEvents(match).length;
+  const participants = (match.teams ?? []).flat();
+  const cards = participants.map((participant) => {
+    const card = document.createElement("article");
+    card.className = participant.is_current_player ? "build-player-card current" : "build-player-card";
+    const header = document.createElement("div");
+    header.className = "build-player-header";
+    header.append(championIcon(participant.champion_alias, participant.champion_name));
+    header.append(inlineStack(shortName(textOr(participant.display_name, "未知玩家")), `${participant.champion_name} · ${participant.position}`));
+
+    const spells = document.createElement("div");
+    spells.className = "skill-sequence";
+    spells.replaceChildren(...(participant.spell_ids ?? []).map(spellIcon));
+
+    const purchases = document.createElement("div");
+    purchases.className = "purchase-sequence";
+    const itemEvents = timelineBuildEvents(match).filter((event) => event.participant_id === participant.participant_id);
+    if (itemEvents.length) {
+      purchases.replaceChildren(...itemEvents.slice(0, 24).map(itemEventNode));
+    } else {
+      const itemIds = (participant.items ?? []).slice(0, 7);
+      purchases.replaceChildren(...Array.from({ length: 7 }, (_, index) => itemIcon(itemIds[index] ?? null)));
+    }
+    card.append(header, labelBlock("召唤师技能", spells), labelBlock(itemEvents.length ? "装备购买" : "最终装备", purchases));
+    return card;
+  });
+  panel.replaceChildren(...(hasTimelineBuilds ? cards : [buildUnavailableNotice(), ...cards]));
+  return panel;
+}
+
+function buildUnavailableNotice() {
+  const notice = document.createElement("div");
+  notice.className = "detail-empty-state build-notice";
+  notice.textContent = "LCU 历史时间线未返回购买时间和技能升级事件，当前先展示最终装备、召唤师技能与符文；后续可尝试接 Riot Match Timeline API 补全构建过程。";
+  return notice;
+}
+
+function labelBlock(label, node) {
+  const block = document.createElement("div");
+  block.className = "detail-labeled-block";
+  const title = document.createElement("span");
+  title.textContent = label;
+  block.append(title, node);
+  return block;
+}
+
+function skillEventPill(event) {
+  const pill = document.createElement("span");
+  pill.className = "skill-pill";
+  pill.textContent = `${skillSlotName(event.skill_slot)} ${timestampLabel(event.timestamp)}`;
+  return pill;
+}
+
+function itemEventNode(event) {
+  const node = document.createElement("span");
+  node.className = "purchase-item";
+  node.append(itemIcon(event.item_id));
+  const time = document.createElement("small");
+  time.textContent = timestampLabel(event.timestamp);
+  node.append(time);
+  return node;
+}
+
+function matchGraphPanel(match) {
+  const panel = document.createElement("div");
+  panel.className = "match-graph-panel";
+  const series = match.timeline?.gold_series ?? [];
+  if (series.length < 2) {
+    panel.append(emptyDetailState("暂无金币曲线数据"));
+    return panel;
+  }
+
+  panel.append(goldChart(series));
+  const controls = document.createElement("aside");
+  controls.className = "graph-side";
+  controls.append(
+    detailSummaryCard("数据类型", ["金币"]),
+    detailSummaryCard("队伍平均", [
+      `蓝队最终 ${series[series.length - 1].blue_gold.toLocaleString("zh-CN")} 金币`,
+      `红队最终 ${series[series.length - 1].red_gold.toLocaleString("zh-CN")} 金币`
+    ])
+  );
+  panel.append(controls);
+  return panel;
+}
+
+function goldChart(series) {
+  const width = 620;
+  const height = 360;
+  const padding = { left: 48, right: 20, top: 20, bottom: 36 };
+  const maxTime = Math.max(1, ...series.map((point) => point.timestamp));
+  const maxGold = Math.max(1, ...series.flatMap((point) => [point.blue_gold, point.red_gold]));
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const x = (time) => padding.left + (time / maxTime) * plotWidth;
+  const y = (gold) => padding.top + plotHeight - (gold / maxGold) * plotHeight;
+  const line = (key) => series.map((point) => `${x(point.timestamp).toFixed(1)},${y(point[key]).toFixed(1)}`).join(" ");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.classList.add("gold-chart");
+  svg.innerHTML = `
+    <g class="chart-grid">
+      ${[0.25, 0.5, 0.75, 1].map((ratio) => `<line x1="${padding.left}" y1="${padding.top + plotHeight * ratio}" x2="${width - padding.right}" y2="${padding.top + plotHeight * ratio}"></line>`).join("")}
+      ${[0, 0.25, 0.5, 0.75, 1].map((ratio) => `<line x1="${padding.left + plotWidth * ratio}" y1="${padding.top}" x2="${padding.left + plotWidth * ratio}" y2="${height - padding.bottom}"></line>`).join("")}
+    </g>
+    <polyline class="blue-line" points="${line("blue_gold")}"></polyline>
+    <polyline class="red-line" points="${line("red_gold")}"></polyline>
+    <text x="${padding.left}" y="${height - 10}">0min</text>
+    <text x="${width - padding.right - 52}" y="${height - 10}">${Math.round(maxTime / 60000)}min</text>
+    <text x="6" y="${padding.top + 8}">${maxGold.toLocaleString("zh-CN")}</text>
+    <text x="6" y="${height - padding.bottom}">0</text>
+  `;
+  return svg;
+}
+
+function emptyDetailState(text) {
+  const empty = document.createElement("div");
+  empty.className = "detail-empty-state";
+  empty.textContent = text;
+  return empty;
 }
 
 function teamHeader(label, team = []) {
@@ -573,6 +877,194 @@ function numberOr(value, fallback = 0) {
 
 function textOr(value, fallback) {
   return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function timelineBuildEvents(match) {
+  return (match.timeline?.events ?? []).filter((event) => {
+    return ["ITEM_PURCHASED", "ITEM_SOLD", "ITEM_DESTROYED"].includes(event.event_type) && event.item_id;
+  });
+}
+
+function timelineSkillEvents(match) {
+  return (match.timeline?.events ?? []).filter((event) => event.event_type === "SKILL_LEVEL_UP" && event.skill_slot);
+}
+
+function timestampLabel(timestamp) {
+  const safe = Math.max(0, Number(timestamp ?? 0));
+  const totalSeconds = Math.floor(safe / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function participantById(match, participantId) {
+  return (match.teams ?? []).flat().find((participant) => Number(participant.participant_id) === Number(participantId));
+}
+
+function eventTitle(event, match) {
+  if (event.event_type === "CHAMPION_KILL") {
+    const killer = participantById(match, event.killer_id);
+    const victim = participantById(match, event.victim_id);
+    return `${killer?.champion_name ?? "未知英雄"} 击杀 ${victim?.champion_name ?? "未知英雄"}`;
+  }
+  if (event.event_type === "ELITE_MONSTER_KILL") {
+    return `${teamLabel(event.team_id)} 击杀 ${monsterName(event.monster_type, event.monster_sub_type)}`;
+  }
+  if (event.event_type === "BUILDING_KILL") {
+    return `${teamLabel(event.team_id)} 摧毁 ${buildingName(event.building_type, event.tower_type)}`;
+  }
+  if (event.event_type === "TURRET_PLATE_DESTROYED") {
+    return "镀层被摧毁";
+  }
+  return event.event_type;
+}
+
+function eventTitleNodes(event, match) {
+  if (event.event_type === "CHAMPION_KILL") {
+    const killer = participantById(match, event.killer_id);
+    const victim = participantById(match, event.victim_id);
+    return [
+      eventChampionNode(killer),
+      document.createTextNode(" 击杀 "),
+      eventChampionNode(victim)
+    ];
+  }
+  return [document.createTextNode(eventTitle(event, match))];
+}
+
+function eventChampionNode(participant) {
+  const node = document.createElement("span");
+  node.className = "event-champion";
+  if (participant) {
+    node.append(championMiniIcon(participant.champion_alias, participant.champion_name), document.createTextNode(participant.champion_name));
+  } else {
+    node.textContent = "未知英雄";
+  }
+  return node;
+}
+
+function eventMeta(event, match) {
+  if (event.event_type === "CHAMPION_KILL") {
+    const assists = (event.assisting_participant_ids ?? [])
+      .map((id) => participantById(match, id)?.champion_name)
+      .filter(Boolean);
+    return assists.length ? `助攻：${assists.join(" / ")}` : "单杀或无助攻";
+  }
+  return [event.lane_type, event.monster_sub_type, event.tower_type].filter(Boolean).join(" · ") || "地图事件";
+}
+
+function countBy(values) {
+  return values.reduce((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function teamLabel(teamId) {
+  return Number(teamId) === 100 ? "蓝队" : Number(teamId) === 200 ? "红队" : "队伍";
+}
+
+function monsterName(type, subType) {
+  if (subType === "AIR_DRAGON") return "风龙";
+  if (subType === "EARTH_DRAGON") return "土龙";
+  if (subType === "FIRE_DRAGON") return "火龙";
+  if (subType === "WATER_DRAGON") return "水龙";
+  if (subType === "CHEMTECH_DRAGON") return "炼金龙";
+  if (subType === "HEXTECH_DRAGON") return "海克斯龙";
+  if (type === "BARON_NASHOR") return "纳什男爵";
+  if (type === "RIFTHERALD") return "峡谷先锋";
+  if (type === "HORDE") return "虚空巢虫";
+  if (type === "DRAGON") return "小龙";
+  return type || "野怪";
+}
+
+function buildingName(buildingType, towerType) {
+  if (buildingType === "INHIBITOR_BUILDING") return "水晶";
+  if (towerType === "OUTER_TURRET") return "外塔";
+  if (towerType === "INNER_TURRET") return "二塔";
+  if (towerType === "BASE_TURRET") return "高地塔";
+  if (towerType === "NEXUS_TURRET") return "门牙塔";
+  return "防御塔";
+}
+
+function skillSlotName(slot) {
+  return ({ 1: "Q", 2: "W", 3: "E", 4: "R" })[Number(slot)] ?? "?";
+}
+
+const runeStyleNames = {
+  8000: "精密",
+  8100: "主宰",
+  8200: "巫术",
+  8300: "启迪",
+  8400: "坚决"
+};
+
+const runeNames = {
+  8005: "强攻",
+  8008: "致命节奏",
+  8010: "征服者",
+  8014: "致命一击",
+  8021: "迅捷步法",
+  8112: "电刑",
+  8124: "掠食者",
+  8126: "恶意中伤",
+  8128: "黑暗收割",
+  8135: "寻宝猎人",
+  8136: "僵尸守卫",
+  8138: "眼球收集器",
+  8139: "血之滋味",
+  8143: "猛然冲击",
+  8210: "超然",
+  8214: "召唤艾黎",
+  8224: "法力流系带",
+  8226: "法力流系带",
+  8229: "奥术彗星",
+  8230: "相位猛冲",
+  8232: "水上行走",
+  8233: "绝对专注",
+  8234: "迅捷",
+  8236: "焦灼",
+  8275: "灵光披风",
+  8299: "砍倒",
+  8304: "神奇之鞋",
+  8313: "完美时机",
+  8316: "万用行家",
+  8321: "饼干配送",
+  8345: "饼干配送",
+  8347: "星界洞悉",
+  8351: "冰川增幅",
+  8360: "启封秘籍",
+  8369: "先攻",
+  8437: "不灭之握",
+  8439: "余震",
+  8444: "复苏之风",
+  8451: "过度生长",
+  8453: "复苏",
+  8463: "生命源泉",
+  8465: "守护者",
+  8473: "骸骨镀层",
+  9101: "气定神闲",
+  9103: "传说：血统",
+  9104: "传说：欢欣",
+  9105: "传说：急速",
+  9111: "凯旋",
+  9923: "丛刃"
+};
+
+function runeStyleName(styleId) {
+  return runeStyleNames[Number(styleId)] ?? (styleId ? `系别 ${styleId}` : "未知系别");
+}
+
+function runeName(perkId) {
+  return runeNames[Number(perkId)] ?? `符文 ${perkId}`;
+}
+
+function runeIconUrl(perkId) {
+  return `https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perk/${perkId}.png`;
+}
+
+function runeStyleIconUrl(styleId) {
+  return `https://opgg-static.akamaized.net/meta/images/lol/16.12.1/perkStyle/${styleId}.png`;
 }
 
 function participantRow(participant) {

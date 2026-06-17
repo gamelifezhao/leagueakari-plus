@@ -1340,6 +1340,49 @@ p {
   border-radius: 6px;
 }
 
+.match-detail-overview,
+.match-runes-panel,
+.match-builds-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.match-detail-overview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.detail-summary-card,
+.rune-player-card,
+.build-player-card,
+.detail-empty-state {
+  border: 1px solid #303946;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px;
+}
+
+.detail-summary-card {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-summary-card strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.detail-summary-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.detail-summary-card span,
+.detail-empty-state {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .detail-team-header,
 .detail-player-row {
   display: grid;
@@ -1477,6 +1520,219 @@ p {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.rune-player-card,
+.build-player-card {
+  display: grid;
+  gap: 9px;
+}
+
+.rune-player-card.current,
+.build-player-card.current {
+  border-color: rgba(49, 216, 195, 0.42);
+  background: rgba(49, 216, 195, 0.06);
+}
+
+.rune-player-header,
+.build-player-header {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.rune-player-header .champion-icon,
+.build-player-header .champion-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+
+.rune-style-row,
+.rune-perk-grid,
+.skill-sequence,
+.purchase-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rune-pill,
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  border: 1px solid #3a4654;
+  border-radius: 999px;
+  background: #202733;
+  color: #cfe0f0;
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 9px 0 4px;
+}
+
+.rune-pill img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #11161d;
+  object-fit: cover;
+}
+
+.rune-pill span {
+  overflow: hidden;
+  max-width: 118px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-labeled-block {
+  display: grid;
+  gap: 6px;
+}
+
+.detail-labeled-block > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.purchase-item {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.match-events-panel,
+.match-graph-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  min-height: 0;
+}
+
+.event-timeline {
+  display: grid;
+  gap: 0;
+  max-height: 440px;
+  overflow: auto;
+  padding-left: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.event-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  min-height: 58px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.event-marker {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  border: 2px solid var(--teal);
+  border-radius: 50%;
+}
+
+.event-marker::after {
+  position: absolute;
+  top: 10px;
+  left: 3px;
+  width: 2px;
+  height: 46px;
+  background: rgba(255, 255, 255, 0.15);
+  content: "";
+}
+
+.event-row:last-child .event-marker::after {
+  display: none;
+}
+
+.event-row strong {
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.event-title,
+.event-champion,
+.event-stat-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.event-title {
+  flex-wrap: wrap;
+}
+
+.event-champion .champion-icon,
+.event-stat-row .champion-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.event-side-summary,
+.graph-side {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 12px;
+}
+
+.event-side-summary strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.event-side-summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.event-stat-row {
+  color: var(--muted);
+}
+
+.gold-chart {
+  width: 100%;
+  min-height: 320px;
+}
+
+.gold-chart text {
+  fill: var(--subtle);
+  font-size: 12px;
+}
+
+.chart-grid line {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.gold-chart polyline {
+  fill: none;
+  stroke-width: 3;
+}
+
+.blue-line {
+  stroke: #4aa3ff;
+}
+
+.red-line {
+  stroke: #ff5d5d;
 }
 
 .placeholder-view {
