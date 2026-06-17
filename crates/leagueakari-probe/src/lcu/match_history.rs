@@ -91,6 +91,22 @@ pub struct MatchParticipant {
     pub champion_name: String,
     pub champion_alias: Option<String>,
     pub is_current_player: bool,
+    pub position: String,
+    pub level: i64,
+    pub kills: i64,
+    pub deaths: i64,
+    pub assists: i64,
+    pub kda: f64,
+    pub kill_participation: f64,
+    pub total_damage: i64,
+    pub damage_taken: i64,
+    pub cs: i64,
+    pub cs_per_minute: f64,
+    pub gold: i64,
+    pub gold_per_minute: f64,
+    pub vision_score: i64,
+    pub spell_ids: Vec<i64>,
+    pub items: Vec<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -178,7 +194,21 @@ fn should_request_game_detail(game: &Value) -> bool {
         .get("participantIdentities")
         .and_then(Value::as_array)
         .map_or(0, Vec::len);
-    i64_field(game, "gameId") > 0 && (participant_count < 10 || identity_count < 10)
+    let missing_stats = game
+        .get("participants")
+        .and_then(Value::as_array)
+        .is_some_and(|participants| participants.iter().any(participant_missing_core_stats));
+    i64_field(game, "gameId") > 0 && (participant_count < 10 || identity_count < 10 || missing_stats)
+}
+
+fn participant_missing_core_stats(participant: &Value) -> bool {
+    let Some(stats) = participant.get("stats").filter(|value| value.is_object()) else {
+        return true;
+    };
+
+    ["kills", "deaths", "assists", "totalDamageDealtToChampions"]
+        .into_iter()
+        .any(|key| stats.get(key).and_then(Value::as_i64).is_none())
 }
 
 fn detail_game_object(detail: Value) -> Value {
@@ -316,6 +346,7 @@ fn summarize_game(
             current_puuid,
             current_display,
             champion_catalog,
+            i64_field(game, "gameDuration"),
         ),
     })
 }
@@ -348,7 +379,18 @@ fn participant_teams(
     current_puuid: Option<&str>,
     current_display: &str,
     champion_catalog: &ChampionCatalog,
+    duration_seconds: i64,
 ) -> Vec<Vec<MatchParticipant>> {
+    let team_kills = participants.iter().fold(
+        HashMap::<i64, i64>::new(),
+        |mut kills_by_team, participant| {
+            let team_id = i64_field(participant, "teamId");
+            let kills = i64_field(participant.get("stats").unwrap_or(&Value::Null), "kills");
+            *kills_by_team.entry(team_id).or_default() += kills;
+            kills_by_team
+        },
+    );
+
     [100, 200]
         .into_iter()
         .map(|team_id| {
@@ -361,6 +403,13 @@ fn participant_teams(
                     let identity = identities.get(&participant_id);
                     let champion_id = i64_field(participant, "championId");
                     let champion = champion_metadata(champion_catalog, champion_id);
+                    let stats = participant.get("stats").unwrap_or(&Value::Null);
+                    let duration = duration_seconds.max(i64_field(stats, "timePlayed")).max(1);
+                    let kills = i64_field(stats, "kills");
+                    let deaths = i64_field(stats, "deaths");
+                    let assists = i64_field(stats, "assists");
+                    let cs = i64_field(stats, "totalMinionsKilled")
+                        + i64_field(stats, "neutralMinionsKilled");
                     MatchParticipant {
                         display_name: identity
                             .map(|identity| identity.display_name.clone())
@@ -372,6 +421,31 @@ fn participant_teams(
                         is_current_player: identity.is_some_and(|identity| {
                             is_current_identity(identity, current_puuid, current_display)
                         }),
+                        position: position_label(participant),
+                        level: i64_field(stats, "champLevel"),
+                        kills,
+                        deaths,
+                        assists,
+                        kda: kda_ratio(kills, deaths, assists),
+                        kill_participation: percent(
+                            kills + assists,
+                            *team_kills.get(&team_id).unwrap_or(&0),
+                        ),
+                        total_damage: i64_field(stats, "totalDamageDealtToChampions"),
+                        damage_taken: i64_field(stats, "totalDamageTaken"),
+                        cs,
+                        cs_per_minute: per_minute(cs, duration),
+                        gold: i64_field(stats, "goldEarned"),
+                        gold_per_minute: per_minute(i64_field(stats, "goldEarned"), duration),
+                        vision_score: i64_field(stats, "visionScore"),
+                        spell_ids: vec![
+                            i64_field(participant, "spell1Id"),
+                            i64_field(participant, "spell2Id"),
+                        ]
+                        .into_iter()
+                        .filter(|spell_id| *spell_id > 0)
+                        .collect(),
+                        items: item_ids(stats),
                     }
                 })
                 .collect()
@@ -621,6 +695,13 @@ fn kda_ratio(kills: i64, deaths: i64, assists: i64) -> f64 {
     (((kills + assists) as f64 / divisor) * 100.0).round() / 100.0
 }
 
+fn per_minute(value: i64, duration_seconds: i64) -> f64 {
+    if duration_seconds <= 0 {
+        return 0.0;
+    }
+    ((value as f64 / duration_seconds as f64) * 600.0).round() / 10.0
+}
+
 fn average(values: impl Iterator<Item = f64>) -> f64 {
     let mut total = 0.0;
     let mut count = 0usize;
@@ -721,5 +802,27 @@ mod tests {
         assert_eq!(history.matches[0].position, "中路");
         assert_eq!(history.matches[0].kill_participation, 90.0);
         assert_eq!(history.matches[0].damage_share, 66.7);
+    }
+
+    #[test]
+    fn requests_game_detail_when_participant_stats_are_missing() {
+        let game = json!({
+            "gameId": 123,
+            "participants": (0..10)
+                .map(|index| json!({
+                    "participantId": index + 1,
+                    "teamId": if index < 5 { 100 } else { 200 },
+                    "championId": 103
+                }))
+                .collect::<Vec<_>>(),
+            "participantIdentities": (0..10)
+                .map(|index| json!({
+                    "participantId": index + 1,
+                    "player": { "summonerName": format!("player{index}") }
+                }))
+                .collect::<Vec<_>>()
+        });
+
+        assert!(should_request_game_detail(&game));
     }
 }

@@ -48,7 +48,8 @@ const state = {
   },
   matchHistory: null,
   matchHistoryStatus: "idle",
-  matchHistoryError: null
+  matchHistoryError: null,
+  expandedMatchId: null
 };
 
 const elements = {
@@ -268,7 +269,8 @@ function renderMatchHistory() {
 
   renderHistorySummary(history.summary);
   renderFavoriteChampions(history.summary?.favorite_champions ?? []);
-  elements.matchHistoryList.replaceChildren(...history.matches.map((match) => matchHistoryCard(match)));
+  elements.matchHistoryList.scrollLeft = 0;
+  elements.matchHistoryList.replaceChildren(...history.matches.map((match) => matchHistoryItem(match)));
 }
 
 function renderHistoryEmpty(message) {
@@ -310,7 +312,7 @@ function renderFavoriteChampions(champions = []) {
   }
 
   elements.favoriteChampions.replaceChildren(
-    ...champions.map((champion) => {
+    ...champions.slice(0, 4).map((champion) => {
       const item = document.createElement("div");
       item.className = "favorite-champion";
       item.append(
@@ -333,16 +335,45 @@ function historyMetric(label, value) {
   return row;
 }
 
+function matchHistoryItem(match) {
+  const item = document.createElement("article");
+  item.className = `match-item ${match.result} ${state.expandedMatchId === match.game_id ? "expanded" : ""}`;
+  item.append(matchHistoryCard(match));
+  if (state.expandedMatchId === match.game_id) {
+    item.append(matchDetailPanel(match));
+  }
+  return item;
+}
+
 function matchHistoryCard(match) {
-  const card = document.createElement("article");
-  card.className = `match-card ${match.result}`;
-  card.append(
-    matchChampionBlock(match),
-    matchStatsBlock(match),
-    matchLoadoutBlock(match),
-    matchParticipantsBlock(match)
-  );
-  return card;
+  const row = document.createElement("article");
+  row.className = `history-match-row ${match.result}`;
+
+  const hero = document.createElement("div");
+  hero.className = "history-match-hero";
+  hero.append(championIcon(match.champion_alias, match.champion_name));
+  hero.append(inlineStack(match.champion_name, `${match.queue_label} · ${match.position} · ${durationLabel(match.duration_seconds)} · ${match.ended_at_label}`));
+
+  const score = document.createElement("div");
+  score.className = "history-match-score";
+  const kda = document.createElement("strong");
+  kda.textContent = `${match.kills} / ${match.deaths} / ${match.assists}`;
+  const meta = document.createElement("span");
+  meta.textContent = `KDA ${Number(match.kda).toFixed(2)} · 参团 ${Number(match.kill_participation).toFixed(0)}%`;
+  const damage = document.createElement("span");
+  damage.textContent = `${Number(match.total_damage).toLocaleString("zh-CN")} 伤害 · ${match.cs} 补刀`;
+  score.append(kda, meta, damage, tagRow(match.tags ?? []));
+
+  const loadout = document.createElement("div");
+  loadout.className = "history-match-loadout";
+  const items = document.createElement("div");
+  items.className = "compact-item-row";
+  const itemIds = (match.items ?? []).slice(0, 7);
+  items.replaceChildren(...Array.from({ length: 7 }, (_, index) => compactItemIcon(itemIds[index] ?? null)));
+  loadout.append(items);
+
+  row.append(hero, score, loadout, matchExpandButton(match));
+  return row;
 }
 
 function matchChampionBlock(match) {
@@ -389,6 +420,159 @@ function matchParticipantsBlock(match) {
     block.append(column);
   });
   return block;
+}
+
+function matchExpandButton(match) {
+  const button = document.createElement("button");
+  button.className = "match-expand-button";
+  button.type = "button";
+  button.textContent = state.expandedMatchId === match.game_id ? "⌃" : "⌄";
+  button.setAttribute("aria-label", state.expandedMatchId === match.game_id ? "收起对局详情" : "展开对局详情");
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    state.expandedMatchId = state.expandedMatchId === match.game_id ? null : match.game_id;
+    render();
+  });
+  return button;
+}
+
+function matchDetailPanel(match) {
+  const panel = document.createElement("section");
+  panel.className = "match-detail-panel";
+  panel.append(matchDetailTabs(), matchDetailSummary(match));
+  return panel;
+}
+
+function matchDetailTabs() {
+  const tabs = document.createElement("div");
+  tabs.className = "match-detail-tabs";
+  ["总览", "详尽表格", "符文", "事件", "构建", "线图"].forEach((label, index) => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = index === 0 ? "active" : "";
+    tab.textContent = label;
+    tabs.append(tab);
+  });
+  return tabs;
+}
+
+function matchDetailSummary(match) {
+  const table = document.createElement("div");
+  table.className = "match-detail-table";
+  const allParticipants = (match.teams ?? []).flat();
+  const maxDamage = Math.max(1, ...allParticipants.map((participant) => Number(participant.total_damage ?? 0)));
+  const maxTaken = Math.max(1, ...allParticipants.map((participant) => Number(participant.damage_taken ?? 0)));
+  const teamLabels = [match.result === "win" ? "胜利 蓝队" : "蓝队", match.result === "loss" ? "投降 红队" : "红队"];
+
+  (match.teams ?? []).slice(0, 2).forEach((team, index) => {
+    table.append(teamHeader(teamLabels[index] ?? `队伍 ${index + 1}`, team));
+    team.forEach((participant) => {
+      table.append(matchDetailRow(participant, maxDamage, maxTaken));
+    });
+  });
+
+  return table;
+}
+
+function teamHeader(label, team = []) {
+  const header = document.createElement("div");
+  header.className = "detail-team-header";
+  const totals = team.reduce(
+    (sum, participant) => ({
+      kills: sum.kills + Number(participant.kills ?? 0),
+      deaths: sum.deaths + Number(participant.deaths ?? 0),
+      assists: sum.assists + Number(participant.assists ?? 0)
+    }),
+    { kills: 0, deaths: 0, assists: 0 }
+  );
+  header.innerHTML = `
+    <strong>${label}</strong>
+    <span>${totals.kills}/${totals.deaths}/${totals.assists}</span>
+  `;
+  return header;
+}
+
+function matchDetailRow(participant, maxDamage, maxTaken) {
+  const row = document.createElement("div");
+  row.className = participant.is_current_player ? "detail-player-row current" : "detail-player-row";
+  row.append(
+    detailIdentity(participant),
+    detailKda(participant),
+    metricBar("伤害", participant.total_damage, maxDamage, "damage"),
+    metricBar("承伤", participant.damage_taken, maxTaken, "taken"),
+    detailFarm(participant),
+    detailItems(participant)
+  );
+  return row;
+}
+
+function detailIdentity(participant) {
+  const block = document.createElement("div");
+  block.className = "detail-identity";
+  block.append(championIcon(participant.champion_alias, participant.champion_name));
+  const championName = textOr(participant.champion_name, "未知英雄");
+  const position = textOr(participant.position, "位置未知");
+  const text = inlineStack(shortName(textOr(participant.display_name, "未知玩家")), `${championName} · ${position}`);
+  block.append(text);
+  return block;
+}
+
+function detailKda(participant) {
+  const block = document.createElement("div");
+  block.className = "detail-kda";
+  const score = document.createElement("strong");
+  score.textContent = `${numberOr(participant.kills)}/${numberOr(participant.deaths)}/${numberOr(participant.assists)}`;
+  const sub = document.createElement("span");
+  sub.textContent = `${Number(participant.kda ?? 0).toFixed(2)} KDA · 参团 ${Number(participant.kill_participation ?? 0).toFixed(0)}%`;
+  block.append(score, sub);
+  return block;
+}
+
+function metricBar(label, value, maxValue, className) {
+  const block = document.createElement("div");
+  block.className = `detail-metric ${className}`;
+  const amount = Number(value ?? 0);
+  const width = Math.max(4, Math.min(100, (amount / maxValue) * 100));
+  block.innerHTML = `
+    <span>${amount.toLocaleString("zh-CN")}</span>
+    <div class="detail-bar"><i style="width: ${width}%"></i></div>
+    <small>${label}</small>
+  `;
+  return block;
+}
+
+function detailFarm(participant) {
+  const block = document.createElement("div");
+  block.className = "detail-farm";
+  block.innerHTML = `
+    <strong>${Number(participant.cs ?? 0)} 补兵</strong>
+    <span>${Number(participant.cs_per_minute ?? 0).toFixed(1)} / 分钟</span>
+    <span>${Number(participant.gold_per_minute ?? 0).toFixed(1)} 金币 / 分钟</span>
+  `;
+  return block;
+}
+
+function detailItems(participant) {
+  const block = document.createElement("div");
+  block.className = "detail-items";
+  const spells = document.createElement("div");
+  spells.className = "spell-row";
+  spells.replaceChildren(...(participant.spell_ids ?? []).map(spellIcon));
+  const items = document.createElement("div");
+  items.className = "item-row";
+  const itemIds = (participant.items ?? []).slice(0, 7);
+  items.replaceChildren(...Array.from({ length: 7 }, (_, index) => itemIcon(itemIds[index] ?? null)));
+  block.append(spells, items);
+  return block;
+}
+
+function numberOr(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function textOr(value, fallback) {
+  return typeof value === "string" && value.trim() ? value : fallback;
 }
 
 function participantRow(participant) {
@@ -447,6 +631,25 @@ function itemIcon(itemId) {
   return slot;
 }
 
+function compactItemIcon(itemId) {
+  const slot = itemIcon(itemId);
+  slot.classList.add("compact");
+  return slot;
+}
+
+function spellIcon(spellId) {
+  const slot = document.createElement("span");
+  slot.className = spellId ? "spell-icon" : "spell-icon empty";
+  if (spellId) {
+    const image = document.createElement("img");
+    image.src = spellIconUrl(spellId);
+    image.alt = `召唤师技能 ${spellId}`;
+    image.loading = "lazy";
+    slot.append(image);
+  }
+  return slot;
+}
+
 function inlineStack(title, subtitle) {
   const stack = document.createElement("div");
   stack.className = "inline-stack";
@@ -490,6 +693,28 @@ function championIconUrl(alias) {
 
 function itemIconUrl(itemId) {
   return `https://ddragon.leagueoflegends.com/cdn/16.12.1/img/item/${itemId}.png`;
+}
+
+function spellIconUrl(spellId) {
+  const spellKey = {
+    1: "SummonerBoost",
+    3: "SummonerExhaust",
+    4: "SummonerFlash",
+    6: "SummonerHaste",
+    7: "SummonerHeal",
+    11: "SummonerSmite",
+    12: "SummonerTeleport",
+    13: "SummonerMana",
+    14: "SummonerDot",
+    21: "SummonerBarrier",
+    32: "SummonerSnowball",
+    39: "SummonerSnowURFSnowball",
+    54: "Summoner_UltBookPlaceholder",
+    55: "Summoner_UltBookSmitePlaceholder"
+  }[Number(spellId)];
+  return spellKey
+    ? `https://ddragon.leagueoflegends.com/cdn/16.12.1/img/spell/${spellKey}.png`
+    : "";
 }
 
 function renderPicks(container, players, side) {
