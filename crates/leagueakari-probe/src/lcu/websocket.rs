@@ -322,6 +322,7 @@ async fn emit_draft_snapshot(
         client,
         draft_state,
         current_summoner,
+        champion_catalog,
         teammate_cache,
     )
     .await;

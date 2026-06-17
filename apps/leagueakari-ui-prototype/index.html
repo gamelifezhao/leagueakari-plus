@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LeagueAkari Plus</title>
-    <link rel="stylesheet" href="./styles.css?v=match-detail-layout-5" />
+    <link rel="stylesheet" href="./styles.css?v=game-lobby-1" />
   </head>
   <body>
     <main class="app-frame">
@@ -24,7 +24,7 @@
           </a>
           <a class="nav-item" href="#" data-view="account">
             <span>◎</span>
-            账号概览
+            对局
           </a>
           <a class="nav-item" href="#" data-view="history">
             <span>▣</span>
@@ -157,6 +157,23 @@
           </section>
         </section>
 
+        <section id="gameView" class="view-page game-view hidden" data-view-page="account">
+          <header class="page-header game-header">
+            <div>
+              <h2>对局</h2>
+              <p>按当前队伍整理五名玩家的近期状态，先看风险，再看每个人最近几场。</p>
+            </div>
+            <div class="header-pills">
+              <span id="gameTeamSummary" class="pill teal">等待对局</span>
+              <button id="refreshGameButton" type="button">刷新对局</button>
+            </div>
+          </header>
+
+          <section id="gamePlayerGrid" class="game-player-grid" aria-label="当前队伍对局状态">
+            <article class="game-empty">进入 BP 或游戏后显示队伍对局信息。</article>
+          </section>
+        </section>
+
         <section id="historyView" class="view-page history-view hidden" data-view-page="history">
           <header class="page-header history-header">
             <div>
@@ -197,7 +214,7 @@
         <section id="placeholderView" class="view-page placeholder-view hidden" data-view-page="placeholder">
           <header class="page-header">
             <div>
-              <h2 id="placeholderTitle">账号概览</h2>
+              <h2 id="placeholderTitle">英雄池</h2>
               <p id="placeholderText">这块之后再做，当前先完成近期战绩。</p>
             </div>
           </header>
@@ -218,7 +235,7 @@
       </div>
     </div>
 
-    <script src="./sample-events.js?v=match-detail-layout-5"></script>
-    <script src="./app.js?v=match-detail-layout-5"></script>
+    <script src="./sample-events.js?v=game-lobby-1"></script>
+    <script src="./app.js?v=game-lobby-1"></script>
   </body>
 </html>

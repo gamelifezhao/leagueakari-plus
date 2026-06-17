@@ -107,6 +107,7 @@ pub async fn run_probe(options: ProbeOptions) -> Result<()> {
             &client,
             &draft_state,
             summoner.as_ref(),
+            &champion_catalog,
             &mut teammate_cache,
         )
         .await;
@@ -503,6 +504,7 @@ async fn try_emit_live_client_snapshot(
                 client,
                 &draft_state,
                 current_summoner,
+                champion_catalog,
                 teammate_cache,
             )
             .await;

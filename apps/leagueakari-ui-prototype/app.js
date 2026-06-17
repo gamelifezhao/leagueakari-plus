@@ -20,6 +20,8 @@ const championNames = {
   950: "百裂冥犬"
 };
 
+const championAliases = {};
+
 const metricLabels = {
   engage: "开团能力",
   magic_damage: "AP 伤害",
@@ -56,6 +58,7 @@ const state = {
 const elements = {
   navItems: document.querySelectorAll("[data-view]"),
   draftView: document.querySelector("#draftView"),
+  gameView: document.querySelector("#gameView"),
   historyView: document.querySelector("#historyView"),
   placeholderView: document.querySelector("#placeholderView"),
   placeholderTitle: document.querySelector("#placeholderTitle"),
@@ -88,6 +91,9 @@ const elements = {
   buildRecommendation: document.querySelector("#buildRecommendation"),
   reconnectButton: document.querySelector("#reconnectButton"),
   loadSampleButton: document.querySelector("#loadSampleButton"),
+  refreshGameButton: document.querySelector("#refreshGameButton"),
+  gameTeamSummary: document.querySelector("#gameTeamSummary"),
+  gamePlayerGrid: document.querySelector("#gamePlayerGrid"),
   refreshMatchesButton: document.querySelector("#refreshMatchesButton"),
   historyStatus: document.querySelector("#historyStatus"),
   historySummary: document.querySelector("#historySummary"),
@@ -217,6 +223,7 @@ function render() {
   renderEnemyAnalysis(analysis, draft);
   renderRecommendations(analysis);
   renderBuildRecommendation(analysis);
+  renderGameView(snapshot, draft);
   renderCurrentView();
   renderMatchHistory();
 
@@ -225,8 +232,9 @@ function render() {
 }
 
 function renderCurrentView() {
-  const placeholderViews = new Set(["account", "champions", "settings"]);
+  const placeholderViews = new Set(["champions", "settings"]);
   elements.draftView?.classList.toggle("hidden", state.currentView !== "draft");
+  elements.gameView?.classList.toggle("hidden", state.currentView !== "account");
   elements.historyView?.classList.toggle("hidden", state.currentView !== "history");
   elements.placeholderView?.classList.toggle("hidden", !placeholderViews.has(state.currentView));
 
@@ -236,7 +244,6 @@ function renderCurrentView() {
 
   if (placeholderViews.has(state.currentView)) {
     const copy = {
-      account: ["账号概览", "这块之后再做，当前先完成近期战绩。"],
       champions: ["英雄池", "英雄池会继续沿用本地标签库和 OP.GG 快照。"],
       settings: ["设置", "设置页后续用于管理数据源、模型和显示偏好。"]
     }[state.currentView];
@@ -281,6 +288,269 @@ function renderHistoryEmpty(message) {
   empty.className = "history-empty";
   empty.textContent = message;
   elements.matchHistoryList.replaceChildren(empty);
+}
+
+function renderGameView(snapshot, draft) {
+  if (!elements.gamePlayerGrid || !elements.gameTeamSummary) {
+    return;
+  }
+
+  const players = gamePlayers(snapshot, draft);
+  const teammateCount = players.filter((player) => !player.isSelf && player.hasStats).length;
+  const activeCount = players.filter((player) => player.hasChampion || player.recentMatches.length).length;
+  elements.gameTeamSummary.textContent = activeCount
+    ? `${players.length} 人 · ${teammateCount} 名队友有近况`
+    : "等待对局";
+
+  if (!players.length || !activeCount) {
+    const empty = document.createElement("article");
+    empty.className = "game-empty";
+    empty.textContent = state.usingLiveData
+      ? "进入 BP 或游戏后显示当前队伍五名玩家。"
+      : "载入样例或连接 LCU 后显示对局信息。";
+    elements.gamePlayerGrid.replaceChildren(empty);
+    return;
+  }
+
+  elements.gamePlayerGrid.replaceChildren(...players.map(gamePlayerCard));
+}
+
+function gamePlayers(snapshot, draft) {
+  const teammates = (snapshot?.teammate_performance ?? []).slice(0, 4);
+  const selfPick = selfDraftPlayer(draft);
+  const selfHistory = state.matchHistory;
+  const selfName = selfHistory?.player?.display_name || displaySummonerName() || "自己";
+  const selfRecentMatches = (selfHistory?.matches ?? []).slice(0, 8).map(matchToGameRecentMatch);
+  const selfSummary = selfHistory?.summary ?? {};
+  const players = [
+    {
+      key: "self",
+      isSelf: true,
+      displayName: selfName,
+      championId: selfPick?.champion_id ?? selfRecentMatches[0]?.championId ?? null,
+      championName: championName(selfPick?.champion_id ?? selfRecentMatches[0]?.championId, false),
+      championAlias: championAlias(selfPick?.champion_id) ?? selfRecentMatches[0]?.championAlias ?? null,
+      assignedPosition: selfPick?.assigned_position ?? selfRecentMatches[0]?.position ?? "unknown",
+      games: Number(selfSummary.total_games ?? selfRecentMatches.length ?? 0),
+      wins: Number(selfSummary.wins ?? 0),
+      losses: Number(selfSummary.losses ?? 0),
+      winRate: Number(selfSummary.win_rate ?? 0),
+      kdRatio: Number(selfSummary.avg_kda ?? 0),
+      tierLabel: "自己",
+      recentMatches: selfRecentMatches,
+      hasStats: Boolean(selfRecentMatches.length)
+    }
+  ];
+
+  teammates.forEach((teammate, index) => {
+    const recentMatches = (teammate.recent_matches ?? []).slice(0, 8).map(normalizeTeammateRecentMatch);
+    const championId = teammate.champion_id ?? recentMatches[0]?.championId ?? null;
+    players.push({
+      key: `teammate-${teammate.cell_id ?? index}`,
+      isSelf: false,
+      displayName: teammate.display_name || `队友 ${index + 1}`,
+      championId,
+      championName: championName(championId, false),
+      championAlias: championAlias(championId) ?? recentMatches[0]?.championAlias ?? null,
+      assignedPosition: teammate.assigned_position ?? recentMatches[0]?.position ?? "unknown",
+      games: Number(teammate.games ?? recentMatches.length ?? 0),
+      wins: Number(teammate.wins ?? 0),
+      losses: Number(teammate.losses ?? 0),
+      winRate: Number(teammate.win_rate ?? 0),
+      kdRatio: Number(teammate.kd_ratio ?? 0),
+      avgKills: Number(teammate.avg_kills ?? 0),
+      avgDeaths: Number(teammate.avg_deaths ?? 0),
+      avgAssists: Number(teammate.avg_assists ?? 0),
+      tierLabel: teammate.tier_label || "数据少",
+      recentMatches,
+      hasStats: Number(teammate.games ?? 0) > 0
+    });
+  });
+
+  while (players.length < 5) {
+    const index = players.length;
+    const pick = (draft?.my_team ?? [])[index] ?? null;
+    players.push({
+      key: `empty-${index}`,
+      isSelf: false,
+      displayName: `队友 ${index + 1}`,
+      championId: pick?.champion_id ?? null,
+      championName: championName(pick?.champion_id, false),
+      championAlias: null,
+      assignedPosition: pick?.assigned_position ?? "unknown",
+      games: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      kdRatio: 0,
+      tierLabel: "等待",
+      recentMatches: [],
+      hasStats: false
+    });
+  }
+
+  return players.map((player) => ({
+    ...player,
+    hasChampion: Boolean(player.championId)
+  })).slice(0, 5);
+}
+
+function gamePlayerCard(player) {
+  const card = document.createElement("article");
+  card.className = `game-player-card ${player.isSelf ? "self" : ""} ${player.hasStats ? "" : "empty"}`.trim();
+
+  const header = document.createElement("div");
+  header.className = "game-player-header";
+  header.append(gamePlayerAvatar(player), gamePlayerIdentity(player));
+
+  const score = document.createElement("div");
+  score.className = "game-player-score";
+  score.append(
+    gameStat("胜率", player.games ? `${Number(player.winRate).toFixed(0)}%` : "--"),
+    gameStat(player.isSelf ? "平均 KDA" : "KD", player.hasStats ? Number(player.kdRatio).toFixed(2) : "--"),
+    gameStat("近况", player.games ? `${player.wins}胜 ${player.losses}负` : "暂无")
+  );
+
+  const recent = document.createElement("div");
+  recent.className = "game-recent-list";
+  const recentItems = player.recentMatches.slice(0, 6).map(gameRecentRow);
+  recent.replaceChildren(...(recentItems.length ? recentItems : [gameRecentEmpty(player)]));
+
+  card.append(header, score, gameLoadoutStrip(player.recentMatches[0]), recent);
+  return card;
+}
+
+function gamePlayerAvatar(player) {
+  if (player.championAlias) {
+    return championIcon(player.championAlias, player.championName);
+  }
+  const icon = document.createElement("div");
+  icon.className = "game-avatar-fallback";
+  icon.textContent = player.isSelf ? "我" : shortIconText(player.displayName);
+  return icon;
+}
+
+function gamePlayerIdentity(player) {
+  const block = document.createElement("div");
+  block.className = "game-player-identity";
+  const name = document.createElement("strong");
+  name.textContent = shortName(player.displayName, 12);
+  name.title = player.displayName;
+  const meta = document.createElement("span");
+  meta.textContent = `${player.championName || "待选"} · ${positionLabel(player.assignedPosition)}`;
+  const badge = document.createElement("small");
+  badge.textContent = player.tierLabel;
+  block.append(name, meta, badge);
+  return block;
+}
+
+function gameStat(label, value) {
+  const item = document.createElement("div");
+  item.className = "game-stat";
+  const strong = document.createElement("strong");
+  strong.textContent = value;
+  const span = document.createElement("span");
+  span.textContent = label;
+  item.append(strong, span);
+  return item;
+}
+
+function gameLoadoutStrip(match) {
+  const strip = document.createElement("div");
+  strip.className = "game-loadout-strip";
+  const itemIds = (match?.items ?? []).slice(0, 6);
+  strip.replaceChildren(...itemIds.map(compactItemIcon));
+  if (!itemIds.length) {
+    strip.append(emptyInline("暂无装备"));
+  }
+  return strip;
+}
+
+function gameRecentRow(match) {
+  const row = document.createElement("div");
+  row.className = `game-recent-row ${match.result}`;
+  row.append(championMiniIcon(match.championAlias, match.championName));
+
+  const body = document.createElement("div");
+  body.className = "game-recent-body";
+  const title = document.createElement("strong");
+  title.textContent = `${match.queueLabel} · ${match.positionLabel}`;
+  const meta = document.createElement("span");
+  meta.textContent = `${match.endedAtLabel} · ${durationLabel(match.durationSeconds)}`;
+  body.append(title, meta);
+
+  const kda = document.createElement("b");
+  kda.textContent = `${match.kills}/${match.deaths}/${match.assists}`;
+
+  const result = document.createElement("em");
+  result.textContent = match.resultLabel;
+
+  row.append(body, kda, result);
+  return row;
+}
+
+function gameRecentEmpty(player) {
+  const empty = document.createElement("div");
+  empty.className = "game-recent-empty";
+  empty.textContent = player.hasChampion ? "等待读取该玩家近期对局" : "等待 BP 玩家名单";
+  return empty;
+}
+
+function matchToGameRecentMatch(match) {
+  return {
+    gameId: match.game_id,
+    queueLabel: match.queue_label || "召唤师峡谷",
+    result: match.result || "loss",
+    resultLabel: match.result_label || (match.result === "win" ? "胜利" : "失败"),
+    endedAtLabel: match.ended_at_label || "时间未知",
+    durationSeconds: Number(match.duration_seconds ?? 0),
+    championId: match.champion_id,
+    championName: match.champion_name || championName(match.champion_id, false),
+    championAlias: match.champion_alias,
+    position: match.position || "unknown",
+    positionLabel: positionLabel(match.position),
+    kills: Number(match.kills ?? 0),
+    deaths: Number(match.deaths ?? 0),
+    assists: Number(match.assists ?? 0),
+    items: match.items ?? []
+  };
+}
+
+function normalizeTeammateRecentMatch(match) {
+  return {
+    gameId: match.game_id,
+    queueLabel: match.queue_label || "召唤师峡谷",
+    result: match.result || "loss",
+    resultLabel: match.result_label || (match.result === "win" ? "胜利" : "失败"),
+    endedAtLabel: match.ended_at_label || "时间未知",
+    durationSeconds: Number(match.duration_seconds ?? 0),
+    championId: match.champion_id,
+    championName: match.champion_name || championName(match.champion_id, false),
+    championAlias: match.champion_alias,
+    position: match.position || "unknown",
+    positionLabel: positionLabel(match.position),
+    kills: Number(match.kills ?? 0),
+    deaths: Number(match.deaths ?? 0),
+    assists: Number(match.assists ?? 0),
+    items: match.items ?? []
+  };
+}
+
+function selfDraftPlayer(draft) {
+  const localCellId = draft?.local_player_cell_id;
+  if (localCellId !== null && localCellId !== undefined) {
+    return (draft?.my_team ?? []).find((player) => player.cell_id === localCellId) ?? null;
+  }
+  return (draft?.my_team ?? [])[0] ?? null;
+}
+
+function displaySummonerName() {
+  const gameName = state.summoner?.game_name || state.summoner?.gameName;
+  const tagLine = state.summoner?.tag_line || state.summoner?.tagLine;
+  if (gameName && tagLine) {
+    return `${gameName}#${tagLine}`;
+  }
+  return gameName || state.summoner?.display_name || state.summoner?.summoner_name || null;
 }
 
 function matchHistoryStatusText() {
@@ -1674,12 +1944,19 @@ function championName(championId, includeId = true) {
   return includeId ? `${name} (${championId})` : name;
 }
 
+function championAlias(championId) {
+  return championAliases[Number(championId)] ?? null;
+}
+
 function cacheChampionNames(names = {}) {
   Object.entries(names || {}).forEach(([id, info]) => {
     const championId = Number(id);
     const name = info?.name || info?.alias;
     if (Number.isFinite(championId) && name) {
       championNames[championId] = name;
+    }
+    if (Number.isFinite(championId) && info?.alias) {
+      championAliases[championId] = info.alias;
     }
   });
 }
@@ -1995,9 +2272,9 @@ function recommendHeroes(analysis) {
   ];
 }
 
-function shortName(name = "队友") {
+function shortName(name = "队友", maxLength = 10) {
   const cleanName = String(name || "队友");
-  return cleanName.length > 10 ? `${cleanName.slice(0, 10)}…` : cleanName;
+  return cleanName.length > maxLength ? `${cleanName.slice(0, maxLength)}…` : cleanName;
 }
 
 function formatAverageKda(teammate) {
@@ -2384,7 +2661,7 @@ elements.navItems.forEach((item) => {
     event.preventDefault();
     state.currentView = item.dataset.view || "draft";
     render();
-    if (state.currentView === "history") {
+    if (state.currentView === "history" || state.currentView === "account") {
       fetchRecentMatches(false);
     }
   });
@@ -2406,6 +2683,17 @@ elements.reconnectButton.addEventListener("click", () => {
 
 elements.refreshMatchesButton?.addEventListener("click", () => {
   fetchRecentMatches(true);
+});
+
+elements.refreshGameButton?.addEventListener("click", () => {
+  fetchRecentMatches(true);
+  reconnectLiveData().catch((error) => {
+    state.bridgeStatus = {
+      status: "error",
+      message: `刷新对局失败：${error}`
+    };
+    render();
+  });
 });
 
 startTauriEventBridge()
