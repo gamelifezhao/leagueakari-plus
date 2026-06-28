@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LeagueAkari Plus</title>
-    <link rel="stylesheet" href="./styles.css?v=game-lobby-1" />
+    <link rel="stylesheet" href="./styles.css?v=settings-1" />
   </head>
   <body>
     <main class="app-frame">
@@ -236,6 +236,190 @@
             </div>
           </header>
         </section>
+
+        <section id="settingsView" class="view-page settings-view hidden" data-view-page="settings">
+          <header class="page-header">
+            <div>
+              <h2>设置</h2>
+              <p>按原版 LeagueAkari 的思路整理显示、数据源和窗口偏好，只保留辅助理解对局的能力。</p>
+            </div>
+            <div class="header-pills">
+              <span class="pill teal">本地保存</span>
+              <span class="pill gold">不自动操作客户端</span>
+            </div>
+          </header>
+
+          <section class="settings-layout" aria-label="设置中心">
+            <aside class="settings-index">
+              <button type="button" class="settings-index-item active" data-settings-section="general">应用</button>
+              <button type="button" class="settings-index-item" data-settings-section="data">数据源</button>
+              <button type="button" class="settings-index-item" data-settings-section="draft">选人分析</button>
+              <button type="button" class="settings-index-item" data-settings-section="windows">窗口</button>
+              <button type="button" class="settings-index-item" data-settings-section="safety">安全边界</button>
+            </aside>
+
+            <section class="settings-panels">
+              <article class="settings-panel" data-settings-panel="general">
+                <div class="settings-panel-header">
+                  <div>
+                    <h3>应用体验</h3>
+                    <p>控制首页、布局密度和显示细节。</p>
+                  </div>
+                  <span class="settings-status">已启用 3 项</span>
+                </div>
+                <div class="setting-list">
+                  <label class="setting-row">
+                    <span>
+                      <strong>启动后自动连接 LCU</strong>
+                      <small>存在唯一客户端时自动监听，不写入游戏配置。</small>
+                    </span>
+                    <input type="checkbox" checked data-setting-control="autoConnect" />
+                  </label>
+                  <label class="setting-row">
+                    <span>
+                      <strong>进入 BP 自动切到选人分析</strong>
+                      <small>游戏流程变为 ChampSelect 时，把主视图切到阵容页。</small>
+                    </span>
+                    <input type="checkbox" checked data-setting-control="autoSwitchDraft" />
+                  </label>
+                  <label class="setting-row">
+                    <span>
+                      <strong>紧凑模式</strong>
+                      <small>减少卡片内边距，适合和客户端并排查看。</small>
+                    </span>
+                    <input type="checkbox" data-setting-control="compactMode" />
+                  </label>
+                </div>
+              </article>
+
+              <article class="settings-panel muted-hidden" data-settings-panel="data">
+                <div class="settings-panel-header">
+                  <div>
+                    <h3>数据源</h3>
+                    <p>原版会组合 LCU、SGP 和 OP.GG；当前先做本地 LCU 与公开 OP.GG。</p>
+                  </div>
+                  <span class="settings-status">LCU 优先</span>
+                </div>
+                <div class="setting-list">
+                  <div class="setting-row">
+                    <span>
+                      <strong>LCU 本地接口</strong>
+                      <small>用于当前召唤师、BP、近期战绩、对局详情。无需 Riot API 密钥。</small>
+                    </span>
+                    <span class="setting-value good">已接入</span>
+                  </div>
+                  <div class="setting-row">
+                    <span>
+                      <strong>WeGame 客户端发现</strong>
+                      <small>LCU lockfile 不可用时，从 WeGame/LeagueClient 日志兜底查找端口。</small>
+                    </span>
+                    <span class="setting-value good">已接入</span>
+                  </div>
+                  <div class="setting-row">
+                    <span>
+                      <strong>OP.GG 公开统计</strong>
+                      <small>用于英雄强度、符文、技能和装备方案，只展示建议，不自动应用。</small>
+                    </span>
+                    <span class="setting-value good">已接入</span>
+                  </div>
+                  <div class="setting-row muted">
+                    <span>
+                      <strong>SGP 战绩扩展</strong>
+                      <small>可补充跨区战绩、排位统计和隐私状态，后续再评估接入。</small>
+                    </span>
+                    <span class="setting-value">规划中</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="settings-panel muted-hidden" data-settings-panel="draft">
+                <div class="settings-panel-header">
+                  <div>
+                    <h3>选人分析</h3>
+                    <p>控制阵容解释、队友质量和 OP.GG 方案的展示方式。</p>
+                  </div>
+                  <span class="settings-status">解释优先</span>
+                </div>
+                <div class="setting-list">
+                  <label class="setting-row">
+                    <span>
+                      <strong>显示阵容维度评分</strong>
+                      <small>保留开团、伤害、控制、容错率等维度，用于解释胜率区间。</small>
+                    </span>
+                    <input type="checkbox" checked data-setting-control="showDimensions" />
+                  </label>
+                  <label class="setting-row">
+                    <span>
+                      <strong>显示队友质量标签</strong>
+                      <small>用近期 KDA、胜率、连胜连败生成标签，避免只看一句“上等马”。</small>
+                    </span>
+                    <input type="checkbox" checked data-setting-control="showTeammateTags" />
+                  </label>
+                  <label class="setting-row">
+                    <span>
+                      <strong>OP.GG 只读方案</strong>
+                      <small>展示符文、技能、装备路径，不自动设置符文或召唤师技能。</small>
+                    </span>
+                    <input type="checkbox" checked disabled data-setting-control="opggReadOnly" />
+                  </label>
+                </div>
+              </article>
+
+              <article class="settings-panel muted-hidden" data-settings-panel="windows">
+                <div class="settings-panel-header">
+                  <div>
+                    <h3>窗口与小窗</h3>
+                    <p>原版有 OP.GG 窗口、对局窗口和计时器窗口；我们先做规划状态。</p>
+                  </div>
+                  <span class="settings-status">主窗口可用</span>
+                </div>
+                <div class="setting-list">
+                  <div class="setting-row">
+                    <span>
+                      <strong>主窗口</strong>
+                      <small>当前所有功能集中在主窗口，便于调试和稳定迭代。</small>
+                    </span>
+                    <span class="setting-value good">可用</span>
+                  </div>
+                  <div class="setting-row muted">
+                    <span>
+                      <strong>OP.GG 小窗</strong>
+                      <small>后续可做成只读悬浮方案面板，支持置顶与不透明度。</small>
+                    </span>
+                    <span class="setting-value">规划中</span>
+                  </div>
+                  <div class="setting-row muted">
+                    <span>
+                      <strong>对局叠加窗口</strong>
+                      <small>只展示对局摘要，不做游戏内自动计时或不可见信息推断。</small>
+                    </span>
+                    <span class="setting-value">规划中</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="settings-panel safety-panel muted-hidden" data-settings-panel="safety">
+                <div class="settings-panel-header">
+                  <div>
+                    <h3>安全边界</h3>
+                    <p>这部分直接决定 LeagueAkari Plus 的方向。</p>
+                  </div>
+                  <span class="settings-status safe">只读辅助</span>
+                </div>
+                <div class="safety-grid">
+                  <div>
+                    <strong>会做</strong>
+                    <span>阵容解释、队友近况、近期战绩、公开统计、只读 OP.GG 方案。</span>
+                  </div>
+                  <div>
+                    <strong>不会做</strong>
+                    <span>自动选英雄、自动 Ban、自动锁定、自动设置符文、自动召唤师技能。</span>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </section>
+        </section>
       </section>
     </main>
 
@@ -252,7 +436,7 @@
       </div>
     </div>
 
-    <script src="./sample-events.js?v=upstream-game-1"></script>
-    <script src="./app.js?v=upstream-game-1"></script>
+    <script src="./sample-events.js?v=settings-1"></script>
+    <script src="./app.js?v=settings-1"></script>
   </body>
 </html>

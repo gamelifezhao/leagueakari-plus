@@ -31,8 +31,38 @@ const metricLabels = {
   physical_damage: "AD 输出"
 };
 
+const defaultSettings = {
+  autoConnect: true,
+  autoSwitchDraft: true,
+  compactMode: false,
+  showDimensions: true,
+  showTeammateTags: true,
+  opggReadOnly: true
+};
+
+function loadSettings() {
+  try {
+    const raw = window.localStorage?.getItem("leagueakari-plus-settings");
+    return {
+      ...defaultSettings,
+      ...(raw ? JSON.parse(raw) : {})
+    };
+  } catch {
+    return { ...defaultSettings };
+  }
+}
+
+function saveSettings() {
+  try {
+    window.localStorage?.setItem("leagueakari-plus-settings", JSON.stringify(state.settings));
+  } catch {
+    // localStorage can be unavailable in restricted embedded contexts.
+  }
+}
+
 const state = {
   currentView: "draft",
+  settings: loadSettings(),
   connection: null,
   summoner: null,
   phase: "Unknown",
@@ -66,6 +96,10 @@ const elements = {
   draftView: document.querySelector("#draftView"),
   gameView: document.querySelector("#gameView"),
   historyView: document.querySelector("#historyView"),
+  settingsView: document.querySelector("#settingsView"),
+  settingsIndexItems: document.querySelectorAll("[data-settings-section]"),
+  settingsPanels: document.querySelectorAll("[data-settings-panel]"),
+  settingControls: document.querySelectorAll("[data-setting-control]"),
   placeholderView: document.querySelector("#placeholderView"),
   placeholderTitle: document.querySelector("#placeholderTitle"),
   placeholderText: document.querySelector("#placeholderText"),
@@ -235,17 +269,32 @@ function render() {
   renderBuildRecommendation(analysis);
   renderGameView(snapshot, draft);
   renderCurrentView();
+  renderSettings();
   renderMatchHistory();
 
   elements.myPickCount.textContent = `${countPicked(draft?.my_team)} / 5`;
   elements.enemyPickCount.textContent = `${countPicked(draft?.their_team)} / 5`;
 }
 
+function renderSettings() {
+  document.body.classList.toggle("compact-mode", Boolean(state.settings.compactMode));
+  document.body.classList.toggle("hide-dimensions", !state.settings.showDimensions);
+  document.body.classList.toggle("hide-teammate-tags", !state.settings.showTeammateTags);
+
+  elements.settingControls?.forEach((control) => {
+    const key = control.dataset.settingControl;
+    if (key && key in state.settings) {
+      control.checked = Boolean(state.settings[key]);
+    }
+  });
+}
+
 function renderCurrentView() {
-  const placeholderViews = new Set(["champions", "settings"]);
+  const placeholderViews = new Set(["champions"]);
   elements.draftView?.classList.toggle("hidden", state.currentView !== "draft");
   elements.gameView?.classList.toggle("hidden", state.currentView !== "account");
   elements.historyView?.classList.toggle("hidden", state.currentView !== "history");
+  elements.settingsView?.classList.toggle("hidden", state.currentView !== "settings");
   elements.placeholderView?.classList.toggle("hidden", !placeholderViews.has(state.currentView));
 
   elements.navItems.forEach((item) => {
@@ -254,8 +303,7 @@ function renderCurrentView() {
 
   if (placeholderViews.has(state.currentView)) {
     const copy = {
-      champions: ["英雄池", "英雄池会继续沿用本地标签库和 OP.GG 快照。"],
-      settings: ["设置", "设置页后续用于管理数据源、模型和显示偏好。"]
+      champions: ["英雄池", "英雄池会继续沿用本地标签库和 OP.GG 快照。"]
     }[state.currentView];
     elements.placeholderTitle.textContent = copy[0];
     elements.placeholderText.textContent = copy[1];
@@ -2666,6 +2714,9 @@ function cacheChampionNames(names = {}) {
 function applyPhase(phase) {
   const nextPhase = String(phase ?? "Unknown");
   state.phase = nextPhase;
+  if (state.settings.autoSwitchDraft && nextPhase === "ChampSelect") {
+    state.currentView = "draft";
+  }
   if (shouldClearDraftForPhase(nextPhase)) {
     clearDraftSnapshots();
   }
@@ -3381,6 +3432,31 @@ elements.gameSortButtons?.forEach((button) => {
   });
 });
 
+elements.settingsIndexItems?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const section = button.dataset.settingsSection;
+    elements.settingsIndexItems.forEach((item) => {
+      item.classList.toggle("active", item === button);
+    });
+    elements.settingsPanels.forEach((panel) => {
+      panel.classList.toggle("muted-hidden", panel.dataset.settingsPanel !== section);
+    });
+  });
+});
+
+elements.settingControls?.forEach((control) => {
+  control.addEventListener("change", () => {
+    const key = control.dataset.settingControl;
+    if (!key || !(key in state.settings) || control.disabled) {
+      renderSettings();
+      return;
+    }
+    state.settings[key] = Boolean(control.checked);
+    saveSettings();
+    render();
+  });
+});
+
 elements.loadSampleButton.addEventListener("click", () => {
   loadSampleEvents();
 });
@@ -3410,16 +3486,24 @@ elements.refreshGameButton?.addEventListener("click", () => {
   });
 });
 
-startTauriEventBridge()
-  .then((connected) => {
-    if (!connected) {
-      loadSampleEvents();
-    }
-  })
-  .catch((error) => {
-    state.bridgeStatus = {
-      status: "error",
-      message: `Tauri event bridge failed: ${error}`
-    };
-    render();
-  });
+if (state.settings.autoConnect) {
+  startTauriEventBridge()
+    .then((connected) => {
+      if (!connected) {
+        loadSampleEvents();
+      }
+    })
+    .catch((error) => {
+      state.bridgeStatus = {
+        status: "error",
+        message: `Tauri event bridge failed: ${error}`
+      };
+      render();
+    });
+} else {
+  state.bridgeStatus = {
+    status: "skipped",
+    message: "自动连接已关闭，可手动重新连接。"
+  };
+  render();
+}
