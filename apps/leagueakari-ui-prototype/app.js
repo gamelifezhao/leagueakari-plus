@@ -372,7 +372,13 @@ function renderGameView(snapshot, draft) {
     return;
   }
 
-  elements.gamePlayerGrid.replaceChildren(...players.map(gamePlayerCard));
+  const activePlayers = players.filter((player) => player.hasStats || player.recentMatches.length);
+  const emptyPlayers = players.filter((player) => !activePlayers.includes(player));
+  const cards = activePlayers.map(gamePlayerCard);
+  if (emptyPlayers.length) {
+    cards.push(gamePendingPlayers(emptyPlayers));
+  }
+  elements.gamePlayerGrid.replaceChildren(...cards);
 }
 
 function renderGameSortButtons() {
@@ -579,6 +585,21 @@ function gamePlayerCard(player) {
   recent.replaceChildren(...(recentItems.length ? recentItems : [gameRecentEmpty(player)]));
 
   card.append(header, gamePlayerTagRow(tags), score, gameLoadoutStrip(player.recentMatches[0]), recent);
+  return card;
+}
+
+function gamePendingPlayers(players = []) {
+  const card = document.createElement("article");
+  card.className = "game-player-card game-player-card-pending";
+  const title = document.createElement("strong");
+  title.textContent = `${players.length} 个位置等待数据`;
+  const text = document.createElement("span");
+  text.textContent = players
+    .map((player) => `${player.isSelf ? "自己" : shortName(player.displayName, 8)} · ${positionLabel(player.assignedPosition)}`)
+    .join(" / ");
+  const hint = document.createElement("small");
+  hint.textContent = "进入 BP 或读取到队友名单后会自动补齐。";
+  card.append(title, text, hint);
   return card;
 }
 
