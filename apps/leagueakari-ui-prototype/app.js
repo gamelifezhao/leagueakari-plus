@@ -46,8 +46,13 @@ const state = {
   detailItems: {
     ally: [],
     enemy: [],
-    teammates: []
+    teammates: [],
+    opgg: []
   },
+  opggBuild: null,
+  opggStatus: "idle",
+  opggError: null,
+  opggRequestKey: null,
   matchHistory: null,
   matchHistoryStatus: "idle",
   matchHistoryError: null,
@@ -87,6 +92,7 @@ const elements = {
   keyReasons: document.querySelector("#keyReasons"),
   enemyAnalysis: document.querySelector("#enemyAnalysis"),
   heroRecommendations: document.querySelector("#heroRecommendations"),
+  opggStatus: document.querySelector("#opggStatus"),
   buildSourceNote: document.querySelector("#buildSourceNote"),
   buildRecommendation: document.querySelector("#buildRecommendation"),
   reconnectButton: document.querySelector("#reconnectButton"),
@@ -222,6 +228,7 @@ function render() {
   renderReasons(analysis);
   renderEnemyAnalysis(analysis, draft);
   renderRecommendations(analysis);
+  queueOpggBuildLoad(draft, analysis);
   renderBuildRecommendation(analysis);
   renderGameView(snapshot, draft);
   renderCurrentView();
@@ -479,13 +486,15 @@ function gameRecentRow(match) {
   meta.textContent = `${match.endedAtLabel} · ${durationLabel(match.durationSeconds)}`;
   body.append(title, meta);
 
+  const result = document.createElement("div");
+  result.className = "game-recent-result";
   const kda = document.createElement("b");
   kda.textContent = `${match.kills}/${match.deaths}/${match.assists}`;
+  const label = document.createElement("em");
+  label.textContent = match.resultLabel;
+  result.append(kda, label);
 
-  const result = document.createElement("em");
-  result.textContent = match.resultLabel;
-
-  row.append(body, kda, result);
+  row.append(body, result);
   return row;
 }
 
@@ -723,6 +732,50 @@ const matchDetailTabLabels = {
   builds: "构建",
   graph: "线图"
 };
+
+const summonerSpellNames = {
+  1: "净化",
+  3: "虚弱",
+  4: "闪现",
+  6: "疾跑",
+  7: "治疗",
+  11: "惩戒",
+  12: "传送",
+  13: "清晰术",
+  14: "点燃",
+  21: "屏障",
+  32: "标记"
+};
+
+const summonerSpellKeyToId = {
+  SummonerBoost: 1,
+  SummonerExhaust: 3,
+  SummonerFlash: 4,
+  SummonerHaste: 6,
+  SummonerHeal: 7,
+  SummonerSmite: 11,
+  SummonerTeleport: 12,
+  SummonerMana: 13,
+  SummonerDot: 14,
+  SummonerBarrier: 21,
+  SummonerSnowball: 32
+};
+
+function resolveSpellId(spellId) {
+  if (Number.isFinite(Number(spellId)) && Number(spellId) > 0) {
+    return Number(spellId);
+  }
+  return summonerSpellKeyToId[String(spellId)] ?? null;
+}
+
+function spellIdFromKey(spellKey) {
+  return resolveSpellId(spellKey);
+}
+
+function spellName(spellId) {
+  const resolvedSpellId = resolveSpellId(spellId);
+  return summonerSpellNames[resolvedSpellId] ?? (resolvedSpellId ? `召唤师技能 ${resolvedSpellId}` : "未知技能");
+}
 
 function matchDetailTabs(match, activeTab) {
   const tabs = document.createElement("div");
@@ -1400,12 +1453,39 @@ function compactItemIcon(itemId) {
 }
 
 function spellIcon(spellId) {
+  const resolvedSpellId = resolveSpellId(spellId);
   const slot = document.createElement("span");
-  slot.className = spellId ? "spell-icon" : "spell-icon empty";
-  if (spellId) {
+  slot.className = resolvedSpellId ? "spell-icon" : "spell-icon empty";
+  if (resolvedSpellId) {
     const image = document.createElement("img");
-    image.src = spellIconUrl(spellId);
-    image.alt = `召唤师技能 ${spellId}`;
+    image.src = spellIconUrl(resolvedSpellId);
+    image.alt = spellName(resolvedSpellId);
+    image.loading = "lazy";
+    slot.append(image);
+  }
+  return slot;
+}
+
+function runeIcon(perkId) {
+  const slot = document.createElement("span");
+  slot.className = perkId ? "rune-icon" : "rune-icon empty";
+  if (perkId) {
+    const image = document.createElement("img");
+    image.src = runeIconUrl(perkId);
+    image.alt = runeName(perkId);
+    image.loading = "lazy";
+    slot.append(image);
+  }
+  return slot;
+}
+
+function runeStyleIcon(styleId) {
+  const slot = document.createElement("span");
+  slot.className = styleId ? "rune-icon style" : "rune-icon empty";
+  if (styleId) {
+    const image = document.createElement("img");
+    image.src = runeStyleIconUrl(styleId);
+    image.alt = runeStyleName(styleId);
     image.loading = "lazy";
     slot.append(image);
   }
@@ -1842,54 +1922,495 @@ function renderBuildRecommendation(analysis) {
   if (!elements.buildRecommendation || !elements.buildSourceNote) {
     return;
   }
-  const build = chooseBuildRecommendation(analysis);
+  const build = state.opggBuild ?? chooseBuildRecommendation(analysis);
   if (!build) {
-    elements.buildSourceNote.textContent = "暂无匹配到本地 OP.GG 方案快照";
+    elements.opggStatus && (elements.opggStatus.textContent = opggStatusText());
+    elements.buildSourceNote.textContent = state.opggError || "暂无匹配到 OP.GG 方案数据";
     elements.buildRecommendation.replaceChildren(emptyBuildState());
+    state.detailItems.opgg = [{ title: "暂无方案", text: elements.buildSourceNote.textContent, type: "suggestion" }];
     return;
   }
 
+  elements.opggStatus && (elements.opggStatus.textContent = opggStatusText(build));
   elements.buildSourceNote.textContent = [
     `${build.champion_name || build.champion_key} · ${roleLabel(build.role)}`,
-    build.side === "enemy" ? "敌方参考" : "我方推荐",
+    build.source === "live-opgg" ? "实时 OP.GG" : build.side === "enemy" ? "敌方参考" : "本地快照",
     `${build.patch} / ${build.tier}`
   ].join(" · ");
 
-  const primaryRune = build.rune?.primary_style?.name ?? "待确认";
-  const secondaryRune = build.rune?.secondary_style?.name ?? "待确认";
-  const perkNames = (build.rune?.perks ?? []).map((perk) => perk.name).slice(0, 6);
-  const spellBuild = build.summoner_spells?.[0];
-  const skillOrder = build.skill_order?.order;
-
   elements.buildRecommendation.replaceChildren(
-    buildBlock("符文", [
-      `${primaryRune} + ${secondaryRune}`,
-      perkNames.join(" / ") || "暂无符文明细"
-    ]),
-    buildBlock("召唤师技能", [
-      spellBuild ? spellBuild.spells.map((spell) => spell.name).join(" + ") : "暂无推荐",
-      metricLine(spellBuild)
-    ]),
-    buildBlock("技能加点", [
-      skillOrder ? compactSkillOrder(skillOrder) : "暂无推荐",
-      metricLine(build.skill_order)
-    ]),
-    buildItemBlock("出门", build.starter_items?.[0]),
-    buildItemBlock("鞋子", build.boots?.[0]),
-    buildItemBlock("辅助装", build.support_items?.[0]),
-    buildItemBlock("核心装备", build.core_items?.[0])
+    opggStatStrip(build),
+    opggSummaryList(build)
   );
+  state.detailItems.opgg = opggDetailItems(build);
+}
+
+function queueOpggBuildLoad(draft, analysis) {
+  const target = pickOpggBuildTarget(draft, analysis);
+  if (!target) {
+    if (state.opggRequestKey || state.opggBuild || state.opggError || state.opggStatus !== "idle") {
+      state.opggBuild = null;
+      state.opggStatus = "idle";
+      state.opggError = null;
+      state.opggRequestKey = null;
+    }
+    return;
+  }
+
+  const requestKey = `${target.championId}:${target.role}`;
+  if (state.opggRequestKey === requestKey) {
+    return;
+  }
+
+  state.opggBuild = null;
+  state.opggError = null;
+  state.opggRequestKey = requestKey;
+
+  const tauriCore = window.__TAURI__?.core;
+  if (!tauriCore?.invoke) {
+    state.opggStatus = "snapshot";
+    return;
+  }
+
+  state.opggStatus = "loading";
+  fetchLiveOpggBuild(target)
+    .then((build) => {
+      if (state.opggRequestKey !== requestKey) {
+        return;
+      }
+      state.opggBuild = build;
+      state.opggStatus = "ready";
+      state.opggError = null;
+      render();
+    })
+    .catch((error) => {
+      if (state.opggRequestKey !== requestKey) {
+        return;
+      }
+      state.opggBuild = null;
+      state.opggStatus = "error";
+      state.opggError = `OP.GG 实时读取失败，已回退本地快照：${humanizeBridgeMessage(String(error?.message ?? error))}`;
+      render();
+    });
+}
+
+function pickOpggBuildTarget(draft, analysis) {
+  const self = selfDraftPlayer(draft);
+  const myTeam = draft?.my_team ?? [];
+  const pickedSelf = Number(self?.champion_id) > 0 ? self : null;
+  const pickedAlly = myTeam.find((player) => Number(player?.champion_id) > 0);
+  const player = pickedSelf ?? pickedAlly ?? null;
+  const championId = Number(player?.champion_id ?? 0);
+  if (!championId) {
+    return null;
+  }
+
+  return {
+    championId,
+    role: preferredOpggRole(player, analysis),
+    championName: championName(championId, false)
+  };
+}
+
+function preferredOpggRole(player, analysis) {
+  const championId = Number(player?.champion_id ?? 0);
+  return normalizeOpggRole(player?.assigned_position)
+    || findChampionStatRole(analysis, championId)
+    || "top";
+}
+
+function findChampionStatRole(analysis, championId) {
+  const stat = (analysis?.champion_stats ?? []).find((entry) => Number(entry.champion_id) === championId);
+  return normalizeOpggRole(stat?.role);
+}
+
+function normalizeOpggRole(role) {
+  const labels = {
+    top: "top",
+    jungle: "jungle",
+    middle: "mid",
+    mid: "mid",
+    bottom: "adc",
+    adc: "adc",
+    utility: "support",
+    support: "support"
+  };
+  return labels[String(role || "").toLowerCase()] ?? null;
+}
+
+async function fetchLiveOpggBuild(target) {
+  const tauriCore = window.__TAURI__?.core;
+  const payload = await tauriCore.invoke("fetch_opgg_champion", {
+    request: {
+      championId: target.championId,
+      role: target.role,
+      region: "global",
+      mode: "ranked",
+      tier: "emerald_plus"
+    }
+  });
+  return normalizeLiveOpggBuild(payload, target);
+}
+
+function normalizeLiveOpggBuild(payload, target) {
+  return {
+    source: "live-opgg",
+    patch: payload.patch,
+    region: payload.region,
+    tier: payload.tier,
+    queue: payload.queue,
+    champion_id: payload.champion_id ?? target.championId,
+    champion_key: String(payload.champion_id ?? target.championId),
+    champion_name: payload.champion_name || target.championName,
+    role: normalizeOpggRole(payload.role) ?? target.role,
+    win_rate: payload.win_rate,
+    pick_rate: payload.pick_rate,
+    ban_rate: payload.ban_rate,
+    rank: payload.rank,
+    sample_count: payload.sample_count,
+    summoner_spells: payload.summoner_spells ?? [],
+    runes: payload.runes ?? [],
+    skill_order: payload.skill_order,
+    starter_items: payload.starter_items ?? [],
+    boots: payload.boots ?? [],
+    core_items: payload.core_items ?? [],
+    last_items: payload.last_items ?? []
+  };
 }
 
 function chooseBuildRecommendation(analysis) {
   const builds = analysis?.build_recommendations ?? [];
-  return builds.find((build) => build.side === "ally") ?? builds[0] ?? null;
+  const build = normalizeSnapshotBuild(builds.find((build) => build.side === "ally") ?? builds[0] ?? null);
+  const stat = matchingChampionStat(analysis, build);
+  return stat
+    ? {
+        ...build,
+        win_rate: stat.win_rate,
+        pick_rate: stat.pick_rate,
+        ban_rate: stat.ban_rate,
+        rank: stat.rank
+      }
+    : build;
+}
+
+function matchingChampionStat(analysis, build) {
+  if (!build) {
+    return null;
+  }
+  return (analysis?.champion_stats ?? []).find((stat) => (
+    Number(stat.champion_id) === Number(build.champion_id)
+    && normalizeOpggRole(stat.role) === normalizeOpggRole(build.role)
+  )) ?? null;
+}
+
+function opggStatusText(build = null) {
+  if (state.opggStatus === "loading") {
+    return "读取中";
+  }
+  if (state.opggBuild || build?.source === "live-opgg") {
+    return "实时";
+  }
+  if (state.opggError) {
+    return "回退";
+  }
+  if (build) {
+    return "本地";
+  }
+  return "等待英雄";
+}
+
+function opggStatStrip(build) {
+  const strip = document.createElement("div");
+  strip.className = "opgg-stat-strip";
+  strip.replaceChildren(
+    opggStat("胜率", build.win_rate),
+    opggStat("登场", build.pick_rate),
+    opggStat("禁用", build.ban_rate),
+    opggStat("样本", build.sample_count, true)
+  );
+  return strip;
+}
+
+function opggStat(label, value, integer = false) {
+  const item = document.createElement("div");
+  item.className = "opgg-stat";
+  const strong = document.createElement("strong");
+  strong.textContent = value === undefined || value === null
+    ? "--"
+    : integer
+      ? Number(value).toLocaleString("zh-CN")
+      : `${Number(value).toFixed(2)}%`;
+  const span = document.createElement("span");
+  span.textContent = label;
+  item.append(strong, span);
+  return item;
+}
+
+function opggIconBlock(title, icons, meta = "") {
+  const block = document.createElement("div");
+  block.className = "opgg-build-block";
+  const heading = document.createElement("span");
+  heading.textContent = title;
+  const row = document.createElement("div");
+  row.className = "opgg-icon-row";
+  row.replaceChildren(...(icons.length ? icons : [emptyInline("暂无")]));
+  const small = document.createElement("small");
+  small.textContent = meta;
+  block.append(heading, row, small);
+  return block;
+}
+
+function opggSummaryList(build) {
+  const rune = firstBuildRow(build.runes);
+  const core = firstBuildRow(build.core_items);
+  const boots = firstBuildRow(build.boots);
+  const late = firstBuildRow(build.last_items);
+  const list = document.createElement("div");
+  list.className = "opgg-summary-list";
+  list.replaceChildren(
+    opggSummaryLine("召唤师", opggSpellIcons(build), conciseMetric(firstBuildRow(build.summoner_spells))),
+    opggSummaryLine("符文", opggRuneIcons(rune).slice(0, 5), rune ? `${runeStyleName(rune.primary_style_id)} + ${runeStyleName(rune.secondary_style_id)}` : "暂无"),
+    opggSummaryTextLine("技能", build.skill_order?.priority?.join(" > ") || "暂无", formatSkillOrder(build.skill_order?.order, 6)),
+    opggSummaryLine("核心装", (core?.ids ?? boots?.ids ?? late?.ids ?? []).slice(0, 4).map(itemIcon), conciseMetric(core ?? boots ?? late))
+  );
+  return list;
+}
+
+function opggSummaryLine(label, icons, meta = "") {
+  const row = document.createElement("div");
+  row.className = "opgg-summary-row";
+  const name = document.createElement("span");
+  name.className = "opgg-summary-label";
+  name.textContent = label;
+  const content = document.createElement("div");
+  content.className = "opgg-summary-content";
+  content.replaceChildren(...(icons.length ? icons : [emptyInline("暂无")]));
+  const note = document.createElement("small");
+  note.className = "opgg-summary-meta";
+  note.textContent = meta;
+  row.append(name, content, note);
+  return row;
+}
+
+function opggSummaryTextLine(label, primary, meta = "") {
+  const row = document.createElement("div");
+  row.className = "opgg-summary-row";
+  const name = document.createElement("span");
+  name.className = "opgg-summary-label";
+  name.textContent = label;
+  const content = document.createElement("strong");
+  content.className = "opgg-summary-text";
+  content.textContent = primary;
+  const note = document.createElement("small");
+  note.className = "opgg-summary-meta";
+  note.textContent = meta;
+  row.append(name, content, note);
+  return row;
+}
+
+function opggRuneIcons(rune) {
+  const icons = [];
+  if (rune?.primary_style_id) {
+    icons.push(runeStyleIcon(rune.primary_style_id));
+  }
+  (rune?.perk_ids ?? []).slice(0, 6).forEach((perkId) => icons.push(runeIcon(perkId)));
+  if (rune?.secondary_style_id) {
+    icons.push(runeStyleIcon(rune.secondary_style_id));
+  }
+  return icons;
+}
+
+function conciseMetric(row) {
+  if (!row) {
+    return "";
+  }
+  const parts = [];
+  if (row.win_rate !== undefined && row.win_rate !== null) {
+    parts.push(`胜率 ${Number(row.win_rate).toFixed(1)}%`);
+  }
+  if (row.pick_rate !== undefined && row.pick_rate !== null) {
+    parts.push(`登场 ${Number(row.pick_rate).toFixed(1)}%`);
+  }
+  if (row.games) {
+    parts.push(`${Number(row.games).toLocaleString("zh-CN")} 场`);
+  }
+  return parts.slice(0, 2).join(" · ");
+}
+
+function opggRuneBlock(build) {
+  const rune = firstBuildRow(build.runes);
+  return opggIconBlock(
+    "符文",
+    opggRuneIcons(rune),
+    rune ? `${runeStyleName(rune.primary_style_id)} + ${runeStyleName(rune.secondary_style_id)} · ${metricLine(rune)}` : ""
+  );
+}
+
+function opggSkillBlock(skillOrder) {
+  const block = document.createElement("div");
+  block.className = "opgg-build-block";
+  const heading = document.createElement("span");
+  heading.textContent = "技能加点";
+  const priority = document.createElement("strong");
+  priority.className = "opgg-skill-priority";
+  priority.textContent = skillOrder?.priority?.length ? skillOrder.priority.join(" > ") : "暂无";
+  const order = document.createElement("small");
+  order.textContent = [formatSkillOrder(skillOrder?.order, 12), metricLine(skillOrder)].filter(Boolean).join(" · ");
+  block.append(heading, priority, order);
+  return block;
+}
+
+function opggItemPathBlock(title, row) {
+  return opggIconBlock(title, (row?.ids ?? []).map(itemIcon), metricLine(row));
+}
+
+function opggSpellIcons(build) {
+  const row = firstBuildRow(build.summoner_spells);
+  if (row?.ids) {
+    return row.ids.map(spellIcon);
+  }
+  if (row?.spells) {
+    return row.spells.map((spell) => spellIcon(spell.spell_id ?? spell.id ?? spell.spell_key));
+  }
+  return [];
+}
+
+function firstBuildRow(rows) {
+  return Array.isArray(rows) ? rows[0] : rows ?? null;
+}
+
+function splitSkillOrder(order) {
+  if (Array.isArray(order)) {
+    return order.map((skill) => String(skill).toUpperCase()).filter(Boolean);
+  }
+  return String(order || "").match(/[QWER]/gi)?.map((skill) => skill.toUpperCase()) ?? [];
+}
+
+function skillPriorityFromOrder(order) {
+  const priority = [];
+  splitSkillOrder(order).forEach((skill) => {
+    if (skill !== "R" && !priority.includes(skill)) {
+      priority.push(skill);
+    }
+  });
+  return priority.slice(0, 3);
+}
+
+function formatSkillOrder(order, limit = 15) {
+  const skills = splitSkillOrder(order).slice(0, limit);
+  return skills.length ? `前 ${skills.length} 级：${skills.join(" ")}` : "";
+}
+
+function normalizeSnapshotBuild(build) {
+  if (!build) {
+    return null;
+  }
+
+  return {
+    ...build,
+    source: build.source ?? "snapshot",
+    runes: build.rune ? [normalizeSnapshotRune(build.rune)] : [],
+    summoner_spells: (build.summoner_spells ?? []).map((row) => ({
+      ...row,
+      ids: (row.spells ?? []).map((spell) => spellIdFromKey(spell.spell_key)).filter(Boolean)
+    })),
+    skill_order: build.skill_order
+      ? {
+          ...build.skill_order,
+          priority: skillPriorityFromOrder(build.skill_order.order),
+          order: splitSkillOrder(build.skill_order.order),
+          skill_names: build.skill_order.skills?.map((skill) => skill.name).filter(Boolean) ?? []
+        }
+      : null,
+    starter_items: normalizeSnapshotItemRows(build.starter_items),
+    boots: normalizeSnapshotItemRows(build.boots),
+    core_items: normalizeSnapshotItemRows(build.core_items),
+    last_items: []
+  };
+}
+
+function normalizeSnapshotRune(rune) {
+  return {
+    primary_style_id: rune.primary_style?.style_id,
+    secondary_style_id: rune.secondary_style?.style_id,
+    perk_ids: (rune.perks ?? []).map((perk) => perk.perk_id).filter(Boolean),
+    pick_rate: rune.pick_rate,
+    win_rate: rune.win_rate,
+    games: rune.games
+  };
+}
+
+function normalizeSnapshotItemRows(rows = []) {
+  return rows.map((row) => ({
+    ...row,
+    ids: (row.items ?? []).map((item) => item.item_id).filter(Boolean)
+  }));
+}
+
+function opggDetailItems(build) {
+  const rune = firstBuildRow(build.runes);
+  const spells = firstBuildRow(build.summoner_spells);
+  const core = firstBuildRow(build.core_items);
+  const starter = firstBuildRow(build.starter_items);
+  return [
+    {
+      title: "数据来源",
+      text: `${build.source === "live-opgg" ? "OP.GG 实时公开 API" : "本地 OP.GG 快照"} · ${build.patch} / ${build.region} / ${build.tier}`,
+      type: "suggestion"
+    },
+    {
+      title: "英雄强度",
+      text: `胜率 ${formatPercent(build.win_rate)} · 登场 ${formatPercent(build.pick_rate)} · 禁用 ${formatPercent(build.ban_rate)} · 样本 ${formatCount(build.sample_count)}`,
+      type: "positive"
+    },
+    {
+      title: "符文",
+      text: rune ? `${runeStyleName(rune.primary_style_id)} + ${runeStyleName(rune.secondary_style_id)}：${(rune.perk_ids ?? []).map(runeName).join(" / ")}` : "暂无符文数据",
+      type: "suggestion"
+    },
+    {
+      title: "召唤师技能",
+      text: spells ? `${(spells.ids ?? []).map(spellName).join(" + ")} · ${metricLine(spells)}` : "暂无召唤师技能数据",
+      type: "suggestion"
+    },
+    {
+      title: "技能加点",
+      text: build.skill_order
+        ? [
+            build.skill_order.priority?.length ? `主升 ${build.skill_order.priority.join(" > ")}` : null,
+            formatSkillOrder(build.skill_order.order, 18),
+            metricLine(build.skill_order)
+          ].filter(Boolean).join("；")
+        : "暂无技能加点数据",
+      type: "suggestion"
+    },
+    {
+      title: "装备路径",
+      text: [
+        starter ? `出门 ${formatItemIds(starter.ids)}` : null,
+        core ? `核心 ${formatItemIds(core.ids)}` : null
+      ].filter(Boolean).join("；") || "暂无装备路径",
+      type: "suggestion"
+    }
+  ];
+}
+
+function formatPercent(value) {
+  return value === undefined || value === null ? "--" : `${Number(value).toFixed(2)}%`;
+}
+
+function formatCount(value) {
+  return value ? Number(value).toLocaleString("zh-CN") : "--";
+}
+
+function formatItemIds(ids = []) {
+  return ids.length ? ids.join(" > ") : "暂无";
 }
 
 function emptyBuildState() {
   const item = document.createElement("div");
   item.className = "build-empty";
-  item.textContent = "继续扩展英雄 build 快照后，这里会显示符文、技能和装备路径。";
+  item.textContent = "选出我方英雄后，这里会显示 OP.GG 符文、技能和装备路径。";
   return item;
 }
 
@@ -2597,6 +3118,11 @@ function openDetailModal(panel) {
       title: "队友质量分析",
       subtitle: "基于队友近期表现的本地判断",
       items: state.detailItems.teammates
+    },
+    opgg: {
+      title: "OP.GG 方案",
+      subtitle: "公开统计里的符文、技能、召唤师技能和装备路径",
+      items: state.detailItems.opgg
     }
   }[panel];
 

@@ -600,14 +600,19 @@ p {
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(420px, 1.45fr);
+  grid-template-columns:
+    minmax(210px, 0.95fr)
+    minmax(210px, 0.95fr)
+    minmax(290px, 1.18fr)
+    minmax(320px, 1.28fr);
   grid-template-rows: minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
   min-height: 0;
 }
 
 .reason-section,
 .enemy-section,
+.opgg-section,
 .recommend-section,
 .teammate-section,
 .rune-section {
@@ -627,8 +632,40 @@ p {
 
 .reason-section h3,
 .enemy-section h3,
+.opgg-section h3,
 .teammate-section h3 {
   margin-bottom: 8px;
+}
+
+.opgg-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.opgg-title-row h3 {
+  margin: 0;
+}
+
+.opgg-status {
+  min-height: 22px;
+  border: 1px solid #315e58;
+  border-radius: 999px;
+  background: rgba(31, 197, 178, 0.1);
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  padding: 0 9px;
+}
+
+.opgg-section p {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .teammate-section p {
@@ -946,7 +983,10 @@ p {
 
 .game-player-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(190px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: 236px;
+  align-content: start;
+  align-items: start;
   gap: 8px;
   min-width: 0;
   min-height: 0;
@@ -969,7 +1009,8 @@ p {
   grid-template-rows: auto auto auto minmax(0, 1fr);
   align-content: start;
   gap: 9px;
-  min-width: 190px;
+  width: 236px;
+  height: 430px;
   min-height: 0;
   overflow: hidden;
   padding: 10px;
@@ -1089,6 +1130,7 @@ p {
   align-content: start;
   gap: 5px;
   min-height: 0;
+  max-height: 248px;
   overflow: auto;
   padding-right: 2px;
   scrollbar-width: thin;
@@ -1097,7 +1139,7 @@ p {
 
 .game-recent-row {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) max-content 34px;
+  grid-template-columns: 20px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 6px;
   min-height: 38px;
@@ -1129,7 +1171,7 @@ p {
 }
 
 .game-recent-body strong,
-.game-recent-row b {
+.game-recent-result b {
   color: var(--text);
   font-size: 11px;
 }
@@ -1139,22 +1181,29 @@ p {
   font-size: 10px;
 }
 
-.game-recent-row b {
+.game-recent-result {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  min-width: 0;
+}
+
+.game-recent-result b {
   white-space: nowrap;
 }
 
-.game-recent-row em {
+.game-recent-result em {
   color: var(--muted);
   font-size: 11px;
   font-style: normal;
   text-align: right;
 }
 
-.game-recent-row.win em {
+.game-recent-row.win .game-recent-result em {
   color: #73c4ff;
 }
 
-.game-recent-row.loss em {
+.game-recent-row.loss .game-recent-result em {
   color: var(--red);
 }
 
@@ -2009,13 +2058,45 @@ p {
   min-height: 16px;
 }
 
+.opgg-build-panel,
 .build-preview {
   display: grid;
   gap: 7px;
-  margin: 10px 0;
-  overflow: auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
+.opgg-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.opgg-stat {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  border: 1px solid #34404e;
+  border-radius: 7px;
+  background: #202733;
+  padding: 6px 7px;
+}
+
+.opgg-stat strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opgg-stat span {
+  color: var(--subtle);
+  font-size: 11px;
+}
+
+.opgg-build-block,
 .build-block,
 .build-empty {
   display: grid;
@@ -2023,14 +2104,16 @@ p {
   border: 1px solid #394250;
   border-radius: 8px;
   background: #202733;
-  padding: 9px 10px;
+  padding: 8px 9px;
 }
 
+.opgg-build-block > span,
 .build-block span {
   color: var(--muted);
   font-size: 12px;
 }
 
+.opgg-build-block strong,
 .build-block strong {
   overflow-wrap: anywhere;
   color: var(--text);
@@ -2038,11 +2121,105 @@ p {
   line-height: 1.25;
 }
 
+.opgg-build-block small,
 .build-block small,
 .build-empty {
   color: var(--subtle);
   font-size: 12px;
   line-height: 1.35;
+}
+
+.opgg-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.opgg-summary-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.opgg-summary-row {
+  display: grid;
+  grid-template-columns: 44px minmax(92px, 1fr) minmax(72px, auto);
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  min-width: 0;
+  border: 1px solid #34404e;
+  border-radius: 7px;
+  background: #202733;
+  padding: 4px 7px;
+}
+
+.opgg-summary-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.opgg-summary-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.opgg-summary-text {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opgg-summary-meta {
+  overflow: hidden;
+  color: var(--subtle);
+  font-size: 11px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opgg-icon-row .item-icon,
+.opgg-icon-row .spell-icon,
+.opgg-icon-row .rune-icon,
+.opgg-summary-content .item-icon,
+.opgg-summary-content .spell-icon,
+.opgg-summary-content .rune-icon {
+  flex: 0 0 auto;
+}
+
+.rune-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  border: 1px solid #485260;
+  border-radius: 50%;
+  background: #11161d;
+}
+
+.rune-icon.style {
+  border-color: #746238;
+}
+
+.rune-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.opgg-skill-priority {
+  letter-spacing: 0;
 }
 
 .rune-actions {
