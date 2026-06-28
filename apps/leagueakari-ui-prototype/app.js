@@ -57,7 +57,8 @@ const state = {
   matchHistoryStatus: "idle",
   matchHistoryError: null,
   expandedMatchId: null,
-  matchDetailTabs: {}
+  matchDetailTabs: {},
+  gameSortMode: "position"
 };
 
 const elements = {
@@ -98,6 +99,8 @@ const elements = {
   reconnectButton: document.querySelector("#reconnectButton"),
   loadSampleButton: document.querySelector("#loadSampleButton"),
   refreshGameButton: document.querySelector("#refreshGameButton"),
+  gameSortButtons: document.querySelectorAll("[data-game-sort]"),
+  gameInsightBar: document.querySelector("#gameInsightBar"),
   gameTeamSummary: document.querySelector("#gameTeamSummary"),
   gamePlayerGrid: document.querySelector("#gamePlayerGrid"),
   refreshMatchesButton: document.querySelector("#refreshMatchesButton"),
@@ -302,12 +305,14 @@ function renderGameView(snapshot, draft) {
     return;
   }
 
-  const players = gamePlayers(snapshot, draft);
+  const players = sortGamePlayers(gamePlayers(snapshot, draft));
   const teammateCount = players.filter((player) => !player.isSelf && player.hasStats).length;
   const activeCount = players.filter((player) => player.hasChampion || player.recentMatches.length).length;
   elements.gameTeamSummary.textContent = activeCount
     ? `${players.length} 人 · ${teammateCount} 名队友有近况`
     : "等待对局";
+  renderGameInsightBar(players, activeCount);
+  renderGameSortButtons();
 
   if (!players.length || !activeCount) {
     const empty = document.createElement("article");
@@ -320,6 +325,59 @@ function renderGameView(snapshot, draft) {
   }
 
   elements.gamePlayerGrid.replaceChildren(...players.map(gamePlayerCard));
+}
+
+function renderGameSortButtons() {
+  elements.gameSortButtons?.forEach((button) => {
+    button.classList.toggle("active", button.dataset.gameSort === state.gameSortMode);
+  });
+}
+
+function renderGameInsightBar(players, activeCount) {
+  if (!elements.gameInsightBar) {
+    return;
+  }
+  if (!activeCount) {
+    elements.gameInsightBar.replaceChildren(gameInsightItem("等待数据", "进入 BP 后生成队伍状态摘要", "neutral"));
+    return;
+  }
+
+  const teammates = players.filter((player) => !player.isSelf && player.hasStats);
+  const riskPlayers = teammates.filter((player) => gamePlayerTags(player).some((tag) => tag.type === "risk"));
+  const carryPlayers = teammates.filter((player) => gamePlayerTags(player).some((tag) => tag.type === "good"));
+  const avgKda = average(teammates.map((player) => player.kdRatio).filter((value) => value > 0));
+  const avgWinRate = average(teammates.map((player) => player.winRate).filter((value) => value > 0));
+
+  elements.gameInsightBar.replaceChildren(
+    gameInsightItem("队伍状态", teammateSummaryText(teammates, riskPlayers, carryPlayers), riskPlayers.length ? "warn" : "good"),
+    gameInsightItem("平均 KDA", avgKda ? avgKda.toFixed(2) : "--", avgKda >= 2.8 ? "good" : avgKda && avgKda < 1.7 ? "risk" : "neutral"),
+    gameInsightItem("平均胜率", avgWinRate ? `${avgWinRate.toFixed(0)}%` : "--", avgWinRate >= 53 ? "good" : avgWinRate && avgWinRate < 47 ? "risk" : "neutral"),
+    gameInsightItem("排序方式", gameSortLabel(state.gameSortMode), "neutral")
+  );
+}
+
+function gameInsightItem(title, text, type = "neutral") {
+  const item = document.createElement("article");
+  item.className = `game-insight-item ${type}`;
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  const span = document.createElement("span");
+  span.textContent = text;
+  item.append(strong, span);
+  return item;
+}
+
+function teammateSummaryText(teammates, riskPlayers, carryPlayers) {
+  if (!teammates.length) {
+    return "暂无队友近况，先看 BP 阵容";
+  }
+  if (riskPlayers.length) {
+    return `${riskPlayers.length} 个风险点，前期少让单点背压`;
+  }
+  if (carryPlayers.length) {
+    return `${carryPlayers.length} 个强势点，可围绕节奏打`;
+  }
+  return "整体普通，按阵容节奏执行";
 }
 
 function gamePlayers(snapshot, draft) {
@@ -345,7 +403,8 @@ function gamePlayers(snapshot, draft) {
       kdRatio: Number(selfSummary.avg_kda ?? 0),
       tierLabel: "自己",
       recentMatches: selfRecentMatches,
-      hasStats: Boolean(selfRecentMatches.length)
+      hasStats: Boolean(selfRecentMatches.length),
+      cellId: selfPick?.cell_id ?? null
     }
   ];
 
@@ -370,13 +429,16 @@ function gamePlayers(snapshot, draft) {
       avgAssists: Number(teammate.avg_assists ?? 0),
       tierLabel: teammate.tier_label || "数据少",
       recentMatches,
-      hasStats: Number(teammate.games ?? 0) > 0
+      hasStats: Number(teammate.games ?? 0) > 0,
+      cellId: teammate.cell_id ?? null
     });
   });
 
+  const usedCells = new Set(players.map((player) => player.cellId).filter((cellId) => cellId !== null && cellId !== undefined));
+  const draftPicks = (draft?.my_team ?? []).filter((pick) => !usedCells.has(pick?.cell_id));
   while (players.length < 5) {
     const index = players.length;
-    const pick = (draft?.my_team ?? [])[index] ?? null;
+    const pick = draftPicks.shift() ?? null;
     players.push({
       key: `empty-${index}`,
       isSelf: false,
@@ -392,19 +454,64 @@ function gamePlayers(snapshot, draft) {
       kdRatio: 0,
       tierLabel: "等待",
       recentMatches: [],
-      hasStats: false
+      hasStats: false,
+      cellId: pick?.cell_id ?? null
     });
   }
 
   return players.map((player) => ({
     ...player,
-    hasChampion: Boolean(player.championId)
+    hasChampion: Boolean(player.championId),
+    qualityScore: gameQualityScore(player)
   })).slice(0, 5);
+}
+
+function sortGamePlayers(players) {
+  const positionOrder = {
+    top: 1,
+    jungle: 2,
+    middle: 3,
+    bottom: 4,
+    utility: 5,
+    unknown: 6
+  };
+  return [...players].sort((a, b) => {
+    if (state.gameSortMode === "quality") {
+      return Number(b.qualityScore ?? 0) - Number(a.qualityScore ?? 0);
+    }
+    if (state.gameSortMode === "kda") {
+      return Number(b.kdRatio ?? 0) - Number(a.kdRatio ?? 0);
+    }
+    if (state.gameSortMode === "winrate") {
+      return Number(b.winRate ?? 0) - Number(a.winRate ?? 0);
+    }
+    return (positionOrder[a.assignedPosition] ?? 6) - (positionOrder[b.assignedPosition] ?? 6);
+  });
+}
+
+function gameQualityScore(player) {
+  if (!player.hasStats || !player.games) {
+    return 0;
+  }
+  return Number(player.winRate ?? 0)
+    + Number(player.kdRatio ?? 0) * 10
+    + Math.min(Number(player.games ?? 0), 20) * 0.6
+    - Number(player.avgDeaths ?? 0) * 2;
+}
+
+function gameSortLabel(mode) {
+  return {
+    position: "分路顺序",
+    quality: "质量排序",
+    kda: "KDA",
+    winrate: "胜率"
+  }[mode] ?? "分路顺序";
 }
 
 function gamePlayerCard(player) {
   const card = document.createElement("article");
-  card.className = `game-player-card ${player.isSelf ? "self" : ""} ${player.hasStats ? "" : "empty"}`.trim();
+  const tags = gamePlayerTags(player);
+  card.className = `game-player-card ${player.isSelf ? "self" : ""} ${player.hasStats ? "" : "empty"} ${tags.some((tag) => tag.type === "risk") ? "risk" : ""}`.trim();
 
   const header = document.createElement("div");
   header.className = "game-player-header";
@@ -423,8 +530,82 @@ function gamePlayerCard(player) {
   const recentItems = player.recentMatches.slice(0, 6).map(gameRecentRow);
   recent.replaceChildren(...(recentItems.length ? recentItems : [gameRecentEmpty(player)]));
 
-  card.append(header, score, gameLoadoutStrip(player.recentMatches[0]), recent);
+  card.append(header, gamePlayerTagRow(tags), score, gameLoadoutStrip(player.recentMatches[0]), recent);
   return card;
+}
+
+function gamePlayerTags(player) {
+  const tags = [];
+  if (player.isSelf) {
+    tags.push({ label: "自己", type: "self" });
+  }
+  if (!player.hasStats) {
+    tags.push({ label: "等待数据", type: "muted" });
+    return tags;
+  }
+
+  if (player.games < 6) {
+    tags.push({ label: "样本少", type: "muted" });
+  }
+  if (player.winRate >= 58 && player.games >= 8) {
+    tags.push({ label: "高胜率", type: "good" });
+  }
+  if (player.kdRatio >= 3) {
+    tags.push({ label: "高 KDA", type: "good" });
+  }
+  if (player.winRate <= 42 && player.games >= 8) {
+    tags.push({ label: "胜率低", type: "risk" });
+  }
+  if (player.avgDeaths >= 7) {
+    tags.push({ label: "死亡偏多", type: "risk" });
+  }
+  const streak = recentResultStreak(player.recentMatches);
+  if (streak.type === "win" && streak.count >= 3) {
+    tags.push({ label: `${streak.count} 连胜`, type: "good" });
+  }
+  if (streak.type === "loss" && streak.count >= 3) {
+    tags.push({ label: `${streak.count} 连败`, type: "risk" });
+  }
+  if (!tags.length) {
+    tags.push({ label: "普通", type: "neutral" });
+  }
+  return tags.slice(0, 4);
+}
+
+function gamePlayerTagRow(tags) {
+  const row = document.createElement("div");
+  row.className = "game-player-tags";
+  row.replaceChildren(...tags.map((tag) => {
+    const pill = document.createElement("span");
+    pill.className = `game-player-tag ${tag.type}`;
+    pill.textContent = tag.label;
+    return pill;
+  }));
+  return row;
+}
+
+function recentResultStreak(matches = []) {
+  if (!matches.length) {
+    return { type: null, count: 0 };
+  }
+  const type = matches[0].result === "win" ? "win" : "loss";
+  let count = 0;
+  for (const match of matches) {
+    const matchType = match.result === "win" ? "win" : "loss";
+    if (matchType !== type) {
+      break;
+    }
+    count += 1;
+  }
+  return { type, count };
+}
+
+function average(values = []) {
+  const valid = values.filter((value) => Number.isFinite(Number(value)));
+  if (!valid.length) {
+    return 0;
+  }
+  return valid.reduce((sum, value) => sum + Number(value), 0) / valid.length;
 }
 
 function gamePlayerAvatar(player) {
@@ -3190,6 +3371,13 @@ elements.navItems.forEach((item) => {
     if (state.currentView === "history" || state.currentView === "account") {
       fetchRecentMatches(false);
     }
+  });
+});
+
+elements.gameSortButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.gameSortMode = button.dataset.gameSort || "position";
+    render();
   });
 });
 

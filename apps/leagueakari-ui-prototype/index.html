@@ -174,11 +174,18 @@
               <p>按当前队伍整理五名玩家的近期状态，先看风险，再看每个人最近几场。</p>
             </div>
             <div class="header-pills">
+              <div class="segmented-control" aria-label="对局排序">
+                <button type="button" class="active" data-game-sort="position">分路顺序</button>
+                <button type="button" data-game-sort="quality">质量排序</button>
+                <button type="button" data-game-sort="kda">KDA</button>
+                <button type="button" data-game-sort="winrate">胜率</button>
+              </div>
               <span id="gameTeamSummary" class="pill teal">等待对局</span>
               <button id="refreshGameButton" type="button">刷新对局</button>
             </div>
           </header>
 
+          <section id="gameInsightBar" class="game-insight-bar" aria-label="队伍摘要"></section>
           <section id="gamePlayerGrid" class="game-player-grid" aria-label="当前队伍对局状态">
             <article class="game-empty">进入 BP 或游戏后显示队伍对局信息。</article>
           </section>
@@ -245,7 +252,7 @@
       </div>
     </div>
 
-    <script src="./sample-events.js?v=game-lobby-1"></script>
-    <script src="./app.js?v=game-lobby-1"></script>
+    <script src="./sample-events.js?v=upstream-game-1"></script>
+    <script src="./app.js?v=upstream-game-1"></script>
   </body>
 </html>

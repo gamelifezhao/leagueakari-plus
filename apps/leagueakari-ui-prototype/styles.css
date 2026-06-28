@@ -257,6 +257,31 @@ p {
   gap: 8px;
 }
 
+.segmented-control {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  border: 1px solid #303946;
+  border-radius: 8px;
+  background: #11161d;
+  padding: 3px;
+}
+
+.segmented-control button {
+  min-height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.segmented-control button.active {
+  background: #203042;
+  color: var(--text);
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -975,10 +1000,64 @@ p {
 
 .game-view {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
   overflow: hidden;
+}
+
+.game-insight-bar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.2fr) repeat(3, minmax(120px, 0.6fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.game-insight-item {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid #303946;
+  border-radius: 8px;
+  background: rgba(27, 32, 39, 0.92);
+  padding: 9px 11px;
+}
+
+.game-insight-item strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.game-insight-item span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-insight-item.good {
+  border-color: rgba(31, 197, 178, 0.38);
+}
+
+.game-insight-item.good span {
+  color: #a8f1e6;
+}
+
+.game-insight-item.warn {
+  border-color: rgba(231, 189, 104, 0.42);
+}
+
+.game-insight-item.warn span {
+  color: var(--gold);
+}
+
+.game-insight-item.risk {
+  border-color: rgba(255, 107, 107, 0.42);
+}
+
+.game-insight-item.risk span {
+  color: #ffc0c0;
 }
 
 .game-player-grid {
@@ -1026,6 +1105,10 @@ p {
 
 .game-player-card.self::before {
   background: var(--teal);
+}
+
+.game-player-card.risk::before {
+  background: var(--red);
 }
 
 .game-player-card.empty {
@@ -1089,6 +1172,46 @@ p {
   font-size: 11px;
   line-height: 18px;
   padding: 0 7px;
+}
+
+.game-player-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.game-player-tag {
+  flex: 0 0 auto;
+  min-height: 20px;
+  border: 1px solid #34404e;
+  border-radius: 999px;
+  background: #202733;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 7px;
+}
+
+.game-player-tag.self {
+  border-color: var(--teal-deep);
+  background: #123330;
+  color: var(--teal);
+}
+
+.game-player-tag.good {
+  border-color: rgba(31, 197, 178, 0.42);
+  color: #a8f1e6;
+}
+
+.game-player-tag.risk {
+  border-color: rgba(255, 107, 107, 0.42);
+  color: #ffc0c0;
+}
+
+.game-player-tag.muted {
+  color: var(--subtle);
 }
 
 .game-player-score {

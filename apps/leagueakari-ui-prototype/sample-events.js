@@ -52,6 +52,91 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
           { champion_id: 11, team_id: 200 }
         ]
       },
+      teammate_performance: [
+        {
+          cell_id: 0,
+          display_name: "稳住别急#1122",
+          champion_id: 22,
+          assigned_position: "bottom",
+          games: 20,
+          wins: 13,
+          losses: 7,
+          win_rate: 65,
+          avg_kills: 7.4,
+          avg_deaths: 4.1,
+          avg_assists: 8.8,
+          kd_ratio: 3.95,
+          tier: "top_horse",
+          tier_label: "上等马",
+          recent_matches: [
+            { game_id: 91001, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "18 分钟前", duration_seconds: 1880, champion_id: 22, champion_name: "寒冰射手", champion_alias: "Ashe", position: "bottom", kills: 9, deaths: 2, assists: 13, items: [3006, 6672, 3031, 3085, 3036, 3035] },
+            { game_id: 91002, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "1 小时前", duration_seconds: 1712, champion_id: 222, champion_name: "暴走萝莉", champion_alias: "Jinx", position: "bottom", kills: 11, deaths: 4, assists: 7, items: [3006, 6672, 3031, 3085, 3094, 3036] },
+            { game_id: 91003, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "2 小时前", duration_seconds: 2033, champion_id: 51, champion_name: "皮城女警", champion_alias: "Caitlyn", position: "bottom", kills: 8, deaths: 3, assists: 9, items: [3006, 6672, 3031, 3094, 3036, 3026] }
+          ]
+        },
+        {
+          cell_id: 1,
+          display_name: "野区有光#0430",
+          champion_id: 104,
+          assigned_position: "jungle",
+          games: 18,
+          wins: 10,
+          losses: 8,
+          win_rate: 56,
+          avg_kills: 6.8,
+          avg_deaths: 5.2,
+          avg_assists: 7.1,
+          kd_ratio: 2.67,
+          tier: "stable",
+          tier_label: "普通",
+          recent_matches: [
+            { game_id: 92001, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "35 分钟前", duration_seconds: 1660, champion_id: 104, champion_name: "法外狂徒", champion_alias: "Graves", position: "jungle", kills: 5, deaths: 6, assists: 6, items: [3047, 3071, 6676, 3031, 3091, 3026] },
+            { game_id: 92002, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "1 小时前", duration_seconds: 1940, champion_id: 56, champion_name: "永恒梦魇", champion_alias: "Nocturne", position: "jungle", kills: 9, deaths: 4, assists: 8, items: [3006, 6692, 3071, 3156, 3026, 3033] },
+            { game_id: 92003, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "3 小时前", duration_seconds: 1515, champion_id: 64, champion_name: "盲僧", champion_alias: "LeeSin", position: "jungle", kills: 7, deaths: 3, assists: 10, items: [3047, 6630, 3071, 3053, 3156, 3026] }
+          ]
+        },
+        {
+          cell_id: 3,
+          display_name: "别越我塔#7788",
+          champion_id: 86,
+          assigned_position: "top",
+          games: 20,
+          wins: 7,
+          losses: 13,
+          win_rate: 35,
+          avg_kills: 4.2,
+          avg_deaths: 8.4,
+          avg_assists: 5.2,
+          kd_ratio: 1.12,
+          tier: "workhorse",
+          tier_label: "牛马",
+          recent_matches: [
+            { game_id: 93001, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "12 分钟前", duration_seconds: 1412, champion_id: 86, champion_name: "德玛西亚之力", champion_alias: "Garen", position: "top", kills: 2, deaths: 9, assists: 3, items: [3047, 6631, 3071, 3053] },
+            { game_id: 93002, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "48 分钟前", duration_seconds: 1777, champion_id: 54, champion_name: "熔岩巨兽", champion_alias: "Malphite", position: "top", kills: 3, deaths: 8, assists: 7, items: [3047, 6662, 3068, 3075] },
+            { game_id: 93003, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "2 小时前", duration_seconds: 1590, champion_id: 122, champion_name: "诺克萨斯之手", champion_alias: "Darius", position: "top", kills: 5, deaths: 10, assists: 4, items: [3047, 6630, 3071, 3053] }
+          ]
+        },
+        {
+          cell_id: 4,
+          display_name: "只玩三把#0099",
+          champion_id: 117,
+          assigned_position: "middle",
+          games: 3,
+          wins: 2,
+          losses: 1,
+          win_rate: 67,
+          avg_kills: 3.3,
+          avg_deaths: 3.6,
+          avg_assists: 12.2,
+          kd_ratio: 4.31,
+          tier: "data_light",
+          tier_label: "样本少",
+          recent_matches: [
+            { game_id: 94001, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "4 小时前", duration_seconds: 2010, champion_id: 117, champion_name: "仙灵女巫", champion_alias: "Lulu", position: "utility", kills: 1, deaths: 2, assists: 18, items: [3158, 2065, 6617, 3107, 3504] },
+            { game_id: 94002, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "1 天前", duration_seconds: 1690, champion_id: 117, champion_name: "仙灵女巫", champion_alias: "Lulu", position: "utility", kills: 2, deaths: 5, assists: 9, items: [3158, 2065, 6617, 3504] }
+          ]
+        }
+      ],
       analysis: {
         confidence: "high",
         dimensions: {
