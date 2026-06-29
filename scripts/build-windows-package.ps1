@@ -16,6 +16,17 @@ if (!(Test-Path -LiteralPath $cargo)) {
   throw "cargo.exe was not found. Install Rust or add cargo to PATH."
 }
 
+$rustcCommand = Get-Command rustc -ErrorAction SilentlyContinue
+if ($rustcCommand) {
+  $rustc = $rustcCommand.Source
+} else {
+  $rustc = Join-Path (Split-Path $cargo) "rustc.exe"
+}
+
+if (!(Test-Path -LiteralPath $rustc)) {
+  throw "rustc.exe was not found. Install Rust or add rustc to PATH."
+}
+
 $distDir = Join-Path $root "dist"
 $resolvedRoot = [System.IO.Path]::GetFullPath($root.Path).TrimEnd("\")
 $resolvedDist = [System.IO.Path]::GetFullPath($distDir).TrimEnd("\")
@@ -29,7 +40,6 @@ $portableDir = Join-Path $distDir $portableName
 $zipPath = Join-Path $distDir "$portableName.zip"
 $installerWorkDir = Join-Path $distDir "installer-work"
 $installerPath = Join-Path $distDir "LeagueAkari-Plus-$Version-setup.exe"
-$sedPath = Join-Path $installerWorkDir "leagueakari-plus.sed"
 
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
@@ -38,9 +48,16 @@ Get-ChildItem -LiteralPath $distDir -Force -ErrorAction SilentlyContinue |
     $_.Name -like "LeagueAkari-Plus-*-setup.exe" -or
     $_.Name -like "LeagueAkari-Plus-*-portable-*.zip" -or
     ($_.PSIsContainer -and $_.Name -like "LeagueAkari-Plus-*-portable-*") -or
+    $_.Name -like "LeagueAkari-Plus-*-setup.pdb" -or
     $_.Name -like "README*.txt"
   } |
-  Remove-Item -Recurse -Force
+  ForEach-Object {
+    try {
+      Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
+    } catch {
+      Write-Warning "skipping locked dist item: $($_.FullName)"
+    }
+  }
 
 New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
 if (Test-Path -LiteralPath $installerWorkDir) {
@@ -81,6 +98,7 @@ $readme = @(
   "",
   "Recommended:",
   "1. Prefer running LeagueAkari-Plus-$Version-setup.exe.",
+  "   The installer lets you choose an install folder and creates a desktop shortcut.",
   "2. Start League of Legends and sign in first.",
   "3. Start LeagueAkari Plus. It will connect to LCU during draft.",
   "",
@@ -93,20 +111,9 @@ $readme = @(
   "- This unsigned test build may show a Windows unknown publisher warning.",
   "- This app reads local League Client LCU data only.",
   "- leagueakari-probe.exe is the local helper process. Do not delete it.",
-  "- The main app also has an embedded probe fallback for accidental zip-preview launches."
+  "- The main app also has an embedded probe fallback for accidental zip-preview launches.",
+  "- Installer logs are written to %TEMP%\LeagueAkariPlus-install.log when something fails."
 ) -join [Environment]::NewLine
-
-$installCmd = @(
-  "@echo off",
-  "cd /d ""%~dp0""",
-  "powershell -NoProfile -ExecutionPolicy Bypass -File ""%~dp0install.ps1""",
-  "exit /b %ERRORLEVEL%"
-) -join "`r`n"
-
-$finishCmd = @(
-  "@echo off",
-  "exit /b 0"
-) -join "`r`n"
 
 $portableFiles = @{
   "LeagueAkari Plus.exe" = $appExe
@@ -120,72 +127,37 @@ foreach ($entry in $portableFiles.GetEnumerator()) {
 
 Set-Content -LiteralPath (Join-Path $portableDir "README.txt") -Value $readme -Encoding UTF8
 Set-Content -LiteralPath (Join-Path $installerWorkDir "README.txt") -Value $readme -Encoding UTF8
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "installer-install.ps1") -Destination (Join-Path $installerWorkDir "install.ps1") -Force
-Set-Content -LiteralPath (Join-Path $installerWorkDir "install.cmd") -Value $installCmd -Encoding ASCII
-Set-Content -LiteralPath (Join-Path $installerWorkDir "finish.cmd") -Value $finishCmd -Encoding ASCII
-
-$installScriptPath = Join-Path $installerWorkDir "install.ps1"
-if ((Get-Item -LiteralPath $installScriptPath).Length -lt 100) {
-  throw "installer install.ps1 was not generated correctly"
-}
 
 if (Test-Path -LiteralPath $zipPath) {
   Remove-Item -LiteralPath $zipPath -Force
 }
 Compress-Archive -LiteralPath (Get-ChildItem -LiteralPath $portableDir | ForEach-Object { $_.FullName }) -DestinationPath $zipPath -Force
 
-$sourceDir = $installerWorkDir.TrimEnd("\") + "\"
-$targetName = $installerPath.Replace("\", "\\")
-$sourceName = $sourceDir.Replace("\", "\\")
+$oldAppExeEnv = $env:LEAGUEAKARI_APP_EXE
+$oldProbeExeEnv = $env:LEAGUEAKARI_PROBE_EXE
+$oldReadmeEnv = $env:LEAGUEAKARI_README
+try {
+  $env:LEAGUEAKARI_APP_EXE = (Join-Path $installerWorkDir "LeagueAkari Plus.exe")
+  $env:LEAGUEAKARI_PROBE_EXE = (Join-Path $installerWorkDir "leagueakari-probe.exe")
+  $env:LEAGUEAKARI_README = (Join-Path $installerWorkDir "README.txt")
 
-$sed = @(
-  "[Version]",
-  "Class=IEXPRESS",
-  "SEDVersion=3",
-  "[Options]",
-  "PackagePurpose=InstallApp",
-  "ShowInstallProgramWindow=1",
-  "HideExtractAnimation=1",
-  "UseLongFileName=1",
-  "InsideCompressed=0",
-  "CAB_FixedSize=0",
-  "CAB_ResvCodeSigning=0",
-  "RebootMode=N",
-  "InstallPrompt=",
-  "DisplayLicense=",
-  "FinishMessage=LeagueAkari Plus has been installed.",
-  "TargetName=$targetName",
-  "FriendlyName=LeagueAkari Plus",
-  "AppLaunched=install.cmd",
-  "PostInstallCmd=finish.cmd",
-  "AdminQuietInstCmd=install.cmd",
-  "UserQuietInstCmd=install.cmd",
-  "SourceFiles=SourceFiles",
-  "[Strings]",
-  "FILE0=""LeagueAkari Plus.exe""",
-  "FILE1=""leagueakari-probe.exe""",
-  "FILE2=""README.txt""",
-  "FILE3=""install.ps1""",
-  "FILE4=""install.cmd""",
-  "FILE5=""finish.cmd""",
-  "[SourceFiles]",
-  "SourceFiles0=$sourceName",
-  "[SourceFiles0]",
-  "%FILE0%=",
-  "%FILE1%=",
-  "%FILE2%=",
-  "%FILE3%=",
-  "%FILE4%=",
-  "%FILE5%="
-) -join "`r`n"
+  & $rustc --edition=2021 -O -o $installerPath (Join-Path $PSScriptRoot "installer-setup.rs")
+  if ($LASTEXITCODE -ne 0) {
+    throw "installer build failed with exit code $LASTEXITCODE"
+  }
+} finally {
+  $env:LEAGUEAKARI_APP_EXE = $oldAppExeEnv
+  $env:LEAGUEAKARI_PROBE_EXE = $oldProbeExeEnv
+  $env:LEAGUEAKARI_README = $oldReadmeEnv
+}
 
-Set-Content -LiteralPath $sedPath -Value $sed -Encoding ASCII
-
-$iexpress = Start-Process -FilePath "iexpress.exe" -ArgumentList @("/N", "/Q", $sedPath) -Wait -PassThru -NoNewWindow
-$iexpressExitCode = $iexpress.ExitCode
+$installerPdbPath = [System.IO.Path]::ChangeExtension($installerPath, ".pdb")
+if (Test-Path -LiteralPath $installerPdbPath) {
+  Remove-Item -LiteralPath $installerPdbPath -Force
+}
 
 if (!(Test-Path -LiteralPath $installerPath) -or (Get-Item -LiteralPath $installerPath).Length -lt 1000000) {
-  throw "installer was not generated correctly; IExpress exit code $iexpressExitCode"
+  throw "installer was not generated correctly"
 }
 
 $installer = Get-Item -LiteralPath $installerPath
