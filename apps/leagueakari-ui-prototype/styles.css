@@ -1188,9 +1188,8 @@ p {
 
 .game-player-grid {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: start;
+  display: grid;
+  align-content: start;
   gap: 10px;
   min-width: 0;
   min-height: 0;
@@ -1215,6 +1214,42 @@ p {
   content: "";
 }
 
+.game-team-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.game-team-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.game-team-header strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.game-team-section.ally .game-team-header strong {
+  color: var(--teal);
+}
+
+.game-team-section.enemy .game-team-header strong {
+  color: #ff8585;
+}
+
+.game-team-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
 .game-player-card,
 .game-empty {
   border: 1px solid rgba(72, 82, 96, 0.72);
@@ -1231,10 +1266,8 @@ p {
   display: grid;
   grid-template-rows: auto auto auto auto minmax(0, 1fr);
   align-content: start;
-  flex: 1 1 300px;
   gap: 8px;
   width: auto;
-  max-width: 360px;
   min-width: 0;
   height: auto;
   min-height: 0;
@@ -1254,6 +1287,10 @@ p {
 
 .game-player-card.self::before {
   background: linear-gradient(180deg, var(--teal), #2f9a91);
+}
+
+.game-player-card.enemy::before {
+  background: linear-gradient(180deg, #ff6b6b, #8f3542);
 }
 
 .game-player-card.risk::before {

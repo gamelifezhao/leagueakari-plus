@@ -40,6 +40,18 @@ fn parse_players(value: Option<&Value>) -> Vec<DraftPlayer> {
                 .filter(|position| !position.is_empty())
                 .map(ToOwned::to_owned),
             summoner_id: positive_i64(player.get("summonerId")),
+            puuid: player
+                .get("puuid")
+                .and_then(Value::as_str)
+                .filter(|puuid| !puuid.is_empty())
+                .map(ToOwned::to_owned),
+            display_name: player
+                .get("displayName")
+                .and_then(Value::as_str)
+                .or_else(|| player.get("summonerName").and_then(Value::as_str))
+                .filter(|name| !name.is_empty())
+                .map(ToOwned::to_owned),
+            team_side: None,
         })
         .collect()
 }
@@ -143,6 +155,9 @@ fn upsert_action_pick(team: &mut Vec<DraftPlayer>, cell_id: i64, champion_id: i6
         champion_id: Some(champion_id),
         assigned_position: None,
         summoner_id: None,
+        puuid: None,
+        display_name: None,
+        team_side: None,
     });
 }
 

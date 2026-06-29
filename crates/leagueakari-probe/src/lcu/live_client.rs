@@ -135,6 +135,9 @@ fn parse_live_client_draft(
             champion_id,
             assigned_position: player.position.as_deref().and_then(position_label),
             summoner_id: None,
+            puuid: None,
+            display_name: player_display_name(player),
+            team_side: Some(player.team.clone()),
         };
 
         if active_riot_id.as_deref() == player_key(player).as_deref() {
@@ -216,6 +219,10 @@ fn player_key(player: &LiveClientPlayer) -> Option<String> {
         player.riot_id_game_name.as_deref(),
         player.riot_id_tag_line.as_deref(),
     )
+}
+
+fn player_display_name(player: &LiveClientPlayer) -> Option<String> {
+    player_key(player).or_else(|| player.riot_id_game_name.clone())
 }
 
 fn riot_id_key(

@@ -4,6 +4,7 @@ mod champ_select;
 mod champions;
 mod client;
 mod connection;
+mod gameflow_session;
 mod live_client;
 mod match_history;
 mod models;
@@ -497,6 +498,46 @@ async fn try_emit_live_client_snapshot(
     teammate_cache: &mut teammate_performance::TeammatePerformanceCache,
     json: bool,
 ) -> Result<bool> {
+    let current_puuid = current_summoner
+        .and_then(|summoner| summoner.get("puuid"))
+        .and_then(Value::as_str);
+    if let Ok(session) = client.get_json::<Value>("/lol-gameflow/v1/session").await {
+        if let Some(draft_state) =
+            gameflow_session::parse_in_progress_draft(&session, current_puuid)
+        {
+            let analysis = analysis::analyze_draft(&draft_state);
+            let teammate_performance = teammate_performance::analyze_teammates(
+                client,
+                &draft_state,
+                current_summoner,
+                champion_catalog,
+                teammate_cache,
+            )
+            .await;
+            if json {
+                output::print_event(
+                    "draft_snapshot",
+                    &output::draft_snapshot(
+                        "gameflow-session",
+                        None,
+                        &draft_state,
+                        &analysis,
+                        champion_catalog,
+                        &teammate_performance,
+                    ),
+                )?;
+            } else {
+                print_draft_summary(&draft_state, champion_catalog);
+                print_json("composition analysis", &serde_json::to_value(analysis)?)?;
+                print_json(
+                    "normalized draft state",
+                    &serde_json::to_value(draft_state)?,
+                )?;
+            }
+            return Ok(true);
+        }
+    }
+
     match live_client::fetch_in_progress_draft_result(champion_catalog).await {
         Ok(Some(draft_state)) => {
             let analysis = analysis::analyze_draft(&draft_state);

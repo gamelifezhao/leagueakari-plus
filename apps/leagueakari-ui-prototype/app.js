@@ -261,7 +261,7 @@ function render() {
   renderBans(elements.enemyBans, draft?.bans ?? [], 200, snapshot);
   renderDimensions(myDimensions, enemyDimensions);
   renderCurrentAdvice(analysis, draft);
-  renderTeammatePerformance(snapshot?.teammate_performance ?? [], draft);
+  renderTeammatePerformance((snapshot?.teammate_performance ?? []).filter((player) => player.team_type !== "enemy"), draft);
   renderReasons(analysis);
   renderEnemyAnalysis(analysis, draft);
   renderRecommendations(analysis);
@@ -353,11 +353,13 @@ function renderGameView(snapshot, draft) {
     return;
   }
 
-  const players = sortGamePlayers(gamePlayers(snapshot, draft));
-  const teammateCount = players.filter((player) => !player.isSelf && player.hasStats).length;
+  const players = gamePlayers(snapshot, draft);
+  const activePlayers = players.filter((player) => player.hasStats || player.hasChampion || player.recentMatches.length);
+  const teammateCount = players.filter((player) => player.teamType === "ally" && !player.isSelf && player.hasStats).length;
+  const enemyCount = players.filter((player) => player.teamType === "enemy" && (player.hasChampion || player.displayName)).length;
   const activeCount = players.filter((player) => player.hasChampion || player.recentMatches.length).length;
   elements.gameTeamSummary.textContent = activeCount
-    ? `${players.length} 人 · ${teammateCount} 名队友有近况`
+    ? `${players.length} 人 · ${teammateCount} 名队友有近况 · ${enemyCount} 名对手`
     : "等待对局";
   renderGameInsightBar(players, activeCount);
   renderGameSortButtons();
@@ -372,13 +374,16 @@ function renderGameView(snapshot, draft) {
     return;
   }
 
-  const activePlayers = players.filter((player) => player.hasStats || player.recentMatches.length);
-  const emptyPlayers = players.filter((player) => !activePlayers.includes(player));
-  const cards = activePlayers.map(gamePlayerCard);
-  if (emptyPlayers.length) {
-    cards.push(gamePendingPlayers(emptyPlayers));
+  const allyPlayers = sortGamePlayers(activePlayers.filter((player) => player.teamType !== "enemy"));
+  const enemyPlayers = sortGamePlayers(activePlayers.filter((player) => player.teamType === "enemy"));
+  const sections = [];
+  if (allyPlayers.length) {
+    sections.push(gameTeamSection("我方", allyPlayers, "ally"));
   }
-  elements.gamePlayerGrid.replaceChildren(...cards);
+  if (enemyPlayers.length) {
+    sections.push(gameTeamSection("敌方", enemyPlayers, "enemy"));
+  }
+  elements.gamePlayerGrid.replaceChildren(...sections);
 }
 
 function renderGameSortButtons() {
@@ -435,16 +440,27 @@ function teammateSummaryText(teammates, riskPlayers, carryPlayers) {
 }
 
 function gamePlayers(snapshot, draft) {
-  const teammates = (snapshot?.teammate_performance ?? []).slice(0, 4);
+  const teammates = (snapshot?.teammate_performance ?? []);
   const selfPick = selfDraftPlayer(draft);
   const selfHistory = state.matchHistory;
   const selfName = selfHistory?.player?.display_name || displaySummonerName() || "自己";
   const selfRecentMatches = (selfHistory?.matches ?? []).slice(0, 8).map(matchToGameRecentMatch);
   const selfSummary = selfHistory?.summary ?? {};
+  const teammateByCell = new Map(
+    teammates
+      .filter((teammate) => teammate.team_type !== "enemy")
+      .map((teammate) => [String(teammate.cell_id), teammate])
+  );
+  const enemyStatsByCell = new Map(
+    teammates
+      .filter((teammate) => teammate.team_type === "enemy")
+      .map((teammate) => [String(teammate.cell_id), teammate])
+  );
   const players = [
     {
       key: "self",
       isSelf: true,
+      teamType: "ally",
       displayName: selfName,
       championId: selfPick?.champion_id ?? selfRecentMatches[0]?.championId ?? null,
       championName: championName(selfPick?.champion_id ?? selfRecentMatches[0]?.championId, false),
@@ -462,17 +478,20 @@ function gamePlayers(snapshot, draft) {
     }
   ];
 
-  teammates.forEach((teammate, index) => {
+  const allyDraftPlayers = (draft?.my_team ?? []).filter((pick) => pick?.cell_id !== selfPick?.cell_id);
+  allyDraftPlayers.forEach((pick, index) => {
+    const teammate = teammateByCell.get(String(pick?.cell_id)) ?? {};
     const recentMatches = (teammate.recent_matches ?? []).slice(0, 8).map(normalizeTeammateRecentMatch);
-    const championId = teammate.champion_id ?? recentMatches[0]?.championId ?? null;
+    const championId = teammate.champion_id ?? pick?.champion_id ?? recentMatches[0]?.championId ?? null;
     players.push({
-      key: `teammate-${teammate.cell_id ?? index}`,
+      key: `teammate-${pick?.cell_id ?? teammate.cell_id ?? index}`,
       isSelf: false,
-      displayName: teammate.display_name || `队友 ${index + 1}`,
+      teamType: "ally",
+      displayName: teammate.display_name || pick?.display_name || `队友 ${index + 1}`,
       championId,
       championName: championName(championId, false),
       championAlias: championAlias(championId) ?? recentMatches[0]?.championAlias ?? null,
-      assignedPosition: teammate.assigned_position ?? recentMatches[0]?.position ?? "unknown",
+      assignedPosition: teammate.assigned_position ?? pick?.assigned_position ?? recentMatches[0]?.position ?? "unknown",
       games: Number(teammate.games ?? recentMatches.length ?? 0),
       wins: Number(teammate.wins ?? 0),
       losses: Number(teammate.losses ?? 0),
@@ -484,40 +503,43 @@ function gamePlayers(snapshot, draft) {
       tierLabel: teammate.tier_label || "数据少",
       recentMatches,
       hasStats: Number(teammate.games ?? 0) > 0,
-      cellId: teammate.cell_id ?? null
+      cellId: pick?.cell_id ?? teammate.cell_id ?? null
     });
   });
 
-  const usedCells = new Set(players.map((player) => player.cellId).filter((cellId) => cellId !== null && cellId !== undefined));
-  const draftPicks = (draft?.my_team ?? []).filter((pick) => !usedCells.has(pick?.cell_id));
-  while (players.length < 5) {
-    const index = players.length;
-    const pick = draftPicks.shift() ?? null;
+  (draft?.their_team ?? []).forEach((pick, index) => {
+    const enemyStats = enemyStatsByCell.get(String(pick?.cell_id)) ?? {};
+    const recentMatches = (enemyStats.recent_matches ?? []).slice(0, 8).map(normalizeTeammateRecentMatch);
+    const championId = pick?.champion_id ?? null;
     players.push({
-      key: `empty-${index}`,
+      key: `enemy-${pick?.cell_id ?? index}`,
       isSelf: false,
-      displayName: `队友 ${index + 1}`,
-      championId: pick?.champion_id ?? null,
-      championName: championName(pick?.champion_id, false),
-      championAlias: null,
-      assignedPosition: pick?.assigned_position ?? "unknown",
-      games: 0,
-      wins: 0,
-      losses: 0,
-      winRate: 0,
-      kdRatio: 0,
-      tierLabel: "等待",
-      recentMatches: [],
-      hasStats: false,
+      teamType: "enemy",
+      displayName: enemyStats.display_name || pick?.display_name || `敌方 ${index + 1}`,
+      championId,
+      championName: championName(championId, false),
+      championAlias: championAlias(championId) ?? recentMatches[0]?.championAlias ?? null,
+      assignedPosition: enemyStats.assigned_position ?? pick?.assigned_position ?? recentMatches[0]?.position ?? "unknown",
+      games: Number(enemyStats.games ?? recentMatches.length ?? 0),
+      wins: Number(enemyStats.wins ?? 0),
+      losses: Number(enemyStats.losses ?? 0),
+      winRate: Number(enemyStats.win_rate ?? 0),
+      kdRatio: Number(enemyStats.kd_ratio ?? 0),
+      avgKills: Number(enemyStats.avg_kills ?? 0),
+      avgDeaths: Number(enemyStats.avg_deaths ?? 0),
+      avgAssists: Number(enemyStats.avg_assists ?? 0),
+      tierLabel: enemyStats.tier_label || "敌方",
+      recentMatches,
+      hasStats: Number(enemyStats.games ?? 0) > 0,
       cellId: pick?.cell_id ?? null
     });
-  }
+  });
 
   return players.map((player) => ({
     ...player,
     hasChampion: Boolean(player.championId),
     qualityScore: gameQualityScore(player)
-  })).slice(0, 5);
+  }));
 }
 
 function sortGamePlayers(players) {
@@ -565,7 +587,7 @@ function gameSortLabel(mode) {
 function gamePlayerCard(player) {
   const card = document.createElement("article");
   const tags = gamePlayerTags(player);
-  card.className = `game-player-card ${player.isSelf ? "self" : ""} ${player.hasStats ? "" : "empty"} ${tags.some((tag) => tag.type === "risk") ? "risk" : ""}`.trim();
+  card.className = `game-player-card ${player.teamType ?? "ally"} ${player.isSelf ? "self" : ""} ${player.hasStats ? "" : "empty"} ${tags.some((tag) => tag.type === "risk") ? "risk" : ""}`.trim();
 
   const header = document.createElement("div");
   header.className = "game-player-header";
@@ -588,6 +610,26 @@ function gamePlayerCard(player) {
   return card;
 }
 
+function gameTeamSection(label, players, teamType) {
+  const section = document.createElement("section");
+  section.className = `game-team-section ${teamType}`;
+
+  const header = document.createElement("div");
+  header.className = "game-team-header";
+  const title = document.createElement("strong");
+  title.textContent = label;
+  const meta = document.createElement("span");
+  meta.textContent = `${players.length} 人`;
+  header.append(title, meta);
+
+  const list = document.createElement("div");
+  list.className = "game-team-list";
+  list.replaceChildren(...players.map(gamePlayerCard));
+
+  section.append(header, list);
+  return section;
+}
+
 function gamePendingPlayers(players = []) {
   const card = document.createElement("article");
   card.className = "game-player-card game-player-card-pending";
@@ -608,8 +650,11 @@ function gamePlayerTags(player) {
   if (player.isSelf) {
     tags.push({ label: "自己", type: "self" });
   }
+  if (player.teamType === "enemy") {
+    tags.push({ label: "敌方", type: "risk" });
+  }
   if (!player.hasStats) {
-    tags.push({ label: "等待数据", type: "muted" });
+    tags.push({ label: player.teamType === "enemy" ? "对手已识别" : "等待数据", type: "muted" });
     return tags;
   }
 
@@ -751,7 +796,11 @@ function gameRecentRow(match) {
 function gameRecentEmpty(player) {
   const empty = document.createElement("div");
   empty.className = "game-recent-empty";
-  empty.textContent = player.hasChampion ? "等待读取该玩家近期对局" : "等待 BP 玩家名单";
+  if (player.teamType === "enemy" && player.hasChampion) {
+    empty.textContent = "已识别对手，等待可用战绩数据";
+  } else {
+    empty.textContent = player.hasChampion ? "等待读取该玩家近期对局" : "等待 BP 玩家名单";
+  }
   return empty;
 }
 

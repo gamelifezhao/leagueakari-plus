@@ -15,6 +15,7 @@ pub struct TeammatePerformance {
     pub display_name: String,
     pub champion_id: Option<i64>,
     pub assigned_position: Option<String>,
+    pub team_type: Option<String>,
     pub games: usize,
     pub wins: usize,
     pub losses: usize,
@@ -174,7 +175,7 @@ pub async fn analyze_teammates(
     let teammates = teammate_identities(client, draft_state, current_puuid.as_deref()).await;
     let mut performance = Vec::new();
 
-    for teammate in teammates.into_iter().take(4) {
+    for teammate in teammates {
         let Some(puuid) = teammate.puuid.as_deref() else {
             performance.push(unavailable_performance(teammate));
             continue;
@@ -204,6 +205,7 @@ pub async fn analyze_teammates(
             display_name: stats.display_name,
             champion_id: teammate.champion_id,
             assigned_position: teammate.assigned_position,
+            team_type: teammate.team_type,
             games: stats.games,
             wins: stats.wins,
             losses: stats.losses,
@@ -230,11 +232,48 @@ async fn teammate_identities(
         return teammates_from_champ_select(client, draft_state, current_puuid).await;
     }
 
+    let draft_teammates = teammates_from_draft_state(draft_state, current_puuid);
+    if draft_teammates
+        .iter()
+        .any(|teammate| teammate.puuid.is_some())
+    {
+        return draft_teammates;
+    }
+
     if let Some(teammates) = teammates_from_gameflow_session(client, current_puuid).await {
         return teammates;
     }
 
     teammates_from_champ_select(client, draft_state, current_puuid).await
+}
+
+fn teammates_from_draft_state(
+    draft_state: &DraftState,
+    current_puuid: Option<&str>,
+) -> Vec<DraftPlayerIdentity> {
+    draft_state
+        .my_team
+        .iter()
+        .map(|player| (player, "ally"))
+        .chain(
+            draft_state
+                .their_team
+                .iter()
+                .map(|player| (player, "enemy")),
+        )
+        .filter(|player| {
+            Some(player.0.cell_id) != draft_state.local_player_cell_id
+                && player.0.puuid.as_deref() != current_puuid
+        })
+        .map(|(player, team_type)| DraftPlayerIdentity {
+            cell_id: player.cell_id,
+            champion_id: player.champion_id,
+            assigned_position: player.assigned_position.clone(),
+            puuid: player.puuid.clone(),
+            display_name: player.display_name.clone(),
+            team_type: Some(team_type.to_string()),
+        })
+        .collect()
 }
 
 async fn teammates_from_gameflow_session(
@@ -281,6 +320,7 @@ async fn teammates_from_gameflow_session(
                 .and_then(position_label),
             puuid,
             display_name: display_name_from_summoner_value(player),
+            team_type: Some("ally".to_string()),
         });
     }
 
@@ -305,6 +345,7 @@ async fn teammates_from_champ_select(
                 assigned_position: player.assigned_position.clone(),
                 puuid: None,
                 display_name: None,
+                team_type: Some("ally".to_string()),
             });
             continue;
         };
@@ -328,6 +369,7 @@ async fn teammates_from_champ_select(
             assigned_position: player.assigned_position.clone(),
             puuid,
             display_name: summoner.as_ref().and_then(display_name_from_summoner_value),
+            team_type: Some("ally".to_string()),
         });
     }
 
@@ -496,6 +538,7 @@ fn unavailable_performance(teammate: DraftPlayerIdentity) -> TeammatePerformance
         display_name: teammate.display_name.unwrap_or_else(|| "队友".to_string()),
         champion_id: teammate.champion_id,
         assigned_position: teammate.assigned_position,
+        team_type: teammate.team_type,
         games: 0,
         wins: 0,
         losses: 0,

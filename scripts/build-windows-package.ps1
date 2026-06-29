@@ -17,6 +17,12 @@ if (!(Test-Path -LiteralPath $cargo)) {
 }
 
 $distDir = Join-Path $root "dist"
+$resolvedRoot = [System.IO.Path]::GetFullPath($root.Path).TrimEnd("\")
+$resolvedDist = [System.IO.Path]::GetFullPath($distDir).TrimEnd("\")
+if (!$resolvedDist.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+  throw "refusing to clean an unexpected dist directory: $resolvedDist"
+}
+
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $portableName = "LeagueAkari-Plus-$Version-portable-$stamp"
 $portableDir = Join-Path $distDir $portableName
@@ -26,6 +32,16 @@ $installerPath = Join-Path $distDir "LeagueAkari-Plus-$Version-setup.exe"
 $sedPath = Join-Path $installerWorkDir "leagueakari-plus.sed"
 
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+
+Get-ChildItem -LiteralPath $distDir -Force -ErrorAction SilentlyContinue |
+  Where-Object {
+    $_.Name -like "LeagueAkari-Plus-*-setup.exe" -or
+    $_.Name -like "LeagueAkari-Plus-*-portable-*.zip" -or
+    ($_.PSIsContainer -and $_.Name -like "LeagueAkari-Plus-*-portable-*") -or
+    $_.Name -like "README*.txt"
+  } |
+  Remove-Item -Recurse -Force
+
 New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
 if (Test-Path -LiteralPath $installerWorkDir) {
   Remove-Item -LiteralPath $installerWorkDir -Recurse -Force
@@ -165,16 +181,22 @@ $sed = @(
 
 Set-Content -LiteralPath $sedPath -Value $sed -Encoding ASCII
 
-& iexpress.exe /N /Q $sedPath
-$iexpressExitCode = $LASTEXITCODE
+$iexpress = Start-Process -FilePath "iexpress.exe" -ArgumentList @("/N", "/Q", $sedPath) -Wait -PassThru -NoNewWindow
+$iexpressExitCode = $iexpress.ExitCode
 
 if (!(Test-Path -LiteralPath $installerPath) -or (Get-Item -LiteralPath $installerPath).Length -lt 1000000) {
   throw "installer was not generated correctly; IExpress exit code $iexpressExitCode"
 }
 
+$installer = Get-Item -LiteralPath $installerPath
+$portable = Get-Item -LiteralPath $zipPath
+
+Remove-Item -LiteralPath $portableDir -Recurse -Force
+Remove-Item -LiteralPath $installerWorkDir -Recurse -Force
+
 [PSCustomObject]@{
-  PortableZip = $zipPath
-  Installer = $installerPath
+  PortableZip = $portable.FullName
+  Installer = $installer.FullName
 }
 
 exit 0

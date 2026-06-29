@@ -199,6 +199,9 @@ mod tests {
                 champion_id: Some(103),
                 assigned_position: Some("middle".to_string()),
                 summoner_id: None,
+                puuid: None,
+                display_name: None,
+                team_side: None,
             }],
             their_team: vec![],
             bans: vec![super::super::models::DraftBan {

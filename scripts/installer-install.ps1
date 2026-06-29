@@ -1,7 +1,27 @@
 $ErrorActionPreference = "Stop"
 
 $appName = "LeagueAkari Plus"
-$installDir = Join-Path $env:LOCALAPPDATA $appName
+$defaultInstallDir = Join-Path $env:LOCALAPPDATA $appName
+
+if (![string]::IsNullOrWhiteSpace($env:LEAGUEAKARI_INSTALL_DIR)) {
+  $installDir = $env:LEAGUEAKARI_INSTALL_DIR
+} else {
+  New-Item -ItemType Directory -Force -Path $defaultInstallDir | Out-Null
+  Add-Type -AssemblyName System.Windows.Forms
+
+  $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+  $dialog.Description = "Choose the LeagueAkari Plus install folder"
+  $dialog.SelectedPath = $defaultInstallDir
+  $dialog.ShowNewFolderButton = $true
+
+  $result = $dialog.ShowDialog()
+  if ($result -ne [System.Windows.Forms.DialogResult]::OK -or [string]::IsNullOrWhiteSpace($dialog.SelectedPath)) {
+    throw "Installation canceled."
+  }
+
+  $installDir = $dialog.SelectedPath
+}
+
 $appExe = Join-Path $installDir "LeagueAkari Plus.exe"
 
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null

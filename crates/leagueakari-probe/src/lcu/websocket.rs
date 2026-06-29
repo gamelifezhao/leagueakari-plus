@@ -11,7 +11,7 @@ use tokio_tungstenite::{
 
 use super::{
     analysis, auth, champ_select, champions::ChampionCatalog, client::LcuClient,
-    connection::LcuConnection, live_client, output, print_champ_select_summary,
+    connection::LcuConnection, gameflow_session, live_client, output, print_champ_select_summary,
     print_draft_summary, print_json, teammate_performance,
 };
 
@@ -221,7 +221,7 @@ async fn handle_text_message(
                 }
             } else if matches!(event.data.as_str(), Some("GameStart" | "InProgress")) {
                 if let Some(draft_state) =
-                    live_client::fetch_in_progress_draft(champion_catalog).await
+                    fetch_in_progress_draft(client, current_summoner, champion_catalog).await
                 {
                     emit_draft_snapshot(
                         client,
@@ -342,6 +342,26 @@ async fn emit_draft_snapshot(
     }
 
     Ok(())
+}
+
+async fn fetch_in_progress_draft(
+    client: &LcuClient,
+    current_summoner: Option<&Value>,
+    champion_catalog: &ChampionCatalog,
+) -> Option<super::models::DraftState> {
+    let current_puuid = current_summoner
+        .and_then(|summoner| summoner.get("puuid"))
+        .and_then(Value::as_str);
+
+    if let Ok(session) = client.get_json::<Value>("/lol-gameflow/v1/session").await {
+        if let Some(draft_state) =
+            gameflow_session::parse_in_progress_draft(&session, current_puuid)
+        {
+            return Some(draft_state);
+        }
+    }
+
+    live_client::fetch_in_progress_draft(champion_catalog).await
 }
 
 fn parse_lcu_event(text: &str) -> Option<LcuEvent> {

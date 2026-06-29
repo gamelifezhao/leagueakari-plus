@@ -26,18 +26,18 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
         gameflow: "ChampSelect",
         local_player_cell_id: 2,
         my_team: [
-          { cell_id: 0, champion_id: 22, assigned_position: "bottom", summoner_id: null },
-          { cell_id: 1, champion_id: 104, assigned_position: "jungle", summoner_id: null },
-          { cell_id: 2, champion_id: 89, assigned_position: "utility", summoner_id: null },
-          { cell_id: 3, champion_id: 86, assigned_position: "top", summoner_id: null },
-          { cell_id: 4, champion_id: 117, assigned_position: "middle", summoner_id: null }
+          { cell_id: 0, champion_id: 22, assigned_position: "bottom", summoner_id: null, puuid: "ally-ashe", display_name: "稳住别急#1122", team_side: "teamOne" },
+          { cell_id: 1, champion_id: 104, assigned_position: "jungle", summoner_id: null, puuid: "ally-graves", display_name: "野区有光#0430", team_side: "teamOne" },
+          { cell_id: 2, champion_id: 89, assigned_position: "utility", summoner_id: null, puuid: "self-leona", display_name: "自己#62047", team_side: "teamOne" },
+          { cell_id: 3, champion_id: 86, assigned_position: "top", summoner_id: null, puuid: "ally-garen", display_name: "别越我塔#7788", team_side: "teamOne" },
+          { cell_id: 4, champion_id: 117, assigned_position: "middle", summoner_id: null, puuid: "ally-lulu", display_name: "只玩三把#0099", team_side: "teamOne" }
         ],
         their_team: [
-          { cell_id: 5, champion_id: 111, assigned_position: "utility", summoner_id: null },
-          { cell_id: 6, champion_id: 54, assigned_position: "top", summoner_id: null },
-          { cell_id: 7, champion_id: 901, assigned_position: "bottom", summoner_id: null },
-          { cell_id: 8, champion_id: 90, assigned_position: "middle", summoner_id: null },
-          { cell_id: 9, champion_id: 56, assigned_position: "jungle", summoner_id: null }
+          { cell_id: 5, champion_id: 111, assigned_position: "utility", summoner_id: null, puuid: "enemy-nautilus", display_name: "深海泰坦#1001", team_side: "teamTwo" },
+          { cell_id: 6, champion_id: 54, assigned_position: "top", summoner_id: null, puuid: "enemy-malphite", display_name: "熔岩巨兽#1002", team_side: "teamTwo" },
+          { cell_id: 7, champion_id: 901, assigned_position: "bottom", summoner_id: null, puuid: "enemy-smolder", display_name: "炽炎雏龙#1003", team_side: "teamTwo" },
+          { cell_id: 8, champion_id: 90, assigned_position: "middle", summoner_id: null, puuid: "enemy-malzahar", display_name: "虚空先知#1004", team_side: "teamTwo" },
+          { cell_id: 9, champion_id: 56, assigned_position: "jungle", summoner_id: null, puuid: "enemy-nocturne", display_name: "永恒梦魇#1005", team_side: "teamTwo" }
         ],
         bans: [
           { champion_id: 11, team_id: 100 },
@@ -134,6 +134,48 @@ window.LEAGUEAKARI_SAMPLE_EVENTS = [
           recent_matches: [
             { game_id: 94001, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "4 小时前", duration_seconds: 2010, champion_id: 117, champion_name: "仙灵女巫", champion_alias: "Lulu", position: "utility", kills: 1, deaths: 2, assists: 18, items: [3158, 2065, 6617, 3107, 3504] },
             { game_id: 94002, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "1 天前", duration_seconds: 1690, champion_id: 117, champion_name: "仙灵女巫", champion_alias: "Lulu", position: "utility", kills: 2, deaths: 5, assists: 9, items: [3158, 2065, 6617, 3504] }
+          ]
+        },
+        {
+          cell_id: 5,
+          team_type: "enemy",
+          display_name: "深海泰坦#1001",
+          champion_id: 111,
+          assigned_position: "utility",
+          games: 20,
+          wins: 11,
+          losses: 9,
+          win_rate: 55,
+          avg_kills: 2.1,
+          avg_deaths: 6.8,
+          avg_assists: 13.4,
+          kd_ratio: 2.28,
+          tier: "stable",
+          tier_label: "普通",
+          recent_matches: [
+            { game_id: 95001, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "21 分钟前", duration_seconds: 1850, champion_id: 111, champion_name: "深海泰坦", champion_alias: "Nautilus", position: "utility", kills: 1, deaths: 5, assists: 18, items: [3860, 3117, 3190, 3067, 3109] },
+            { game_id: 95002, queue_id: 420, queue_label: "单双排", result: "loss", result_label: "失败", ended_at_label: "1 小时前", duration_seconds: 1720, champion_id: 89, champion_name: "曙光女神", champion_alias: "Leona", position: "utility", kills: 2, deaths: 8, assists: 9, items: [3860, 3047, 3190, 3067] }
+          ]
+        },
+        {
+          cell_id: 6,
+          team_type: "enemy",
+          display_name: "熔岩巨兽#1002",
+          champion_id: 54,
+          assigned_position: "top",
+          games: 20,
+          wins: 14,
+          losses: 6,
+          win_rate: 70,
+          avg_kills: 5.1,
+          avg_deaths: 4.4,
+          avg_assists: 8.2,
+          kd_ratio: 3.02,
+          tier: "top_horse",
+          tier_label: "上等马",
+          recent_matches: [
+            { game_id: 96001, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "33 分钟前", duration_seconds: 1990, champion_id: 54, champion_name: "熔岩巨兽", champion_alias: "Malphite", position: "top", kills: 7, deaths: 3, assists: 11, items: [3047, 6662, 3068, 3075, 3110] },
+            { game_id: 96002, queue_id: 420, queue_label: "单双排", result: "win", result_label: "胜利", ended_at_label: "2 小时前", duration_seconds: 1640, champion_id: 54, champion_name: "熔岩巨兽", champion_alias: "Malphite", position: "top", kills: 4, deaths: 2, assists: 9, items: [3047, 6662, 3068, 3075] }
           ]
         }
       ],

@@ -29,6 +29,12 @@ pub struct DraftPlayer {
     pub champion_id: Option<i64>,
     pub assigned_position: Option<String>,
     pub summoner_id: Option<i64>,
+    #[serde(default)]
+    pub puuid: Option<String>,
+    #[serde(default)]
+    pub display_name: Option<String>,
+    #[serde(default)]
+    pub team_side: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +44,7 @@ pub struct DraftPlayerIdentity {
     pub assigned_position: Option<String>,
     pub puuid: Option<String>,
     pub display_name: Option<String>,
+    pub team_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

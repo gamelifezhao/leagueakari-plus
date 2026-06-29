@@ -1484,6 +1484,9 @@ mod tests {
             champion_id: Some(champion_id),
             assigned_position: None,
             summoner_id: None,
+            puuid: None,
+            display_name: None,
+            team_side: None,
         }
     }
 }

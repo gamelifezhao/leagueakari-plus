@@ -242,7 +242,8 @@ fn should_request_game_detail(game: &Value) -> bool {
         .get("participants")
         .and_then(Value::as_array)
         .is_some_and(|participants| participants.iter().any(participant_missing_core_stats));
-    i64_field(game, "gameId") > 0 && (participant_count < 10 || identity_count < 10 || missing_stats)
+    i64_field(game, "gameId") > 0
+        && (participant_count < 10 || identity_count < 10 || missing_stats)
 }
 
 fn participant_missing_core_stats(participant: &Value) -> bool {
@@ -568,7 +569,10 @@ fn match_timeline(game: &Value, participants: &[Value]) -> Option<MatchTimeline>
                         participant_id: positive_i64_field(event, "participantId"),
                         killer_id: positive_i64_field(event, "killerId"),
                         victim_id: positive_i64_field(event, "victimId"),
-                        assisting_participant_ids: i64_array_field(event, "assistingParticipantIds"),
+                        assisting_participant_ids: i64_array_field(
+                            event,
+                            "assistingParticipantIds",
+                        ),
                         item_id: positive_i64_field(event, "itemId"),
                         skill_slot: positive_i64_field(event, "skillSlot"),
                         team_id: positive_i64_field(event, "teamId"),
