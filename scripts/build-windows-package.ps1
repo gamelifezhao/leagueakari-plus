@@ -105,6 +105,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"
 exit /b %ERRORLEVEL%
 '@
 
+$finishCmd = @'
+@echo off
+exit /b 0
+'@
+
 $portableFiles = @{
   "LeagueAkari Plus.exe" = $appExe
   "leagueakari-probe.exe" = $probeExe
@@ -119,6 +124,7 @@ Set-Content -LiteralPath (Join-Path $portableDir "README.txt") -Value $readme -E
 Set-Content -LiteralPath (Join-Path $installerWorkDir "README.txt") -Value $readme -Encoding UTF8
 Set-Content -LiteralPath (Join-Path $installerWorkDir "install.ps1") -Value $installPs1 -Encoding UTF8
 Set-Content -LiteralPath (Join-Path $installerWorkDir "install.cmd") -Value $installCmd -Encoding ASCII
+Set-Content -LiteralPath (Join-Path $installerWorkDir "finish.cmd") -Value $finishCmd -Encoding ASCII
 
 if (Test-Path -LiteralPath $zipPath) {
   Remove-Item -LiteralPath $zipPath -Force
@@ -148,7 +154,7 @@ FinishMessage=LeagueAkari Plus has been installed.
 TargetName=$targetName
 FriendlyName=LeagueAkari Plus
 AppLaunched=install.cmd
-PostInstallCmd=
+PostInstallCmd=finish.cmd
 AdminQuietInstCmd=install.cmd
 UserQuietInstCmd=install.cmd
 SourceFiles=SourceFiles
@@ -158,6 +164,7 @@ FILE1="leagueakari-probe.exe"
 FILE2="README.txt"
 FILE3="install.ps1"
 FILE4="install.cmd"
+FILE5="finish.cmd"
 [SourceFiles]
 SourceFiles0=$sourceName
 [SourceFiles0]
@@ -166,6 +173,7 @@ SourceFiles0=$sourceName
 %FILE2%=
 %FILE3%=
 %FILE4%=
+%FILE5%=
 "@
 
 Set-Content -LiteralPath $sedPath -Value $sed -Encoding ASCII
