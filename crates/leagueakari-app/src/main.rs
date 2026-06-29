@@ -2,6 +2,7 @@
 
 use std::{
     ffi::OsString,
+    fs,
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{Child, Command, Stdio},
@@ -27,6 +28,8 @@ const PROBE_EVENT: &str = "leagueakari-probe-event";
 const FRONTEND_READY_EVENT: &str = "leagueakari-frontend-ready";
 const PROBE_PATH_ENV: &str = "LEAGUEAKARI_PROBE_PATH";
 const PROBE_RETRY_DELAY: Duration = Duration::from_secs(5);
+
+include!(concat!(env!("OUT_DIR"), "/embedded_probe.rs"));
 
 #[derive(Clone, Default)]
 struct ProbeProcess {
@@ -615,7 +618,26 @@ fn resolve_probe_path_from(
         }
     }
 
+    if let Some(extracted_probe) = extract_embedded_probe(executable_name) {
+        return extracted_probe;
+    }
+
     PathBuf::from(executable_name)
+}
+
+fn extract_embedded_probe(executable_name: &str) -> Option<PathBuf> {
+    let bytes = EMBEDDED_PROBE_BYTES?;
+    let directory = std::env::temp_dir().join("LeagueAkari Plus");
+    let path = directory.join(executable_name);
+
+    if fs::create_dir_all(&directory).is_err() {
+        return None;
+    }
+    if fs::write(&path, bytes).is_err() {
+        return None;
+    }
+
+    Some(path)
 }
 
 fn format_probe_exit_status(
