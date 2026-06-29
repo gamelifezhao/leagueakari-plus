@@ -302,9 +302,10 @@ p {
 
 .draft-view {
   display: grid;
-  align-content: start;
-  grid-template-rows: auto auto auto auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   gap: 10px;
+  height: 100%;
+  overflow: hidden;
 }
 
 .page-header {
@@ -517,7 +518,7 @@ p {
 
 .middle-grid {
   display: grid;
-  grid-template-columns: minmax(520px, 1.32fr) minmax(340px, 0.94fr);
+  grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.92fr);
   gap: 8px;
   min-height: 0;
 }
@@ -718,19 +719,38 @@ p {
 }
 
 .bottom-grid {
+  align-self: stretch;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 10px;
   min-width: 0;
-  height: clamp(220px, calc(100vh - 505px), 360px);
+  height: 100%;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: scroll;
   overscroll-behavior: contain;
-  padding-right: 6px;
+  padding-right: 8px;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: #64748b transparent;
+}
+
+.bottom-grid::-webkit-scrollbar {
+  width: 12px;
+}
+
+.bottom-grid::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(31, 37, 46, 0.72);
+}
+
+.bottom-grid::-webkit-scrollbar-thumb {
+  border: 3px solid rgba(31, 37, 46, 0.72);
+  border-radius: 999px;
+  background: #64748b;
+  background-clip: padding-box;
 }
 
 .reason-section,
@@ -742,7 +762,7 @@ p {
   display: flex;
   flex-direction: column;
   min-height: 138px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .detail-card {
@@ -2808,6 +2828,95 @@ p {
   color: var(--subtle);
 }
 
+@media (max-width: 1320px) {
+  .app-frame {
+    grid-template-columns: 188px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px;
+  }
+
+  .sidebar {
+    padding: 12px;
+  }
+
+  .draft-view {
+    gap: 8px;
+  }
+
+  .page-header h2 {
+    font-size: 26px;
+  }
+
+  .summary-grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.96fr) minmax(0, 1.12fr);
+    gap: 8px;
+  }
+
+  .summary-card,
+  .draft-section,
+  .dimension-section,
+  .reason-section,
+  .enemy-section,
+  .opgg-section,
+  .teammate-section {
+    padding: 10px 12px;
+  }
+
+  .middle-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.84fr);
+  }
+
+  .hero-row {
+    gap: 6px;
+  }
+
+  .hero-card {
+    min-height: 50px;
+    padding: 7px 8px;
+  }
+
+  .hero-name {
+    font-size: 13px;
+  }
+
+  .ban-list {
+    gap: 5px;
+  }
+
+  .ban-chip {
+    font-size: 11px;
+    padding: 0 5px;
+  }
+
+  .dimension-row {
+    grid-template-columns: 74px minmax(0, 1fr) 38px;
+    gap: 8px;
+  }
+
+  .dimension-row span {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .draft-view {
+    overflow-y: auto;
+  }
+
+  .summary-grid,
+  .middle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-grid {
+    min-height: 260px;
+  }
+
+  .dimension-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1180px) {
   html,
   body {
@@ -2855,11 +2964,14 @@ p {
 
   .summary-grid,
   .middle-grid,
-  .bottom-grid,
   .history-layout,
   .settings-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+  }
+
+  .bottom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settings-index {
@@ -2908,6 +3020,8 @@ p {
 
   .summary-grid,
   .hero-row,
+  .bottom-grid,
+  .dimension-list,
   .match-card,
   .settings-index {
     grid-template-columns: 1fr;

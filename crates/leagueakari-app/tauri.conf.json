@@ -5,6 +5,7 @@
   "identifier": "com.leagueakari.plus",
   "mainBinaryName": "leagueakari-plus",
   "build": {
+    "beforeBuildCommand": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/prepare-sidecars.ps1 -Release",
     "frontendDist": "../../apps/leagueakari-ui-prototype"
   },
   "app": {
@@ -26,7 +27,22 @@
     }
   },
   "bundle": {
-    "active": false,
-    "targets": "all"
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "LeagueAkari Plus",
+    "icon": ["icons/icon.ico"],
+    "externalBin": ["../../target/release/leagueakari-probe"],
+    "useLocalToolsDir": true,
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true
+      }
+    }
   }
 }
