@@ -722,7 +722,15 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   min-width: 0;
+  height: clamp(220px, calc(100vh - 505px), 360px);
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #64748b transparent;
 }
 
 .reason-section,
@@ -733,7 +741,7 @@ p {
 .rune-section {
   display: flex;
   flex-direction: column;
-  min-height: 126px;
+  min-height: 138px;
   overflow: hidden;
 }
 
@@ -1113,10 +1121,12 @@ p {
   display: grid;
   gap: 3px;
   min-width: 0;
-  border: 1px solid #303946;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  background: rgba(27, 32, 39, 0.92);
-  padding: 9px 11px;
+  background:
+    linear-gradient(180deg, rgba(34, 41, 51, 0.92), rgba(22, 27, 34, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 10px 12px;
 }
 
 .game-insight-item strong {
@@ -1157,6 +1167,7 @@ p {
 }
 
 .game-player-grid {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: start;
@@ -1164,16 +1175,35 @@ p {
   min-width: 0;
   min-height: 0;
   overflow-x: hidden;
-  overflow-y: visible;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: #4b5563 transparent;
 }
 
+.game-player-grid::after {
+  position: sticky;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  flex: 1 0 100%;
+  height: 18px;
+  margin-top: -18px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(16, 19, 24, 0), rgba(16, 19, 24, 0.9));
+  content: "";
+}
+
 .game-player-card,
 .game-empty {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(72, 82, 96, 0.72);
   border-radius: 8px;
-  background: rgba(27, 32, 39, 0.92);
+  background:
+    linear-gradient(180deg, rgba(31, 37, 46, 0.96), rgba(20, 24, 31, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 12px 24px rgba(0, 0, 0, 0.16);
 }
 
 .game-player-card {
@@ -1188,26 +1218,26 @@ p {
   min-width: 0;
   height: auto;
   min-height: 0;
-  max-height: 398px;
+  max-height: 372px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 11px 12px 12px;
+  padding: 11px 12px 12px 14px;
 }
 
 .game-player-card::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 3px;
-  background: #334155;
+  width: 4px;
+  background: #5c6675;
   content: "";
 }
 
 .game-player-card.self::before {
-  background: var(--teal);
+  background: linear-gradient(180deg, var(--teal), #2f9a91);
 }
 
 .game-player-card.risk::before {
-  background: var(--red);
+  background: linear-gradient(180deg, var(--red), #a94252);
 }
 
 .game-player-card.empty {
@@ -1216,7 +1246,7 @@ p {
 
 .game-player-header {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 46px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -1224,9 +1254,10 @@ p {
 
 .game-player-header .champion-icon,
 .game-avatar-fallback {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(231, 189, 104, 0.2);
 }
 
 .game-avatar-fallback {
@@ -1247,7 +1278,7 @@ p {
 .game-player-identity strong {
   overflow: hidden;
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1263,33 +1294,33 @@ p {
 
 .game-player-identity small {
   justify-self: start;
-  min-height: 20px;
+  min-height: 19px;
   border: 1px solid rgba(231, 189, 104, 0.32);
   border-radius: 999px;
   background: rgba(231, 189, 104, 0.08);
   color: var(--gold);
   font-size: 11px;
-  line-height: 18px;
+  line-height: 17px;
   padding: 0 7px;
 }
 
 .game-player-tags {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   overflow: hidden;
 }
 
 .game-player-tag {
   flex: 0 0 auto;
-  min-height: 20px;
+  min-height: 19px;
   border: 1px solid #34404e;
   border-radius: 999px;
   background: #202733;
   color: var(--muted);
   font-size: 10px;
-  line-height: 18px;
+  line-height: 17px;
   padding: 0 6px;
 }
 
@@ -1316,21 +1347,25 @@ p {
 .game-player-score {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 7px 0;
+  gap: 7px;
+  border: 0;
+  padding: 0;
 }
 
 .game-stat {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 7px;
+  background: rgba(12, 16, 21, 0.38);
+  padding: 7px 8px;
 }
 
 .game-stat strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.1;
 }
 
@@ -1341,8 +1376,10 @@ p {
 
 .game-loadout-strip {
   display: flex;
-  min-height: 22px;
+  min-height: 24px;
   gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  padding-top: 8px;
   overflow: hidden;
 }
 
@@ -1383,9 +1420,9 @@ p {
 .game-recent-list {
   display: grid;
   align-content: start;
-  gap: 5px;
+  gap: 4px;
   min-height: 0;
-  max-height: 154px;
+  max-height: 132px;
   overflow: auto;
   padding-right: 2px;
   scrollbar-width: thin;
@@ -1393,23 +1430,41 @@ p {
 }
 
 .game-recent-row {
+  position: relative;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) 42px;
   align-items: center;
   gap: 5px;
-  min-height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  min-height: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.055);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.035);
-  padding: 5px;
+  background: rgba(11, 15, 20, 0.38);
+  padding: 4px 5px 4px 8px;
 }
 
 .game-recent-row.win {
-  background: rgba(39, 85, 128, 0.34);
+  background: linear-gradient(90deg, rgba(42, 90, 130, 0.45), rgba(11, 15, 20, 0.34));
 }
 
 .game-recent-row.loss {
-  background: rgba(116, 48, 55, 0.34);
+  background: linear-gradient(90deg, rgba(118, 50, 58, 0.42), rgba(11, 15, 20, 0.34));
+}
+
+.game-recent-row::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #54606f;
+  content: "";
+}
+
+.game-recent-row.win::before {
+  background: #4aa3ff;
+}
+
+.game-recent-row.loss::before {
+  background: var(--red);
 }
 
 .game-recent-body {
